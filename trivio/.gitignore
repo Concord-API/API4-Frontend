@@ -41,3 +41,6 @@ __screenshots__/
 #enviroments
 .env*
 !.env.example
+
+# other
+docs
