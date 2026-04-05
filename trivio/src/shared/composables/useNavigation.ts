@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useAuth } from './useAuth'
 import type { RouteLocationRaw } from 'vue-router'
-import { Home, Users, Settings, Package, Wrench, Calendar, MapPin, History } from 'lucide-vue-next'
+import { Home, Users, Settings, Package, Wrench, Calendar, MapPin, History, FileText, ClipboardList } from 'lucide-vue-next'
 
 export interface NavigationItem {
   id: string
@@ -30,7 +30,9 @@ export function useNavigation() {
             { id: '2', title: 'Clientes', icon: Users, route: { name: 'dashboard-clientes' } },
             { id: '3', title: 'Equipamentos', icon: Package, route: { name: 'dashboard-equipamentos' } },
             { id: '4', title: 'Manutenções', icon: Wrench, route: { name: 'dashboard-manutencoes' } },
-            { id: '5', title: 'Técnicos & Alocação', icon: Settings, route: { name: 'dashboard-tecnicos' } }
+            { id: '5', title: 'Contratos', icon: FileText, route: { name: 'dashboard-contratos' } },
+            { id: '6', title: 'Requisitos', icon: ClipboardList, route: { name: 'dashboard-requisitos' } },
+            { id: '7', title: 'Técnicos & Alocação', icon: Settings, route: { name: 'dashboard-tecnicos' } }
           ]
         }
       ]
