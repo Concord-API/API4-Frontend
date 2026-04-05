@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import branding from '@/assets/branding.gif'
+import AuthBrandingCopy from '@/features/auth/components/AuthBrandingCopy.vue'
 import LoginForm from '@/features/auth/components/LoginForm.vue'
 import BrandLogo from '@/shared/components/branding/BrandLogo.vue'
 import ThemeToggleButton from '@/shared/components/theme/ThemeToggleButton.vue'
@@ -27,23 +28,7 @@ import ThemeToggleButton from '@/shared/components/theme/ThemeToggleButton.vue'
         </div>
 
         <div class="flex items-center justify-center px-8 xl:px-12">
-          <div class="space-y-7">
-            <h2
-              class="max-w-md text-5xl leading-[1.02] font-bold tracking-[-0.06em] text-black dark:text-white xl:text-6xl"
-            >
-              Conecte pessoas, dados e
-              <span
-                class="inline-block rounded-[0.12em] bg-[#b9f11b] px-[0.16em] pt-[0.02em] pb-[0.08em] text-[#111827] shadow-[0_0_0_1px_rgba(185,241,27,0.08)]"
-              >
-                decisoes
-              </span>
-              em um so lugar.
-            </h2>
-            <p class="max-w-md text-lg leading-8 text-black/70 dark:text-white/72">
-              Um espaco central para acompanhar operacoes, manter visibilidade do que importa e
-              transformar informacoes em acoes.
-            </p>
-          </div>
+          <AuthBrandingCopy />
         </div>
       </div>
     </section>
@@ -73,25 +58,7 @@ import ThemeToggleButton from '@/shared/components/theme/ThemeToggleButton.vue'
               />
             </div>
 
-            <div class="space-y-4">
-              <h2
-                class="max-w-sm text-3xl leading-[1.04] font-bold tracking-[-0.06em] text-black dark:text-white sm:text-4xl"
-              >
-                Conecte pessoas, dados e
-                <span
-                  class="inline-block rounded-[0.12em] bg-[#b9f11b] px-[0.16em] pt-[0.02em] pb-[0.08em] text-[#111827] shadow-[0_0_0_1px_rgba(185,241,27,0.08)]"
-                >
-                  decisoes
-                </span>
-                em um so lugar.
-              </h2>
-              <p
-                class="max-w-sm text-sm leading-6 text-black/70 dark:text-white/72 sm:text-base sm:leading-7"
-              >
-                Um espaco central para acompanhar operacoes, manter visibilidade do que importa e
-                transformar informacoes em acoes.
-              </p>
-            </div>
+            <AuthBrandingCopy size="compact" />
           </div>
         </div>
       </div>
