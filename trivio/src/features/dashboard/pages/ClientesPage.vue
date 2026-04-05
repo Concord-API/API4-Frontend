@@ -32,6 +32,15 @@ function resetForm() {
   form.value = { name: '', cpf: '', cnpj: '', email: '', phone: '', active: true }
 }
 
+const detailOpen = ref(false)
+const detailItem = ref<ClienteAPI | null>(null)
+
+function openDetail(c: ClienteAPI) { detailItem.value = c; detailOpen.value = true }
+function openEditFromDetail() {
+  if (!detailItem.value) return
+  const c = detailItem.value; detailOpen.value = false; openEdit(c)
+}
+
 function openCreate() {
   resetForm(); editingId.value = null; sheetMode.value = 'create'; sheetOpen.value = true
 }
@@ -180,6 +189,42 @@ onMounted(() => { void ensureClientesLoaded() })
       </SheetContent>
     </Sheet>
 
+    <!-- DETAIL SHEET -->
+    <Sheet v-model:open="detailOpen">
+      <SheetContent class="nd-sheet nd-sheet--detail">
+        <SheetHeader class="nd-sheet-header">
+          <SheetTitle class="nd-sheet-title">DETALHES DO CLIENTE</SheetTitle>
+          <SheetDescription class="sr-only">Detalhes do cliente</SheetDescription>
+        </SheetHeader>
+        <div v-if="detailItem" class="nd-detail">
+          <div class="nd-detail-status-row">
+            <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'ATIVO' : 'INATIVO' }}</span>
+          </div>
+          <div class="nd-detail-section">
+            <span class="nd-field-label">NOME</span>
+            <span class="nd-detail-value">{{ detailItem.name }}</span>
+          </div>
+          <div v-if="detailItem.cnpj || detailItem.cpf" class="nd-detail-section">
+            <span class="nd-field-label">DOCUMENTO</span>
+            <span class="nd-detail-value nd-detail-value--mono">{{ documentoExibicao(detailItem) }}</span>
+          </div>
+          <div v-if="detailItem.email" class="nd-detail-section">
+            <span class="nd-field-label">E-MAIL</span>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.email }}</span>
+          </div>
+          <div v-if="detailItem.phone" class="nd-detail-section">
+            <span class="nd-field-label">TELEFONE</span>
+            <span class="nd-detail-value nd-detail-value--mono">{{ formatPhone(detailItem.phone) }}</span>
+          </div>
+          <div class="nd-detail-footer">
+            <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
+              <Pencil :size="12" /> EDITAR CLIENTE
+            </button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
     <div class="nd-hero">
@@ -233,7 +278,7 @@ onMounted(() => { void ensureClientesLoaded() })
         </thead>
         <tbody>
           <tr v-if="loading"><td colspan="6" class="nd-empty">CARREGANDO...</td></tr>
-          <tr v-for="c in filteredClientes" :key="c.id_client" class="nd-tr">
+          <tr v-for="c in filteredClientes" :key="c.id_client" class="nd-tr nd-tr--clickable" @click="openDetail(c)">
             <td class="nd-td nd-td--primary">{{ c.name }}</td>
             <td class="nd-td nd-td--mono">{{ documentoExibicao(c) }}</td>
             <td class="nd-td nd-td--secondary">{{ c.email ?? '—' }}</td>
@@ -242,7 +287,7 @@ onMounted(() => { void ensureClientesLoaded() })
               <span class="nd-tag" :style="c.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ c.active ? 'ATIVO' : 'INATIVO' }}</span>
             </td>
             <td class="nd-td nd-td--action">
-              <button class="nd-edit-btn" type="button" @click="openEdit(c)"><Pencil :size="12" /></button>
+              <button class="nd-edit-btn" type="button" @click.stop="openEdit(c)"><Pencil :size="12" /></button>
             </td>
           </tr>
           <tr v-if="!loading && filteredClientes.length === 0"><td colspan="6" class="nd-empty">NENHUM CLIENTE CADASTRADO</td></tr>
@@ -253,8 +298,11 @@ onMounted(() => { void ensureClientesLoaded() })
     <!-- GRID VIEW -->
     <div v-else class="nd-grid">
       <div v-if="loading" class="nd-empty nd-empty--grid">CARREGANDO...</div>
-      <div v-for="c in filteredClientes" :key="c.id_client" class="nd-card" @click="openEdit(c)">
-        <span class="nd-card-cat">CLIENTE</span>
+      <div v-for="c in filteredClientes" :key="c.id_client" class="nd-card" @click="openDetail(c)">
+        <div class="nd-card-top-row">
+          <span class="nd-card-cat">CLIENTE</span>
+          <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(c)"><Pencil :size="11" /></button>
+        </div>
         <p class="nd-card-name">{{ c.name }}</p>
         <div class="nd-card-meta">
           <span class="nd-card-detail nd-card-detail--mono">{{ documentoExibicao(c) }}</span>
@@ -296,6 +344,7 @@ onMounted(() => { void ensureClientesLoaded() })
 .nd-tr { border-bottom: 1px solid var(--nd-border); transition: background 150ms ease-out; }
 .nd-tr:hover { background: var(--nd-surface); }
 .nd-tr:hover .nd-edit-btn { opacity: 1; }
+.nd-tr--clickable { cursor: pointer; }
 .nd-td { padding: 13px 16px 13px 0; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 400; color: var(--nd-text-secondary); vertical-align: middle; }
 .nd-td--primary { color: var(--nd-text-primary); }
 .nd-td--secondary { color: var(--nd-text-secondary); }
@@ -309,8 +358,20 @@ onMounted(() => { void ensureClientesLoaded() })
 .nd-empty--grid { grid-column: 1 / -1; }
 .nd-card { background: var(--nd-surface); border: 1px solid var(--nd-border); border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 150ms ease-out; display: flex; flex-direction: column; }
 .nd-card:hover { border-color: var(--nd-border-visible); }
+.nd-card-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
 .nd-card-cat { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-disabled); }
+.nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
+.nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
 .nd-card-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 6px 0 8px; line-height: 1.3; }
+:deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
+.nd-detail { display: flex; flex-direction: column; gap: 28px; }
+.nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
+.nd-tag--lg { font-size: 11px; padding: 4px 12px; }
+.nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
+.nd-detail-value { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
+.nd-detail-value--secondary { font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-secondary); }
+.nd-detail-value--mono { font-family: 'Space Mono', monospace; font-size: 14px; letter-spacing: 0.04em; color: var(--nd-text-primary); }
+.nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
 .nd-card-meta { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 .nd-card-detail { font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--nd-text-secondary); }
 .nd-card-detail--mono { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.03em; }

@@ -30,6 +30,7 @@ const loading = computed(() => loadingContratos.value || loadingClientes.value |
 const erro = computed(() => submitError.value ?? contratosError.value ?? clientesError.value ?? equipamentosError.value ?? requisitosError.value)
 
 const clienteOptions = computed(() => clientes.value.map(c => ({ value: c.id_client, label: c.name })))
+const equipamentoOptions = computed(() => equipamentos.value.map(e => ({ value: e.id_equipment, label: e.model ? `${e.name} — ${e.model}` : e.name })))
 const requisitoOptions = computed(() => requisitos.value.filter(r => r.active).map(r => ({ value: r.id, label: r.name })))
 
 const defaultForm = () => ({
@@ -46,6 +47,15 @@ const form = ref(defaultForm())
 
 const hoje = new Date().toISOString().split('T')[0] ?? ''
 function isVencido(finalDate: string) { return finalDate < hoje }
+
+const detailOpen = ref(false)
+const detailItem = ref<ContratoAPI | null>(null)
+
+function openDetail(c: ContratoAPI) { detailItem.value = c; detailOpen.value = true }
+function openEditFromDetail() {
+  if (!detailItem.value) return
+  const c = detailItem.value; detailOpen.value = false; openEdit(c)
+}
 
 function openCreate() {
   form.value = defaultForm(); editingId.value = null; sheetMode.value = 'create'; sheetOpen.value = true
@@ -86,12 +96,6 @@ const filteredContratos = computed(() => {
   }
   return result
 })
-
-function toggleEquipamento(id: number) {
-  const idx = form.value.equipmentIds.indexOf(id)
-  if (idx >= 0) form.value.equipmentIds.splice(idx, 1)
-  else form.value.equipmentIds.push(id)
-}
 
 
 function formatDate(dateStr: string) {
@@ -188,14 +192,14 @@ onMounted(() => {
           </div>
           <div class="nd-field">
             <label class="nd-field-label">EQUIPAMENTOS</label>
-            <div v-if="equipamentos.length === 0" class="nd-field-hint">Nenhum equipamento cadastrado</div>
-            <div class="nd-check-list">
-              <label v-for="eq in equipamentos" :key="eq.id_equipment" class="nd-check-item">
-                <input type="checkbox" :value="eq.id_equipment" :checked="form.equipmentIds.includes(eq.id_equipment)" @change="toggleEquipamento(eq.id_equipment)" class="nd-check" />
-                <span class="nd-check-name">{{ eq.name }}</span>
-                <span v-if="eq.model" class="nd-check-model">{{ eq.model }}</span>
-              </label>
-            </div>
+            <NdMultiCombobox
+              v-model="form.equipmentIds"
+              :options="equipamentoOptions"
+              placeholder="Selecione os equipamentos"
+              search-placeholder="Buscar equipamento..."
+              singular-label="equipamento"
+              plural-label="equipamentos"
+            />
           </div>
           <div class="nd-field">
             <label class="nd-field-label">REQUISITOS</label>
@@ -215,6 +219,56 @@ onMounted(() => {
             </button>
           </div>
         </form>
+      </SheetContent>
+    </Sheet>
+
+    <!-- DETAIL SHEET -->
+    <Sheet v-model:open="detailOpen">
+      <SheetContent class="nd-sheet nd-sheet--detail">
+        <SheetHeader class="nd-sheet-header">
+          <SheetTitle class="nd-sheet-title">DETALHES DO CONTRATO</SheetTitle>
+          <SheetDescription class="sr-only">Detalhes do contrato</SheetDescription>
+        </SheetHeader>
+        <div v-if="detailItem" class="nd-detail">
+          <div class="nd-detail-status-row">
+            <span class="nd-tag nd-tag--lg" :style="{ color: contratoStatus(detailItem).color, borderColor: contratoStatus(detailItem).color }">{{ contratoStatus(detailItem).label }}</span>
+            <span class="nd-detail-id">#{{ String(detailItem.id).padStart(3, '0') }}</span>
+          </div>
+          <div class="nd-detail-section">
+            <span class="nd-field-label">CLIENTE</span>
+            <span class="nd-detail-value">{{ detailItem.client.name }}</span>
+          </div>
+          <div class="nd-detail-section">
+            <span class="nd-field-label">VIGÊNCIA</span>
+            <span class="nd-detail-value nd-detail-value--mono">{{ formatDate(detailItem.initialDate) }} → {{ formatDate(detailItem.finalDate) }}</span>
+          </div>
+          <div class="nd-detail-section">
+            <span class="nd-field-label">RECORRÊNCIA</span>
+            <span class="nd-detail-value nd-detail-value--mono">{{ detailItem.recurrenceMaintenance }} dias</span>
+          </div>
+          <div class="nd-detail-section">
+            <span class="nd-field-label">EQUIPAMENTOS ({{ detailItem.equipments.length }})</span>
+            <div v-if="detailItem.equipments.length" class="nd-detail-list">
+              <div v-for="eq in detailItem.equipments" :key="eq.id_equipment" class="nd-detail-list-item">
+                <span class="nd-detail-list-dot" />{{ eq.name }}<span v-if="eq.model" class="nd-detail-list-sub">{{ eq.model }}</span>
+              </div>
+            </div>
+            <span v-else class="nd-detail-value--dim">Nenhum equipamento</span>
+          </div>
+          <div v-if="detailItem.requirements?.length" class="nd-detail-section">
+            <span class="nd-field-label">REQUISITOS ({{ detailItem.requirements.length }})</span>
+            <div class="nd-detail-list">
+              <div v-for="req in detailItem.requirements" :key="req.id" class="nd-detail-list-item">
+                <span class="nd-detail-list-dot" />{{ req.name }}
+              </div>
+            </div>
+          </div>
+          <div class="nd-detail-footer">
+            <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
+              <Pencil :size="12" /> EDITAR CONTRATO
+            </button>
+          </div>
+        </div>
       </SheetContent>
     </Sheet>
 
@@ -280,7 +334,7 @@ onMounted(() => {
         </thead>
         <tbody>
           <tr v-if="loading"><td colspan="8" class="nd-empty">CARREGANDO...</td></tr>
-          <tr v-for="c in filteredContratos" :key="c.id" class="nd-tr" :class="{ 'nd-tr--alert': isVencido(c.finalDate) }">
+          <tr v-for="c in filteredContratos" :key="c.id" class="nd-tr nd-tr--clickable" :class="{ 'nd-tr--alert': isVencido(c.finalDate) }" @click="openDetail(c)">
             <td class="nd-td nd-td--mono nd-td--id">#{{ String(c.id).padStart(3, '0') }}</td>
             <td class="nd-td nd-td--primary">{{ c.client.name }}</td>
             <td class="nd-td nd-td--mono">{{ formatDate(c.initialDate) }}</td>
@@ -291,7 +345,7 @@ onMounted(() => {
               <span class="nd-tag" :style="{ color: contratoStatus(c).color, borderColor: contratoStatus(c).color }">{{ contratoStatus(c).label }}</span>
             </td>
             <td class="nd-td nd-td--action">
-              <button class="nd-edit-btn" type="button" @click="openEdit(c)"><Pencil :size="12" /></button>
+              <button class="nd-edit-btn" type="button" @click.stop="openEdit(c)"><Pencil :size="12" /></button>
             </td>
           </tr>
           <tr v-if="!loading && filteredContratos.length === 0"><td colspan="8" class="nd-empty">NENHUM CONTRATO CADASTRADO</td></tr>
@@ -307,11 +361,14 @@ onMounted(() => {
         :key="c.id"
         class="nd-card"
         :class="{ 'nd-card--vencido': isVencido(c.finalDate) }"
-        @click="openEdit(c)"
+        @click="openDetail(c)"
       >
         <div class="nd-card-top">
           <span class="nd-card-id">#{{ String(c.id).padStart(3, '0') }}</span>
-          <span class="nd-tag" :style="{ color: contratoStatus(c).color, borderColor: contratoStatus(c).color }">{{ contratoStatus(c).label }}</span>
+          <div class="nd-card-top-actions">
+            <span class="nd-tag" :style="{ color: contratoStatus(c).color, borderColor: contratoStatus(c).color }">{{ contratoStatus(c).label }}</span>
+            <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(c)"><Pencil :size="11" /></button>
+          </div>
         </div>
         <p class="nd-card-name">{{ c.client.name }}</p>
         <div class="nd-card-dates">
@@ -364,6 +421,7 @@ onMounted(() => {
 .nd-tr:hover { background: var(--nd-surface); }
 .nd-tr--alert { border-left: 2px solid var(--nd-accent); }
 .nd-tr:hover .nd-edit-btn { opacity: 1; }
+.nd-tr--clickable { cursor: pointer; }
 .nd-td { padding: 13px 16px 13px 0; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-secondary); vertical-align: middle; }
 .nd-td--primary { color: var(--nd-text-primary); }
 .nd-td--mono { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 0.02em; }
@@ -381,7 +439,24 @@ onMounted(() => {
 .nd-card:hover { border-color: var(--nd-border-visible); }
 .nd-card--vencido { border-left: 2px solid var(--nd-accent); }
 .nd-card-top { display: flex; align-items: center; justify-content: space-between; }
+.nd-card-top-actions { display: flex; align-items: center; gap: 8px; }
+.nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
+.nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
 .nd-card-id { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--nd-text-disabled); }
+:deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
+.nd-detail { display: flex; flex-direction: column; gap: 28px; }
+.nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
+.nd-detail-id { font-family: 'Space Mono', monospace; font-size: 13px; letter-spacing: 0.06em; color: var(--nd-text-disabled); }
+.nd-tag--lg { font-size: 11px; padding: 4px 12px; }
+.nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
+.nd-detail-value { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
+.nd-detail-value--mono { font-family: 'Space Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: var(--nd-text-primary); }
+.nd-detail-value--dim { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--nd-text-disabled); }
+.nd-detail-list { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.nd-detail-list-item { display: flex; align-items: center; gap: 10px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-primary); }
+.nd-detail-list-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--nd-action); flex-shrink: 0; }
+.nd-detail-list-sub { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-text-disabled); margin-left: 4px; }
+.nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
 .nd-card-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; color: var(--nd-text-primary); line-height: 1.3; margin: 0; }
 .nd-card-dates { display: flex; gap: 16px; }
 .nd-card-date-item { display: flex; flex-direction: column; gap: 1px; }

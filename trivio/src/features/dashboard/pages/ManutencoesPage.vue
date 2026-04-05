@@ -11,6 +11,21 @@ import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 
+const detailOpen = ref(false)
+const detailItem = ref<ManutencaoAPI | null>(null)
+
+function openDetail(m: ManutencaoAPI) {
+  detailItem.value = m
+  detailOpen.value = true
+}
+
+function openEditFromDetail() {
+  if (!detailItem.value) return
+  const m = detailItem.value
+  detailOpen.value = false
+  openEdit(m)
+}
+
 const manutencoes = ref<ManutencaoAPI[]>([])
 const contratos = ref<ContratoAPI[]>([])
 const tecnicos = ref<TecnicoAPI[]>([])
@@ -220,6 +235,56 @@ onMounted(carregarDados)
       </SheetContent>
     </Sheet>
 
+    <!-- DETAIL SHEET -->
+    <Sheet v-model:open="detailOpen">
+      <SheetContent class="nd-sheet nd-sheet--detail">
+        <SheetHeader class="nd-sheet-header">
+          <SheetTitle class="nd-sheet-title">DETALHES DA MANUTENÇÃO</SheetTitle>
+          <SheetDescription class="sr-only">Detalhes da manutenção</SheetDescription>
+        </SheetHeader>
+        <div v-if="detailItem" class="nd-detail">
+          <div class="nd-detail-status-row">
+            <span class="nd-tag nd-tag--lg" :style="{ color: statusColor(detailItem.status), borderColor: statusColor(detailItem.status) }">
+              {{ statusLabel(detailItem.status) }}
+            </span>
+            <span class="nd-detail-tipo">{{ detailItem.type }}</span>
+          </div>
+
+          <div class="nd-detail-section">
+            <span class="nd-field-label">DATA</span>
+            <span class="nd-detail-value nd-detail-value--mono">{{ formatDate(detailItem.date) }}</span>
+          </div>
+
+          <div class="nd-detail-section">
+            <span class="nd-field-label">CONTRATO</span>
+            <span class="nd-detail-value">#{{ String(detailItem.contract.id).padStart(3, '0') }}</span>
+          </div>
+
+          <div class="nd-detail-section">
+            <span class="nd-field-label">CLIENTE</span>
+            <span class="nd-detail-value">{{ detailItem.contract.client.name }}</span>
+          </div>
+
+          <div class="nd-detail-section">
+            <span class="nd-field-label">TÉCNICOS ({{ detailItem.employees.length }})</span>
+            <div v-if="detailItem.employees.length" class="nd-detail-list">
+              <div v-for="emp in detailItem.employees" :key="emp.employeeId" class="nd-detail-list-item">
+                <span class="nd-detail-list-dot" />
+                {{ emp.name }}
+              </div>
+            </div>
+            <span v-else class="nd-detail-value nd-detail-value--dim">Nenhum técnico alocado</span>
+          </div>
+
+          <div class="nd-detail-footer">
+            <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
+              <Pencil :size="12" /> EDITAR MANUTENÇÃO
+            </button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+
     <div v-if="submitError && !sheetOpen" class="nd-error">{{ submitError }}</div>
 
     <div class="nd-hero">
@@ -303,7 +368,7 @@ onMounted(carregarDados)
         </thead>
         <tbody>
           <tr v-if="loading"><td colspan="6" class="nd-empty">CARREGANDO...</td></tr>
-          <tr v-for="m in filteredManutencoes" :key="m.id" class="nd-tr">
+          <tr v-for="m in filteredManutencoes" :key="m.id" class="nd-tr nd-tr--clickable" @click="openDetail(m)">
             <td class="nd-td nd-td--mono">{{ formatDate(m.date) }}</td>
             <td class="nd-td nd-td--primary">{{ m.contract.client.name }}</td>
             <td class="nd-td nd-td--secondary">{{ m.type }}</td>
@@ -312,7 +377,7 @@ onMounted(carregarDados)
               <span class="nd-tag" :style="{ color: statusColor(m.status), borderColor: statusColor(m.status) }">{{ statusLabel(m.status) }}</span>
             </td>
             <td class="nd-td nd-td--action">
-              <button class="nd-edit-btn" type="button" @click="openEdit(m)"><Pencil :size="12" /></button>
+              <button class="nd-edit-btn" type="button" @click.stop="openEdit(m)"><Pencil :size="12" /></button>
             </td>
           </tr>
           <tr v-if="!loading && filteredManutencoes.length === 0"><td colspan="6" class="nd-empty">NENHUMA MANUTENÇÃO CADASTRADA</td></tr>
@@ -323,12 +388,13 @@ onMounted(carregarDados)
     <!-- GRID VIEW -->
     <div v-else class="nd-grid">
       <div v-if="loading" class="nd-empty nd-empty--grid">CARREGANDO...</div>
-      <div v-for="m in filteredManutencoes" :key="m.id" class="nd-card" @click="openEdit(m)">
+      <div v-for="m in filteredManutencoes" :key="m.id" class="nd-card" @click="openDetail(m)">
         <div class="nd-card-top">
           <span class="nd-card-date">{{ formatDate(m.date) }}</span>
-          <span class="nd-card-tipo">{{ m.type }}</span>
+          <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(m)"><Pencil :size="11" /></button>
         </div>
         <p class="nd-card-name">{{ m.contract.client.name }}</p>
+        <span class="nd-card-tipo">{{ m.type }}</span>
         <span class="nd-card-tecnicos">{{ m.employees.length }} TÉCNICO{{ m.employees.length !== 1 ? 'S' : '' }}</span>
         <div class="nd-card-footer">
           <span class="nd-tag" :style="{ color: statusColor(m.status), borderColor: statusColor(m.status) }">{{ statusLabel(m.status) }}</span>
@@ -376,6 +442,7 @@ onMounted(carregarDados)
 .nd-tr { border-bottom: 1px solid var(--nd-border); transition: background 150ms ease-out; }
 .nd-tr:hover { background: var(--nd-surface); }
 .nd-tr:hover .nd-edit-btn { opacity: 1; }
+.nd-tr--clickable { cursor: pointer; }
 .nd-td { padding: 13px 16px 13px 0; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-secondary); vertical-align: middle; }
 .nd-td--primary { color: var(--nd-text-primary); }
 .nd-td--secondary { color: var(--nd-text-secondary); }
@@ -397,6 +464,22 @@ onMounted(carregarDados)
 .nd-card-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 2px 0; line-height: 1.3; flex: 1; }
 .nd-card-tecnicos { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--nd-text-disabled); }
 .nd-card-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--nd-border); }
+.nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
+.nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
+/* Detail sheet */
+:deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
+.nd-detail { display: flex; flex-direction: column; gap: 28px; }
+.nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
+.nd-tag--lg { font-size: 11px; padding: 4px 12px; }
+.nd-detail-tipo { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-secondary); }
+.nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
+.nd-detail-value { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
+.nd-detail-value--mono { font-family: 'Space Mono', monospace; font-size: 14px; letter-spacing: 0.04em; }
+.nd-detail-value--dim { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--nd-text-disabled); }
+.nd-detail-list { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.nd-detail-list-item { display: flex; align-items: center; gap: 10px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-primary); }
+.nd-detail-list-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--nd-action); flex-shrink: 0; }
+.nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
 :deep(.nd-sheet) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
 .nd-sheet-header { margin-bottom: 32px; }
 .nd-sheet-title { font-family: 'Space Mono', monospace !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0.1em !important; text-transform: uppercase !important; color: var(--nd-text-display) !important; }
