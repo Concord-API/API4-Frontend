@@ -53,10 +53,10 @@ const breadcrumb = computed(() =>
 }
 
 .nd-breadcrumb {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 11px;
   font-weight: 400;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   color: var(--nd-text-secondary);
 }
 

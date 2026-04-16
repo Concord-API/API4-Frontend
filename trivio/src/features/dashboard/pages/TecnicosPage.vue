@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { Search, Plus, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
@@ -108,14 +108,14 @@ async function submitForm() {
 }
 
 const filters = [
-  { key: 'todos', label: 'TODOS' },
-  { key: 'ativo', label: 'ATIVOS' },
-  { key: 'inativo', label: 'INATIVOS' },
+  { key: 'todos', label: 'Todos' },
+  { key: 'ativo', label: 'Ativos' },
+  { key: 'inativo', label: 'Inativos' },
 ] as const
 
 const funcaoOptions = [
   { value: 'false', label: 'TÉCNICO' },
-  { value: 'true', label: 'ADMINISTRADOR' },
+  { value: 'true', label: 'Administrador' },
 ]
 
 const adminValue = computed({
@@ -143,15 +143,15 @@ onMounted(() => { void ensureTecnicosLoaded() })
         </SheetHeader>
         <form class="nd-form" @submit.prevent="submitForm">
           <div class="nd-field">
-            <label class="nd-field-label">NOME *</label>
+            <label class="nd-field-label">Nome *</label>
             <input v-model="form.name" class="nd-field-input" placeholder="Nome completo" required />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">E-MAIL *</label>
+            <label class="nd-field-label">E-mail *</label>
             <input v-model="form.email" type="email" class="nd-field-input" placeholder="email@empresa.com" required />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">{{ sheetMode === 'edit' ? 'NOVA SENHA (OPCIONAL)' : 'SENHA *' }}</label>
+            <label class="nd-field-label">{{ sheetMode === 'edit' ? 'Nova senha (opcional)' : 'Senha *' }}</label>
             <input v-model="form.password" type="password" class="nd-field-input" placeholder="Senha de acesso" :required="sheetMode === 'create'" />
           </div>
           <div class="nd-field">
@@ -159,12 +159,12 @@ onMounted(() => { void ensureTecnicosLoaded() })
             <NdCombobox v-model="adminValue" :options="funcaoOptions" placeholder="Selecione a função" />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">STATUS</label>
+            <label class="nd-field-label">Status</label>
             <div class="nd-toggle-row">
               <button type="button" class="nd-toggle" :class="{ 'nd-toggle--on': form.active }" @click="form.active = !form.active">
                 <span class="nd-toggle-thumb" />
               </button>
-              <span class="nd-toggle-label">{{ form.active ? 'ATIVO' : 'INATIVO' }}</span>
+              <span class="nd-toggle-label">{{ form.active ? 'Ativo' : 'Inativo' }}</span>
             </div>
           </div>
           <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
@@ -181,25 +181,25 @@ onMounted(() => { void ensureTecnicosLoaded() })
     <Sheet v-model:open="detailOpen">
       <SheetContent class="nd-sheet nd-sheet--detail">
         <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">DETALHES DO COLABORADOR</SheetTitle>
+          <SheetTitle class="nd-sheet-title">Detalhes do colaborador</SheetTitle>
           <SheetDescription class="sr-only">Detalhes do colaborador</SheetDescription>
         </SheetHeader>
         <div v-if="detailItem" class="nd-detail">
           <div class="nd-detail-status-row">
-            <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'ATIVO' : 'INATIVO' }}</span>
+            <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'Ativo' : 'Inativo' }}</span>
             <span class="nd-role" :class="detailItem.admin ? 'nd-role--admin' : 'nd-role--tech'">{{ detailItem.admin ? 'ADMINISTRADOR' : 'TÉCNICO' }}</span>
           </div>
           <div class="nd-detail-section">
-            <span class="nd-field-label">NOME</span>
+            <span class="nd-field-label">Nome</span>
             <span class="nd-detail-value">{{ detailItem.name }}</span>
           </div>
           <div class="nd-detail-section">
-            <span class="nd-field-label">E-MAIL</span>
+            <span class="nd-field-label">E-mail</span>
             <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.email }}</span>
           </div>
           <div class="nd-detail-footer">
             <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
-              <Pencil :size="12" /> EDITAR COLABORADOR
+              <Pencil :size="12" /> Editar colaborador
             </button>
           </div>
         </div>
@@ -215,29 +215,29 @@ onMounted(() => { void ensureTecnicosLoaded() })
         <span class="nd-hero-total">{{ counts.total }}</span>
       </div>
       <div class="nd-hero-meta">
-        <span class="nd-label" style="color: var(--nd-success)">COLABORADORES ATIVOS</span>
+        <span class="nd-label" style="color: var(--nd-success)">Colaboradores ativos</span>
       </div>
     </div>
 
     <div class="nd-stats-row">
       <div class="nd-stat">
         <span class="nd-stat-val" style="color: var(--nd-success)">{{ counts.ativos }}</span>
-        <span class="nd-label">ATIVOS</span>
+        <span class="nd-label">Ativos</span>
       </div>
       <div class="nd-stat-sep" />
       <div class="nd-stat">
         <span class="nd-stat-val" style="color: var(--nd-accent)">{{ counts.inativos }}</span>
-        <span class="nd-label">INATIVOS</span>
+        <span class="nd-label">Inativos</span>
       </div>
       <div class="nd-stat-sep" />
       <div class="nd-stat">
         <span class="nd-stat-val">{{ counts.admins }}</span>
-        <span class="nd-label">ADMINS</span>
+        <span class="nd-label">Admins</span>
       </div>
       <div class="nd-stat-sep" />
       <div class="nd-stat">
         <span class="nd-stat-val">{{ counts.total }}</span>
-        <span class="nd-label">TOTAL</span>
+        <span class="nd-label">Total</span>
       </div>
     </div>
 
@@ -270,7 +270,7 @@ onMounted(() => { void ensureTecnicosLoaded() })
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="5" class="nd-empty">CARREGANDO...</td></tr>
+          <tr v-if="loading"><td colspan="5" class="nd-empty">Carregando...</td></tr>
           <tr v-for="t in filtered" :key="t.employeeId" class="nd-tr nd-tr--clickable" @click="openDetail(t)">
             <td class="nd-td nd-td--primary">{{ t.name }}</td>
             <td class="nd-td nd-td--secondary">{{ t.email }}</td>
@@ -284,17 +284,17 @@ onMounted(() => { void ensureTecnicosLoaded() })
               <button class="nd-edit-btn" type="button" @click.stop="openEdit(t)"><Pencil :size="12" /></button>
             </td>
           </tr>
-          <tr v-if="!loading && filtered.length === 0"><td colspan="5" class="nd-empty">NENHUM COLABORADOR CADASTRADO</td></tr>
+          <tr v-if="!loading && filtered.length === 0"><td colspan="5" class="nd-empty">Nenhum colaborador cadastrado</td></tr>
         </tbody>
       </table>
     </div>
 
     <!-- GRID VIEW -->
     <div v-else class="nd-grid">
-      <div v-if="loading" class="nd-empty nd-empty--grid">CARREGANDO...</div>
+      <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
       <div v-for="t in filtered" :key="t.employeeId" class="nd-card" @click="openDetail(t)">
         <div class="nd-card-top-row">
-          <span class="nd-card-cat">COLABORADOR</span>
+          <span class="nd-card-cat">Colaborador</span>
           <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(t)"><Pencil :size="11" /></button>
         </div>
         <p class="nd-card-name">{{ t.name }}</p>
@@ -304,7 +304,7 @@ onMounted(() => { void ensureTecnicosLoaded() })
           <span class="nd-tag" :style="t.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ t.active ? 'ATIVO' : 'INATIVO' }}</span>
         </div>
       </div>
-      <div v-if="!loading && filtered.length === 0" class="nd-empty nd-empty--grid">NENHUM COLABORADOR CADASTRADO</div>
+      <div v-if="!loading && filtered.length === 0" class="nd-empty nd-empty--grid">Nenhum colaborador cadastrado</div>
     </div>
 
   </div>
@@ -313,82 +313,82 @@ onMounted(() => { void ensureTecnicosLoaded() })
 <style scoped>
 .nd-page { display: flex; flex-direction: column; min-height: 100%; }
 .nd-action-row { display: flex; justify-content: flex-end; margin-bottom: 40px; }
-.nd-error { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--nd-accent); margin-bottom: 16px; }
-.nd-label { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nd-text-secondary); line-height: 1.2; }
+.nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
+.nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
 .nd-hero { display: flex; align-items: flex-end; gap: 20px; margin-bottom: 32px; }
 .nd-hero-fraction { display: flex; align-items: baseline; line-height: 1.0; }
-.nd-hero-available { font-family: 'Space Mono', monospace; font-size: 80px; font-weight: 400; letter-spacing: -0.02em; color: var(--nd-success); }
-.nd-hero-slash { font-family: 'Space Mono', monospace; font-size: 40px; color: var(--nd-border-visible); margin: 0 4px; letter-spacing: -0.02em; }
-.nd-hero-total { font-family: 'Space Mono', monospace; font-size: 40px; font-weight: 400; letter-spacing: -0.02em; color: var(--nd-text-secondary); }
+.nd-hero-available { font-family: 'Montserrat', sans-serif; font-size: 80px; font-weight: 400; letter-spacing: -0.02em; color: var(--nd-success); }
+.nd-hero-slash { font-family: 'Montserrat', sans-serif; font-size: 40px; color: var(--nd-border-visible); margin: 0 4px; letter-spacing: -0.02em; }
+.nd-hero-total { font-family: 'Montserrat', sans-serif; font-size: 40px; font-weight: 400; letter-spacing: -0.02em; color: var(--nd-text-secondary); }
 .nd-hero-meta { padding-bottom: 10px; }
 .nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 28px; }
 .nd-stat { display: flex; flex-direction: column; gap: 4px; }
-.nd-stat-val { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
+.nd-stat-val { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
 .nd-stat-sep { width: 1px; height: 28px; background: var(--nd-border-visible); }
 .nd-controls-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .nd-controls-right { display: flex; align-items: center; gap: 16px; }
 .nd-segmented { display: flex; border: 1px solid var(--nd-border-visible); border-radius: 999px; overflow: hidden; }
-.nd-seg-btn { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; background: transparent; color: var(--nd-text-disabled); border: none; padding: 7px 14px; cursor: pointer; transition: color 150ms ease-out, background 150ms ease-out; white-space: nowrap; }
+.nd-seg-btn { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.02em; font-weight: 500; background: transparent; color: var(--nd-text-disabled); border: none; padding: 7px 14px; cursor: pointer; transition: color 150ms ease-out, background 150ms ease-out; white-space: nowrap; }
 .nd-seg-btn:hover { color: var(--nd-text-secondary); }
 .nd-seg-btn--active { background: var(--nd-text-display); color: var(--nd-bg); }
 .nd-search { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--nd-border-visible); padding-bottom: 6px; }
 .nd-search-icon { color: var(--nd-text-disabled); }
-.nd-search-input { background: transparent; border: none; outline: none; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: var(--nd-text-primary); width: 200px; }
+.nd-search-input { background: transparent; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; color: var(--nd-text-primary); width: 200px; }
 .nd-search-input::placeholder { color: var(--nd-text-disabled); }
 .nd-table-wrap { overflow-x: auto; }
 .nd-table { width: 100%; border-collapse: collapse; }
-.nd-th { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-secondary); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--nd-border-visible); white-space: nowrap; }
+.nd-th { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--nd-text-secondary); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--nd-border-visible); white-space: nowrap; }
 .nd-tr { border-bottom: 1px solid var(--nd-border); transition: background 150ms ease-out; }
 .nd-tr:hover { background: var(--nd-surface); }
 .nd-tr:hover .nd-edit-btn { opacity: 1; }
 .nd-tr--clickable { cursor: pointer; }
-.nd-td { padding: 13px 16px 13px 0; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-secondary); vertical-align: middle; }
+.nd-td { padding: 13px 16px 13px 0; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-secondary); vertical-align: middle; }
 .nd-td--primary { color: var(--nd-text-primary); }
 .nd-td--secondary { color: var(--nd-text-secondary); }
 .nd-td--action { padding-right: 0; width: 44px; }
 .nd-edit-btn { opacity: 0; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: opacity 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out; }
 .nd-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
-.nd-role { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; white-space: nowrap; }
+.nd-role { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; white-space: nowrap; }
 .nd-role--admin { background: color-mix(in srgb, var(--nd-warning) 15%, transparent); color: var(--nd-warning); }
 .nd-role--tech { background: color-mix(in srgb, var(--nd-text-secondary) 10%, transparent); color: var(--nd-text-secondary); }
-.nd-tag { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }
-.nd-empty { padding: 48px 0; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--nd-text-disabled); text-align: center; }
+.nd-tag { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }
+.nd-empty { padding: 48px 0; font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-text-disabled); text-align: center; }
 .nd-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .nd-empty--grid { grid-column: 1 / -1; }
 .nd-card { background: var(--nd-surface); border: 1px solid var(--nd-border); border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 150ms ease-out; display: flex; flex-direction: column; gap: 4px; }
 .nd-card:hover { border-color: var(--nd-border-visible); }
 .nd-card-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
-.nd-card-cat { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-disabled); }
+.nd-card-cat { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.03em; color: var(--nd-text-disabled); }
 .nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
 .nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
-.nd-card-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 4px 0 2px; line-height: 1.3; }
-.nd-card-email { font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: var(--nd-text-secondary); flex: 1; }
+.nd-card-name { font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 4px 0 2px; line-height: 1.3; }
+.nd-card-email { font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--nd-text-secondary); flex: 1; }
 .nd-card-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--nd-border); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 :deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
 .nd-detail { display: flex; flex-direction: column; gap: 28px; }
 .nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
 .nd-tag--lg { font-size: 11px; padding: 4px 12px; }
 .nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
-.nd-detail-value { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
-.nd-detail-value--secondary { font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-secondary); }
+.nd-detail-value { font-family: 'Montserrat', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
+.nd-detail-value--secondary { font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-secondary); }
 .nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
 :deep(.nd-sheet) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
 .nd-sheet-header { margin-bottom: 32px; }
-.nd-sheet-title { font-family: 'Space Mono', monospace !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0.1em !important; text-transform: uppercase !important; color: var(--nd-text-display) !important; }
+.nd-sheet-title { font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0 !important; color: var(--nd-text-display) !important; }
 .nd-form { display: flex; flex-direction: column; gap: 24px; }
 .nd-field { display: flex; flex-direction: column; gap: 8px; }
-.nd-field-label { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-disabled); }
-.nd-field-input { background: transparent; border: none; border-bottom: 1px solid var(--nd-border-visible); outline: none; padding: 8px 0; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-primary); transition: border-color 150ms ease-out; width: 100%; }
+.nd-field-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--nd-text-disabled); }
+.nd-field-input { background: transparent; border: none; border-bottom: 1px solid var(--nd-border-visible); outline: none; padding: 8px 0; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-primary); transition: border-color 150ms ease-out; width: 100%; }
 .nd-field-input:focus { border-bottom-color: var(--nd-text-primary); }
-.nd-field-select { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
-.nd-field-error { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
+.nd-field-select { font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; cursor: pointer; }
+.nd-field-error { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
 .nd-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
 .nd-toggle { position: relative; width: 40px; height: 22px; border: none; border-radius: 999px; background: var(--nd-border-visible); cursor: pointer; transition: background 200ms ease-out; }
 .nd-toggle--on { background: var(--nd-text-display); }
 .nd-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--nd-text-disabled); transition: transform 200ms ease-out, background 200ms ease-out; }
 .nd-toggle--on .nd-toggle-thumb { transform: translateX(18px); background: var(--nd-bg); }
-.nd-toggle-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nd-text-secondary); }
-.nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
+.nd-toggle-label { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.01em; color: var(--nd-text-secondary); }
+.nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
 .nd-btn-primary:hover { background: var(--nd-action-hover); }
 .nd-btn-full { width: 100%; justify-content: center; }
 .nd-form-footer { margin-top: 16px; }
