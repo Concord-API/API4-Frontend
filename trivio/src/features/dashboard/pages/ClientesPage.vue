@@ -137,12 +137,6 @@ onMounted(() => { void ensureClientesLoaded() })
 <template>
   <div class="nd-page">
 
-    <div class="nd-action-row">
-      <button class="nd-btn-primary" @click="openCreate">
-        <Plus :size="12" /> Novo cliente
-      </button>
-    </div>
-
     <Sheet v-model:open="sheetOpen">
       <SheetContent class="nd-sheet">
         <SheetHeader class="nd-sheet-header">
@@ -227,17 +221,12 @@ onMounted(() => { void ensureClientesLoaded() })
 
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
-    <div class="nd-hero">
-      <div class="nd-hero-number">
-        <span v-if="loading">—</span>
-        <span v-else>{{ String(clientes.length).padStart(2, '0') }}</span>
-      </div>
-      <div class="nd-hero-context">
-        <span class="nd-label">Clientes registrados</span>
-      </div>
-    </div>
-
     <div class="nd-stats-row">
+      <div class="nd-stat">
+        <span class="nd-stat-val">{{ String(clientes.length).padStart(2, '0') }}</span>
+        <span class="nd-label">Total</span>
+      </div>
+      <div class="nd-stat-sep" />
       <div class="nd-stat">
         <span class="nd-stat-val" style="color: var(--nd-success)">{{ String(counts.ativos).padStart(2, '0') }}</span>
         <span class="nd-label">Ativos</span>
@@ -247,6 +236,9 @@ onMounted(() => { void ensureClientesLoaded() })
         <span class="nd-stat-val" style="color: var(--nd-accent)">{{ String(counts.inativos).padStart(2, '0') }}</span>
         <span class="nd-label">Inativos</span>
       </div>
+      <button class="nd-btn-primary" style="margin-left: auto" @click="openCreate">
+        <Plus :size="12" /> Novo cliente
+      </button>
     </div>
 
     <div class="nd-search-row">
@@ -321,13 +313,9 @@ onMounted(() => { void ensureClientesLoaded() })
 
 <style scoped>
 .nd-page { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
-.nd-action-row { display: flex; justify-content: flex-end; margin-bottom: 40px; }
 .nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
 .nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
 .nd-label--dim { color: var(--nd-text-disabled); }
-.nd-hero { margin-bottom: 32px; }
-.nd-hero-number { font-family: 'Montserrat', sans-serif; font-size: 80px; font-weight: 400; letter-spacing: -0.02em; line-height: 1.0; color: var(--nd-text-display); margin-bottom: 6px; }
-.nd-hero-context { display: flex; align-items: center; gap: 12px; }
 .nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 32px; }
 .nd-stat { display: flex; flex-direction: column; gap: 4px; }
 .nd-stat-val { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
@@ -402,7 +390,6 @@ onMounted(() => { void ensureClientesLoaded() })
   .nd-search { flex: 1; }
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
-  .nd-hero-number { font-size: 56px; }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
   .nd-grid { grid-template-columns: repeat(2, 1fr); }

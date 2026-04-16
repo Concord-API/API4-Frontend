@@ -185,12 +185,6 @@ onMounted(carregarDados)
 <template>
   <div class="nd-page">
 
-    <div class="nd-action-row">
-      <button class="nd-btn-primary" @click="openCreate">
-        <Plus :size="12" /> NOVA MANUTENÇÃO
-      </button>
-    </div>
-
     <Sheet v-model:open="sheetOpen">
       <SheetContent class="nd-sheet">
         <SheetHeader class="nd-sheet-header">
@@ -287,18 +281,6 @@ onMounted(carregarDados)
 
     <div v-if="submitError && !sheetOpen" class="nd-error">{{ submitError }}</div>
 
-    <div class="nd-hero">
-      <div class="nd-hero-row">
-        <div class="nd-hero-number nd-hero-number--accent">
-          {{ String(counts.scheduled + counts.started).padStart(2, '0') }}
-        </div>
-        <div class="nd-hero-aside">
-          <span class="nd-label" style="color: var(--nd-warning)">Programadas / Em andamento</span>
-          <span class="nd-label nd-label--dim">REQUEREM ATENÇÃO</span>
-        </div>
-      </div>
-    </div>
-
     <div class="nd-stats-row">
       <div class="nd-stat">
         <span class="nd-stat-val">{{ counts.scheduled }}</span>
@@ -314,6 +296,9 @@ onMounted(carregarDados)
         <span class="nd-stat-val" style="color: var(--nd-success)">{{ counts.completed }}</span>
         <span class="nd-label">CONCLUÍDAS</span>
       </div>
+      <button class="nd-btn-primary" style="margin-left: auto" @click="openCreate">
+        <Plus :size="12" /> NOVA MANUTENÇÃO
+      </button>
     </div>
 
     <div class="nd-progress-section">
@@ -408,15 +393,9 @@ onMounted(carregarDados)
 
 <style scoped>
 .nd-page { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
-.nd-action-row { display: flex; justify-content: flex-end; margin-bottom: 40px; }
 .nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
 .nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
 .nd-label--dim { color: var(--nd-text-disabled); }
-.nd-hero { margin-bottom: 32px; }
-.nd-hero-row { display: flex; align-items: flex-end; gap: 20px; }
-.nd-hero-number { font-family: 'Montserrat', sans-serif; font-size: 80px; font-weight: 400; letter-spacing: -0.02em; line-height: 1.0; color: var(--nd-text-display); }
-.nd-hero-number--accent { color: var(--nd-warning); }
-.nd-hero-aside { display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px; }
 .nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 28px; }
 .nd-stat { display: flex; flex-direction: column; gap: 4px; }
 .nd-stat-val { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
@@ -507,7 +486,6 @@ onMounted(carregarDados)
   .nd-search { flex: 1; }
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
-  .nd-hero-number { font-size: 56px; }
   .nd-progress-label-col { min-width: 110px; }
 }
 @media (min-width: 641px) and (max-width: 1024px) {

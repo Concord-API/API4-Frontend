@@ -129,12 +129,6 @@ onMounted(() => { void ensureTecnicosLoaded() })
 <template>
   <div class="nd-page">
 
-    <div class="nd-action-row">
-      <button class="nd-btn-primary" @click="openCreate">
-        <Plus :size="12" /> CADASTRAR TÉCNICO
-      </button>
-    </div>
-
     <Sheet v-model:open="sheetOpen">
       <SheetContent class="nd-sheet">
         <SheetHeader class="nd-sheet-header">
@@ -208,17 +202,6 @@ onMounted(() => { void ensureTecnicosLoaded() })
 
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
-    <div class="nd-hero">
-      <div class="nd-hero-fraction">
-        <span class="nd-hero-available">{{ counts.ativos }}</span>
-        <span class="nd-hero-slash">/</span>
-        <span class="nd-hero-total">{{ counts.total }}</span>
-      </div>
-      <div class="nd-hero-meta">
-        <span class="nd-label" style="color: var(--nd-success)">Colaboradores ativos</span>
-      </div>
-    </div>
-
     <div class="nd-stats-row">
       <div class="nd-stat">
         <span class="nd-stat-val" style="color: var(--nd-success)">{{ counts.ativos }}</span>
@@ -239,6 +222,9 @@ onMounted(() => { void ensureTecnicosLoaded() })
         <span class="nd-stat-val">{{ counts.total }}</span>
         <span class="nd-label">Total</span>
       </div>
+      <button class="nd-btn-primary" style="margin-left: auto" @click="openCreate">
+        <Plus :size="12" /> CADASTRAR TÉCNICO
+      </button>
     </div>
 
     <div class="nd-controls-row">
@@ -312,15 +298,8 @@ onMounted(() => { void ensureTecnicosLoaded() })
 
 <style scoped>
 .nd-page { display: flex; flex-direction: column; min-height: 100%; }
-.nd-action-row { display: flex; justify-content: flex-end; margin-bottom: 40px; }
 .nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
 .nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
-.nd-hero { display: flex; align-items: flex-end; gap: 20px; margin-bottom: 32px; }
-.nd-hero-fraction { display: flex; align-items: baseline; line-height: 1.0; }
-.nd-hero-available { font-family: 'Montserrat', sans-serif; font-size: 80px; font-weight: 400; letter-spacing: -0.02em; color: var(--nd-success); }
-.nd-hero-slash { font-family: 'Montserrat', sans-serif; font-size: 40px; color: var(--nd-border-visible); margin: 0 4px; letter-spacing: -0.02em; }
-.nd-hero-total { font-family: 'Montserrat', sans-serif; font-size: 40px; font-weight: 400; letter-spacing: -0.02em; color: var(--nd-text-secondary); }
-.nd-hero-meta { padding-bottom: 10px; }
 .nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 28px; }
 .nd-stat { display: flex; flex-direction: column; gap: 4px; }
 .nd-stat-val { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
@@ -399,8 +378,6 @@ onMounted(() => { void ensureTecnicosLoaded() })
   .nd-search { flex: 1; }
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
-  .nd-hero-available { font-size: 56px; }
-  .nd-hero-slash, .nd-hero-total { font-size: 28px; }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
   .nd-grid { grid-template-columns: repeat(2, 1fr); }
