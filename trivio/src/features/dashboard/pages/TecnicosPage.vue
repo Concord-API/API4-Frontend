@@ -114,7 +114,7 @@ const filters = [
 ] as const
 
 const funcaoOptions = [
-  { value: 'false', label: 'TÉCNICO' },
+  { value: 'false', label: 'Técnico' },
   { value: 'true', label: 'Administrador' },
 ]
 
