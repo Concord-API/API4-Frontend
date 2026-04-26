@@ -183,7 +183,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<ApiRespo
     })
   }
 
-  if (response.status === 401) {
+  if (response.status === 401 && path !== '/auth/login') {
     localStorage.removeItem('trivio_session')
     router.push('/')
     throw new ApiError({
