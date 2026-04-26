@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { Search, Plus, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
@@ -205,6 +205,15 @@ onMounted(() => {
               singular-label="requisito"
               plural-label="requisitos"
             />
+          </div>
+          <div class="nd-field">
+            <label class="nd-field-label">Status</label>
+            <div class="nd-toggle-row">
+              <button type="button" class="nd-toggle" :class="{ 'nd-toggle--on': form.active }" @click="form.active = !form.active">
+                <span class="nd-toggle-thumb" />
+              </button>
+              <span class="nd-toggle-label">{{ form.active ? 'Ativo' : 'Inativo' }}</span>
+            </div>
           </div>
           <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
           <div class="nd-form-footer">
@@ -463,6 +472,12 @@ onMounted(() => {
 .nd-field-input:focus { border-bottom-color: var(--nd-text-primary); }
 .nd-field-select { font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; cursor: pointer; }
 .nd-field-error { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
+.nd-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.nd-toggle { position: relative; width: 40px; height: 22px; border: none; border-radius: 999px; background: var(--nd-border-visible); cursor: pointer; transition: background 200ms ease-out; }
+.nd-toggle--on { background: var(--nd-text-display); }
+.nd-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--nd-text-disabled); transition: transform 200ms ease-out, background 200ms ease-out; }
+.nd-toggle--on .nd-toggle-thumb { transform: translateX(18px); background: var(--nd-bg); }
+.nd-toggle-label { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.01em; color: var(--nd-text-secondary); }
 .nd-check-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding: 8px 0; }
 .nd-check-item { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0; }
 .nd-check { accent-color: var(--nd-action); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
