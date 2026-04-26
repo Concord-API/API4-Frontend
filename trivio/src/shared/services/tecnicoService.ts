@@ -15,5 +15,5 @@ export const tecnicoService = {
   criar: (data: Omit<TecnicoAPI, 'employeeId'>) =>
     api.postResponse<TecnicoAPI>('/employees', data),
   atualizar: (id: number, data: Omit<TecnicoAPI, 'employeeId'>) =>
-    api.put<TecnicoAPI>(`/employees/${id}`, data),
+    api.patch<TecnicoAPI>(`/employees/${id}`, data),
 }
