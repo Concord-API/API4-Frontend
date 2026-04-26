@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { api } from '@/shared/services/api'
 
 export type UserRole = 'manager' | 'technician'
 
@@ -9,6 +10,13 @@ export interface ApiSessionPayload {
     email: string
     role: UserRole
   }
+}
+
+interface LoginApiResponse {
+  token: string
+  id: number
+  email: string
+  role: 'MANAGER' | 'TECHNICIAN'
 }
 
 const SESSION_KEY = 'trivio_session'
@@ -37,15 +45,15 @@ const authToken = ref<string | null>(stored?.token ?? null)
 const isAuthenticated = computed(() => !!authToken.value && !!currentUser.value)
 
 export function useAuth() {
-  const login = async (email: string, _password?: string) => {
-    // const payload = await api.post<ApiSessionPayload>('/auth/login', { email, password })
-    await new Promise(resolve => setTimeout(resolve, 600))
+  const login = async (email: string, password?: string) => {
+    const response = await api.post<LoginApiResponse>('/auth/login', { email, password })
+
     const payload: ApiSessionPayload = {
-      token: 'mock-jwt-token-xyz',
+      token: response.token,
       user: {
-        id: `usr_${Date.now()}`,
-        email,
-        role: email.toLowerCase().includes('tecnico') ? 'technician' : 'manager',
+        id: String(response.id),
+        email: response.email,
+        role: response.role === 'MANAGER' ? 'manager' : 'technician',
       },
     }
 

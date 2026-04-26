@@ -24,7 +24,7 @@ async function handleSubmit(e: Event) {
   isLoading.value = true
   
   try {
-    await login(email.value)
+    await login(email.value, password.value)
     router.push('/dashboard')
   } catch (err) {
     console.error(err)
