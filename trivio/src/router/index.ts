@@ -57,7 +57,7 @@ const router = createRouter({
           path: 'tecnicos',
           name: 'dashboard-tecnicos',
           meta: { breadcrumb: 'tecnicos', roles: ['manager'] },
-          component: () => import('@/features/dashboard/pages/TecnicosPage.vue')
+          component: () => import('@/features/dashboard/pages/EquipePage.vue')
         },
         {
           path: 'contratos',
