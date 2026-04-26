@@ -20,6 +20,12 @@ const router = createRouter({
           component: () => import('@/features/dashboard/pages/HomePage.vue')
         },
         {
+          path: 'carteira',
+          name: 'dashboard-carteira',
+          meta: { breadcrumb: 'contratos' },
+          component: () => import('@/features/dashboard/pages/CarteirePage.vue')
+        },
+        {
           path: 'clientes',
           name: 'dashboard-clientes',
           meta: { breadcrumb: 'clientes' },

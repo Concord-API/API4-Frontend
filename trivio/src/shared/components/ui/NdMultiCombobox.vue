@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { Check, ChevronsUpDown } from 'lucide-vue-next'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
@@ -120,7 +120,7 @@ function isSelected(value: string | number) {
 .nd-cb-trigger:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
 .nd-cb-value {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   color: var(--nd-text-primary);
   text-align: left;
@@ -130,7 +130,7 @@ function isSelected(value: string | number) {
   white-space: nowrap;
 }
 .nd-cb-placeholder {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   color: var(--nd-text-disabled);
   text-align: left;
@@ -171,9 +171,9 @@ function isSelected(value: string | number) {
 :deep([cmdk-input]),
 :deep([data-slot="command-input"]) {
   all: unset !important;
-  font-family: 'Space Mono', monospace !important;
+  font-family: 'Montserrat', sans-serif !important;
   font-size: 11px !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.01em !important;
   color: var(--nd-text-primary) !important;
   padding: 9px 12px !important;
   flex: 1 !important;
@@ -193,9 +193,9 @@ function isSelected(value: string | number) {
 :deep([cmdk-group-heading]) { display: none !important; }
 
 :deep(.nd-cb-empty) {
-  font-family: 'Space Mono', monospace !important;
+  font-family: 'Montserrat', sans-serif !important;
   font-size: 10px !important;
-  letter-spacing: 0.1em !important;
+  letter-spacing: 0.02em !important;
   color: var(--nd-text-disabled) !important;
   text-align: center !important;
   padding: 14px 12px !important;
@@ -205,7 +205,7 @@ function isSelected(value: string | number) {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-family: 'Space Grotesk', sans-serif !important;
+  font-family: 'Montserrat', sans-serif !important;
   font-size: 13px !important;
   color: var(--nd-text-secondary) !important;
   padding: 7px 10px !important;
