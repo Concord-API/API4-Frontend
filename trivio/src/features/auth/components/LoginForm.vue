@@ -7,6 +7,8 @@ import { Button } from '@/shared/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/shared/components/ui/field'
 import { Input } from '@/shared/components/ui/input'
 import { useAuth } from '@/shared/composables/useAuth'
+import { getApiErrorMessage } from '@/shared/services/api'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
@@ -24,10 +26,11 @@ async function handleSubmit(e: Event) {
   isLoading.value = true
   
   try {
-    await login(email.value)
+    await login(email.value, password.value)
     router.push('/dashboard')
   } catch (err) {
     console.error(err)
+    toast.error(getApiErrorMessage(err))
   } finally {
     isLoading.value = false
   }
