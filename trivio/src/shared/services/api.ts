@@ -1,4 +1,7 @@
-const BASE_URL = (import.meta.env.VITE_API_URL as string) ?? 'http://localhost:8080'
+import { useAuth } from '@/shared/composables/useAuth'
+import router from '@/router'
+
+const BASE_URL = (import.meta.env.VITE_API_URL as string) ?? 'https://api.trivio.usesora.tech'
 
 const GENERIC_HTTP_MESSAGES = new Set([
   'Bad Request',
@@ -141,13 +144,35 @@ async function parseResponseBody(response: Response): Promise<unknown> {
   return text
 }
 
+function getAuthToken(): string | null {
+  try {
+    const raw = localStorage.getItem('trivio_session')
+    if (!raw) return null
+    const session = JSON.parse(raw) as { token?: string }
+    return session.token ?? null
+  } catch {
+    return null
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<ApiResponse<T>> {
+  const token = getAuthToken()
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   let response: Response
 
   try {
     response = await fetch(`${BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
       ...options,
+      headers,
     })
   } catch {
     throw new ApiError({
@@ -155,6 +180,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<ApiRespo
       message: 'Nao foi possivel conectar ao servidor.',
       status: 0,
       statusText: 'NETWORK_ERROR',
+    })
+  }
+
+  if (response.status === 401) {
+    localStorage.removeItem('trivio_session')
+    router.push('/')
+    throw new ApiError({
+      body: undefined,
+      message: 'Sua sessao expirou. Faca login novamente.',
+      status: 401,
+      statusText: 'Unauthorized',
     })
   }
 

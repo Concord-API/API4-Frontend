@@ -1,5 +1,15 @@
 import LoginPage from "@/features/auth/pages/LoginPage.vue";
 import { createRouter, createWebHistory } from "vue-router";
+import type { UserRole } from "@/shared/composables/useAuth";
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean
+    requiresGuest?: boolean
+    roles?: UserRole[]
+    breadcrumb?: string
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,13 +32,13 @@ const router = createRouter({
         {
           path: 'carteira',
           name: 'dashboard-carteira',
-          meta: { breadcrumb: 'contratos' },
+          meta: { breadcrumb: 'contratos', roles: ['manager'] },
           component: () => import('@/features/dashboard/pages/CarteirePage.vue')
         },
         {
           path: 'clientes',
           name: 'dashboard-clientes',
-          meta: { breadcrumb: 'clientes' },
+          meta: { breadcrumb: 'clientes', roles: ['manager'] },
           component: () => import('@/features/dashboard/pages/ClientesPage.vue')
         },
         {
@@ -46,31 +56,31 @@ const router = createRouter({
         {
           path: 'tecnicos',
           name: 'dashboard-tecnicos',
-          meta: { breadcrumb: 'tecnicos' },
+          meta: { breadcrumb: 'tecnicos', roles: ['manager'] },
           component: () => import('@/features/dashboard/pages/TecnicosPage.vue')
         },
         {
           path: 'contratos',
           name: 'dashboard-contratos',
-          meta: { breadcrumb: 'contratos' },
+          meta: { breadcrumb: 'contratos', roles: ['manager'] },
           component: () => import('@/features/dashboard/pages/ContratosPage.vue')
         },
         {
           path: 'requisitos',
           name: 'dashboard-requisitos',
-          meta: { breadcrumb: 'requisitos' },
+          meta: { breadcrumb: 'requisitos', roles: ['manager'] },
           component: () => import('@/features/dashboard/pages/RequisitosPage.vue')
         },
         {
           path: 'locais',
           name: 'dashboard-locais',
-          meta: { breadcrumb: 'locais' },
+          meta: { breadcrumb: 'locais', roles: ['technician'] },
           component: () => import('@/features/dashboard/pages/HomePage.vue')
         },
         {
           path: 'historico',
           name: 'dashboard-historico',
-          meta: { breadcrumb: 'historico' },
+          meta: { breadcrumb: 'historico', roles: ['technician'] },
           component: () => import('@/features/dashboard/pages/HomePage.vue')
         }
       ]
@@ -79,13 +89,20 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-  const hasSession = !!localStorage.getItem('trivio_session')
+  const raw = localStorage.getItem('trivio_session')
+  const session = raw ? JSON.parse(raw) as { user?: { role?: UserRole } } : null
+  const hasSession = !!session
+  const userRole = session?.user?.role ?? null
 
   if (to.meta.requiresAuth && !hasSession) {
     return { path: '/' }
   }
 
   if (to.meta.requiresGuest && hasSession) {
+    return { path: '/dashboard' }
+  }
+
+  if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
     return { path: '/dashboard' }
   }
 })
