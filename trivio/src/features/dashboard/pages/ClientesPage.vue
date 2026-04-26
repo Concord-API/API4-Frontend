@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { Search, Plus, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
@@ -157,8 +157,8 @@ onMounted(() => { void ensureClientesLoaded() })
             <input v-model="cpfModel" inputmode="numeric" maxlength="14" class="nd-field-input" placeholder="000.000.000-00" />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">E-mail</label>
-            <input v-model="form.email" type="email" class="nd-field-input" placeholder="contato@empresa.com" />
+            <label class="nd-field-label">E-mail *</label>
+            <input v-model="form.email" type="email" class="nd-field-input" placeholder="contato@empresa.com" required />
           </div>
           <div class="nd-field">
             <label class="nd-field-label">Telefone</label>
