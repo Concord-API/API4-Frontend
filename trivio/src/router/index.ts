@@ -82,6 +82,12 @@ const router = createRouter({
           name: 'dashboard-historico',
           meta: { breadcrumb: 'historico', roles: ['technician'] },
           component: () => import('@/features/dashboard/pages/HomePage.vue')
+        },
+        {
+          path: 'agenda',
+          name: 'dashboard-agenda',
+          meta: { breadcrumb: 'agenda' },
+          component: () => import('@/features/dashboard/pages/AgendaPage.vue')
         }
       ]
     }
