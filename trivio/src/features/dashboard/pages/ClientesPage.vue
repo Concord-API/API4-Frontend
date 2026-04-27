@@ -6,7 +6,7 @@ import { clienteService, type ClienteAPI } from '@/shared/services/clienteServic
 import { getApiErrorMessage } from '@/shared/services/api'
 import { useClientesStore } from '@/shared/composables/useClientesStore'
 import { formatCnpj, formatCpf, formatCpfOrCnpj, formatPhone, onlyDigits } from '@/shared/lib/masks'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 
 const searchQuery = ref('')
@@ -137,32 +137,32 @@ onMounted(() => { void ensureClientesLoaded() })
 <template>
   <div class="nd-page">
 
-    <Sheet v-model:open="sheetOpen">
-      <SheetContent class="nd-sheet">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">{{ sheetMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</SheetTitle>
-          <SheetDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</SheetDescription>
-        </SheetHeader>
-        <form class="nd-form" @submit.prevent="submitForm">
-          <div class="nd-field">
+    <Dialog v-model:open="sheetOpen">
+      <DialogContent class="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</DialogDescription>
+        </DialogHeader>
+        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">Nome *</label>
             <input v-model="form.name" class="nd-field-input" placeholder="Nome ou razão social" required />
           </div>
-          <div class="nd-field">
-            <label class="nd-field-label">CNPJ</label>
-            <input v-model="cnpjModel" inputmode="numeric" maxlength="18" class="nd-field-input" placeholder="00.000.000/0001-00" />
+          <div class="nd-field col-span-full">
+            <label class="nd-field-label">E-mail *</label>
+            <input v-model="form.email" type="email" class="nd-field-input" placeholder="contato@empresa.com" required />
           </div>
           <div class="nd-field">
             <label class="nd-field-label">CPF</label>
             <input v-model="cpfModel" inputmode="numeric" maxlength="14" class="nd-field-input" placeholder="000.000.000-00" />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">E-mail *</label>
-            <input v-model="form.email" type="email" class="nd-field-input" placeholder="contato@empresa.com" required />
+            <label class="nd-field-label">CNPJ</label>
+            <input v-model="cnpjModel" inputmode="numeric" maxlength="18" class="nd-field-input" placeholder="00.000.000/0000-00" />
           </div>
           <div class="nd-field">
             <label class="nd-field-label">Telefone</label>
-            <input v-model="phoneModel" inputmode="numeric" maxlength="15" class="nd-field-input" placeholder="(11) 99999-9999" />
+            <input v-model="phoneModel" inputmode="numeric" maxlength="15" class="nd-field-input" placeholder="(00) 00000-0000" />
           </div>
           <div class="nd-field">
             <label class="nd-field-label">Status</label>
@@ -173,23 +173,26 @@ onMounted(() => { void ensureClientesLoaded() })
               <span class="nd-toggle-label">{{ form.active ? 'Ativo' : 'Inativo' }}</span>
             </div>
           </div>
-          <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
-          <div class="nd-form-footer">
-            <button type="submit" class="nd-btn-primary nd-btn-full">
+          <div v-if="submitError" class="nd-field-error col-span-full">{{ submitError }}</div>
+          <DialogFooter class="col-span-full">
+            <DialogClose as-child>
+              <button type="button" class="nd-btn-secondary">CANCELAR</button>
+            </DialogClose>
+            <button type="submit" class="nd-btn-primary">
               {{ sheetMode === 'edit' ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR CLIENTE' }}
             </button>
-          </div>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
 
-    <!-- DETAIL SHEET -->
-    <Sheet v-model:open="detailOpen">
-      <SheetContent class="nd-sheet nd-sheet--detail">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">Detalhes do cliente</SheetTitle>
-          <SheetDescription class="sr-only">Detalhes do cliente</SheetDescription>
-        </SheetHeader>
+    <!-- DETAIL DIALOG -->
+    <Dialog v-model:open="detailOpen">
+      <DialogContent class="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">Detalhes do cliente</DialogTitle>
+          <DialogDescription class="sr-only">Detalhes do cliente</DialogDescription>
+        </DialogHeader>
         <div v-if="detailItem" class="nd-detail">
           <div class="nd-detail-status-row">
             <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'Ativo' : 'Inativo' }}</span>
@@ -198,26 +201,33 @@ onMounted(() => { void ensureClientesLoaded() })
             <span class="nd-field-label">Nome</span>
             <span class="nd-detail-value">{{ detailItem.name }}</span>
           </div>
-          <div v-if="detailItem.cnpj || detailItem.cpf" class="nd-detail-section">
-            <span class="nd-field-label">Documento</span>
-            <span class="nd-detail-value nd-detail-value--mono">{{ documentoExibicao(detailItem) }}</span>
-          </div>
-          <div v-if="detailItem.email" class="nd-detail-section">
+          <div class="nd-detail-section">
             <span class="nd-field-label">E-mail</span>
             <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.email }}</span>
           </div>
+          <div v-if="detailItem.cpf" class="nd-detail-section">
+            <span class="nd-field-label">CPF</span>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ formatCpf(detailItem.cpf) }}</span>
+          </div>
+          <div v-if="detailItem.cnpj" class="nd-detail-section">
+            <span class="nd-field-label">CNPJ</span>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ formatCnpj(detailItem.cnpj) }}</span>
+          </div>
           <div v-if="detailItem.phone" class="nd-detail-section">
             <span class="nd-field-label">Telefone</span>
-            <span class="nd-detail-value nd-detail-value--mono">{{ formatPhone(detailItem.phone) }}</span>
-          </div>
-          <div class="nd-detail-footer">
-            <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
-              <Pencil :size="12" /> Editar cliente
-            </button>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ formatPhone(detailItem.phone) }}</span>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        <DialogFooter>
+          <DialogClose as-child>
+            <button type="button" class="nd-btn-secondary">FECHAR</button>
+          </DialogClose>
+          <button class="nd-btn-primary" type="button" @click="openEditFromDetail">
+            <Pencil :size="12" /> Editar cliente
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
@@ -355,38 +365,16 @@ onMounted(() => { void ensureClientesLoaded() })
 .nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
 .nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
 .nd-card-name { font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 6px 0 8px; line-height: 1.3; }
-:deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
-.nd-detail { display: flex; flex-direction: column; gap: 28px; }
-.nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
-.nd-tag--lg { font-size: 11px; padding: 4px 12px; }
-.nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
-.nd-detail-value { font-family: 'Montserrat', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
-.nd-detail-value--secondary { font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-secondary); }
-.nd-detail-value--mono { font-family: 'Montserrat', sans-serif; font-size: 14px; letter-spacing: 0.04em; color: var(--nd-text-primary); }
-.nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
 .nd-card-meta { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 .nd-card-detail { font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--nd-text-secondary); }
 .nd-card-detail--mono { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.03em; }
 .nd-card-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--nd-border); }
-:deep(.nd-sheet) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
-.nd-sheet-header { margin-bottom: 32px; }
-.nd-sheet-title { font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0 !important; color: var(--nd-text-display) !important; }
-.nd-form { display: flex; flex-direction: column; gap: 24px; }
-.nd-field { display: flex; flex-direction: column; gap: 8px; }
-.nd-field-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--nd-text-disabled); }
-.nd-field-input { background: transparent; border: none; border-bottom: 1px solid var(--nd-border-visible); outline: none; padding: 8px 0; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-primary); transition: border-color 150ms ease-out; width: 100%; }
-.nd-field-input:focus { border-bottom-color: var(--nd-text-primary); }
-.nd-field-error { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
-.nd-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
-.nd-toggle { position: relative; width: 40px; height: 22px; border: none; border-radius: 999px; background: var(--nd-border-visible); cursor: pointer; transition: background 200ms ease-out; }
-.nd-toggle--on { background: var(--nd-text-display); }
-.nd-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--nd-text-disabled); transition: transform 200ms ease-out, background 200ms ease-out; }
-.nd-toggle--on .nd-toggle-thumb { transform: translateX(18px); background: var(--nd-bg); }
-.nd-toggle-label { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.01em; color: var(--nd-text-secondary); }
 .nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
 .nd-btn-primary:hover { background: var(--nd-action-hover); }
 .nd-btn-full { width: 100%; justify-content: center; }
-.nd-form-footer { margin-top: 16px; }
+.nd-dialog-title { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--nd-text-display); }
+.nd-btn-secondary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: transparent; color: var(--nd-text-secondary); border: 1px solid var(--nd-border-visible); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: border-color 150ms ease-out; }
+.nd-btn-secondary:hover { border-color: var(--nd-text-secondary); }
 
 .nd-fab { display: none; }
 
