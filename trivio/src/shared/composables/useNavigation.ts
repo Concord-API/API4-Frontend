@@ -27,10 +27,9 @@ export function useNavigation() {
           title: 'Gestão Operacional',
           items: [
             { id: '1', title: 'Visão Geral', icon: Home, route: { name: 'dashboard-home' } },
-            { id: '2', title: 'Agenda', icon: Calendar, route: { name: 'dashboard-agenda' } },
-            { id: '3', title: 'Manutenção', icon: Wrench, route: { name: 'dashboard-manutencoes' } },
-            { id: '4', title: 'Contratos', icon: Briefcase, route: { name: 'dashboard-carteira' } },
-            { id: '5', title: 'Técnico', icon: Users, route: { name: 'dashboard-tecnicos' } },
+            { id: '2', title: 'Manutenção', icon: Wrench, route: { name: 'dashboard-manutencoes' } },
+            { id: '3', title: 'Contratos', icon: Briefcase, route: { name: 'dashboard-carteira' } },
+            { id: '4', title: 'Técnico', icon: Users, route: { name: 'dashboard-tecnicos' } },
           ]
         }
       ]
@@ -41,7 +40,7 @@ export function useNavigation() {
         {
           title: 'Rotina de Campo',
           items: [
-            { id: '1', title: 'Minha Agenda', icon: Calendar, route: { name: 'dashboard-agenda' } },
+            { id: '1', title: 'Minha Agenda', icon: Calendar, route: { name: 'dashboard-home' } },
             { id: '2', title: 'Locais de Atendimento', icon: MapPin, route: { name: 'dashboard-locais' } },
             { id: '3', title: 'Histórico de Execução', icon: History, route: { name: 'dashboard-historico' } }
           ]
