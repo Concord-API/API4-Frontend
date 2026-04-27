@@ -1,5 +1,6 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import AgendaPage from './AgendaPage.vue'
 import { Search, Plus, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
@@ -10,6 +11,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
+
+const activeTab = ref<'agenda' | 'manutencoes'>('agenda')
 
 const detailOpen = ref(false)
 const detailItem = ref<ManutencaoAPI | null>(null)
@@ -184,8 +187,17 @@ onMounted(carregarDados)
 
 <template>
   <div class="nd-page">
+    <nav class="manutencoes-nav">
+      <button class="manutencoes-tab" :class="{ 'manutencoes-tab--active': activeTab === 'agenda' }" @click="activeTab = 'agenda'">
+        Agenda
+      </button>
+      <button class="manutencoes-tab" :class="{ 'manutencoes-tab--active': activeTab === 'manutencoes' }" @click="activeTab = 'manutencoes'">
+        Manutenções
+      </button>
+    </nav>
 
-    <Sheet v-model:open="sheetOpen">
+    <template v-if="activeTab === 'manutencoes'">
+      <Sheet v-model:open="sheetOpen">
       <SheetContent class="nd-sheet">
         <SheetHeader class="nd-sheet-header">
           <SheetTitle class="nd-sheet-title">{{ sheetMode === 'edit' ? 'EDITAR MANUTENÇÃO' : 'NOVA MANUTENÇÃO' }}</SheetTitle>
@@ -387,11 +399,18 @@ onMounted(carregarDados)
       </div>
       <div v-if="!loading && filteredManutencoes.length === 0" class="nd-empty nd-empty--grid">NENHUMA MANUTENÇÃO CADASTRADA</div>
     </div>
+    </template>
+    <AgendaPage v-else />
 
   </div>
 </template>
 
 <style scoped>
+.manutencoes-nav { display: flex; margin-bottom: 24px; }
+.manutencoes-tab { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nd-text-disabled); background: transparent; border: none; border-bottom: 2px solid var(--nd-border); padding: 10px 20px; margin-bottom: -1px; cursor: pointer; transition: color 150ms ease-out, border-color 150ms ease-out; }
+.manutencoes-tab:hover { color: var(--nd-text-primary); }
+.manutencoes-tab--active { color: var(--nd-text-display); border-bottom-color: var(--nd-sidebar-active-color); }
+
 .nd-page { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
 .nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
 .nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
