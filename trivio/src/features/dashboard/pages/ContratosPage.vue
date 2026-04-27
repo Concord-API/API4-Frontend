@@ -297,10 +297,14 @@ onMounted(() => {
         <span class="nd-stat-val" style="color: var(--nd-text-disabled)">{{ String(counts.inativos).padStart(2, '0') }}</span>
         <span class="nd-label">Inativos</span>
       </div>
-      <button class="nd-btn-primary" style="margin-left: auto" @click="openCreate">
+      <button class="nd-btn-primary nd-btn-desktop" style="margin-left: auto" @click="openCreate">
         <Plus :size="12" /> Novo contrato
       </button>
     </div>
+
+    <button class="nd-fab" @click="openCreate" aria-label="Novo contrato">
+      <Plus :size="20" />
+    </button>
 
     <div class="nd-controls-row">
       <div class="nd-filter-select">
@@ -488,6 +492,8 @@ onMounted(() => {
 .nd-btn-full { width: 100%; justify-content: center; }
 .nd-form-footer { margin-top: 16px; }
 
+.nd-fab { display: none; }
+
 @media (max-width: 640px) {
   .nd-controls-row { flex-direction: column; align-items: stretch; gap: 12px; }
   .nd-controls-right { justify-content: space-between; }
@@ -497,6 +503,9 @@ onMounted(() => {
   .nd-grid { grid-template-columns: 1fr; }
   /* tabela densa: força scroll horizontal para não partir layout */
   .nd-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nd-btn-desktop { display: none; }
+  .nd-fab { display: flex; align-items: center; justify-content: center; position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--nd-action); color: var(--nd-action-foreground); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); transition: background-color 150ms ease-out; z-index: 50; }
+  .nd-fab:hover { background: var(--nd-action-hover); }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
   .nd-grid { grid-template-columns: repeat(2, 1fr); }

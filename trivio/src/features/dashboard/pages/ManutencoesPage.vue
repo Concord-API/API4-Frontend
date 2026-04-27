@@ -308,10 +308,14 @@ onMounted(carregarDados)
         <span class="nd-stat-val" style="color: var(--nd-success)">{{ counts.completed }}</span>
         <span class="nd-label">CONCLUÍDAS</span>
       </div>
-      <button class="nd-btn-primary" style="margin-left: auto" @click="openCreate">
+      <button class="nd-btn-primary nd-btn-desktop" style="margin-left: auto" @click="openCreate">
         <Plus :size="12" /> NOVA MANUTENÇÃO
       </button>
     </div>
+
+    <button class="nd-fab" @click="openCreate" aria-label="Nova manutenção">
+      <Plus :size="20" />
+    </button>
 
     <div class="nd-progress-section">
       <div class="nd-progress-row">
@@ -406,7 +410,10 @@ onMounted(carregarDados)
 </template>
 
 <style scoped>
-.manutencoes-nav { display: flex; margin-bottom: 24px; }
+.manutencoes-nav { display: flex; justify-content: center; margin-top: -1.5rem; margin-bottom: 1.5rem; }
+@media (min-width: 640px) { .manutencoes-nav { margin-top: -2rem; margin-bottom: 2rem; } }
+@media (min-width: 768px) { .manutencoes-nav { margin-top: -2.5rem; margin-bottom: 2.5rem; } }
+@media (min-width: 1024px) { .manutencoes-nav { margin-top: -3rem; margin-bottom: 3rem; } }
 .manutencoes-tab { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nd-text-disabled); background: transparent; border: none; border-bottom: 2px solid var(--nd-border); padding: 10px 20px; margin-bottom: -1px; cursor: pointer; transition: color 150ms ease-out, border-color 150ms ease-out; }
 .manutencoes-tab:hover { color: var(--nd-text-primary); }
 .manutencoes-tab--active { color: var(--nd-text-display); border-bottom-color: var(--nd-sidebar-active-color); }
@@ -498,6 +505,8 @@ onMounted(carregarDados)
 .nd-btn-full { width: 100%; justify-content: center; }
 .nd-form-footer { margin-top: 16px; }
 
+.nd-fab { display: none; }
+
 @media (max-width: 640px) {
   .nd-controls-row { flex-direction: column; align-items: stretch; gap: 12px; }
   .nd-controls-right { justify-content: space-between; }
@@ -506,6 +515,26 @@ onMounted(carregarDados)
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
   .nd-progress-label-col { min-width: 110px; }
+  .nd-btn-desktop { display: none; }
+  .nd-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--nd-action);
+    color: var(--nd-action-foreground);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: background-color 150ms ease-out;
+    z-index: 50;
+  }
+  .nd-fab:hover { background: var(--nd-action-hover); }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
   .nd-grid { grid-template-columns: repeat(2, 1fr); }
