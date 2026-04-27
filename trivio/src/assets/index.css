@@ -268,3 +268,33 @@
   --nd-sidebar-active-bg-start: rgba(185, 241, 27, 0.12);
   --nd-sidebar-active-bg-mid: rgba(185, 241, 27, 0.03);
 }
+
+/* ── nd-form shared styles ── */
+.nd-form { display: flex; flex-direction: column; gap: 24px; }
+.nd-field { display: flex; flex-direction: column; gap: 8px; }
+.nd-field-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--nd-text-disabled); }
+.nd-field-input { background: transparent; border: none; border-bottom: 1px solid var(--nd-border-visible); outline: none; padding: 8px 0; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-primary); transition: border-color 150ms ease-out; width: 100%; }
+.nd-field-input:focus { border-bottom-color: var(--nd-text-primary); }
+.nd-field-textarea { resize: none; line-height: 1.5; }
+.nd-field-error { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
+.nd-form-footer { margin-top: 16px; }
+.nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
+.nd-btn-primary:hover { background: var(--nd-action-hover); }
+.nd-btn-full { width: 100%; justify-content: center; }
+.nd-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.nd-toggle { position: relative; width: 40px; height: 22px; border: none; border-radius: 999px; background: var(--nd-border-visible); cursor: pointer; transition: background 200ms ease-out; }
+.nd-toggle--on { background: var(--nd-text-display); }
+.nd-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--nd-text-disabled); transition: transform 200ms ease-out, background 200ms ease-out; }
+.nd-toggle--on .nd-toggle-thumb { transform: translateX(18px); background: var(--nd-bg); }
+.nd-toggle-label { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.01em; color: var(--nd-text-secondary); }
+.nd-detail { display: flex; flex-direction: column; gap: 28px; }
+.nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
+.nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
+.nd-detail-value { font-family: 'Montserrat', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
+.nd-detail-value--secondary { font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-secondary); line-height: 1.5; }
+.nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
+.nd-tag { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }
+.nd-tag--lg { font-size: 11px; padding: 4px 12px; }
+.nd-dialog-title { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--nd-text-display); }
+.nd-btn-secondary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: transparent; color: var(--nd-text-secondary); border: 1px solid var(--nd-border-visible); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: border-color 150ms ease-out; }
+.nd-btn-secondary:hover { border-color: var(--nd-text-secondary); }

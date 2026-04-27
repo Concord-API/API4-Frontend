@@ -1,11 +1,11 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { Search, Plus, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
 import { useTecnicosStore } from '@/shared/composables/useTecnicosStore'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 
@@ -129,30 +129,30 @@ onMounted(() => { void ensureTecnicosLoaded() })
 <template>
   <div class="nd-page">
 
-    <Sheet v-model:open="sheetOpen">
-      <SheetContent class="nd-sheet">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">{{ sheetMode === 'edit' ? 'EDITAR COLABORADOR' : 'CADASTRAR TÉCNICO' }}</SheetTitle>
-          <SheetDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar colaborador' : 'Cadastrar técnico' }}</SheetDescription>
-        </SheetHeader>
-        <form class="nd-form" @submit.prevent="submitForm">
-          <div class="nd-field">
+    <Dialog v-model:open="sheetOpen">
+      <DialogContent class="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar técnico' : 'Cadastrar técnico' }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar técnico' : 'Cadastrar técnico' }}</DialogDescription>
+        </DialogHeader>
+        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">Nome *</label>
-            <input v-model="form.name" class="nd-field-input" placeholder="Nome completo" required />
+            <input v-model="form.name" class="nd-field-input" placeholder="Nome do técnico" required />
           </div>
-          <div class="nd-field">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">E-mail *</label>
             <input v-model="form.email" type="email" class="nd-field-input" placeholder="email@empresa.com" required />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">{{ sheetMode === 'edit' ? 'Nova senha (opcional)' : 'Senha *' }}</label>
-            <input v-model="form.password" type="password" class="nd-field-input" placeholder="Senha de acesso" :required="sheetMode === 'create'" />
+            <label class="nd-field-label">{{ sheetMode === 'edit' ? 'Nova senha' : 'Senha *' }}</label>
+            <input v-model="form.password" type="password" class="nd-field-input" :required="sheetMode === 'create'" placeholder="••••••••" />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">FUNÇÃO</label>
-            <NdCombobox v-model="adminValue" :options="funcaoOptions" placeholder="Selecione a função" />
+            <label class="nd-field-label">Perfil</label>
+            <NdCombobox v-model="adminValue" :options="funcaoOptions" placeholder="Selecione o perfil" />
           </div>
-          <div class="nd-field">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">Status</label>
             <div class="nd-toggle-row">
               <button type="button" class="nd-toggle" :class="{ 'nd-toggle--on': form.active }" @click="form.active = !form.active">
@@ -161,27 +161,29 @@ onMounted(() => { void ensureTecnicosLoaded() })
               <span class="nd-toggle-label">{{ form.active ? 'Ativo' : 'Inativo' }}</span>
             </div>
           </div>
-          <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
-          <div class="nd-form-footer">
-            <button type="submit" class="nd-btn-primary nd-btn-full">
-              {{ sheetMode === 'edit' ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR' }}
+          <div v-if="submitError" class="nd-field-error col-span-full">{{ submitError }}</div>
+          <DialogFooter class="col-span-full">
+            <DialogClose as-child>
+              <button type="button" class="nd-btn-secondary">CANCELAR</button>
+            </DialogClose>
+            <button type="submit" class="nd-btn-primary">
+              {{ sheetMode === 'edit' ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR TÉCNICO' }}
             </button>
-          </div>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
 
-    <!-- DETAIL SHEET -->
-    <Sheet v-model:open="detailOpen">
-      <SheetContent class="nd-sheet nd-sheet--detail">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">Detalhes do colaborador</SheetTitle>
-          <SheetDescription class="sr-only">Detalhes do colaborador</SheetDescription>
-        </SheetHeader>
+    <!-- DETAIL DIALOG -->
+    <Dialog v-model:open="detailOpen">
+      <DialogContent class="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">Detalhes do técnico</DialogTitle>
+          <DialogDescription class="sr-only">Detalhes do técnico</DialogDescription>
+        </DialogHeader>
         <div v-if="detailItem" class="nd-detail">
           <div class="nd-detail-status-row">
             <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'Ativo' : 'Inativo' }}</span>
-            <span class="nd-role" :class="detailItem.admin ? 'nd-role--admin' : 'nd-role--tech'">{{ detailItem.admin ? 'ADMINISTRADOR' : 'TÉCNICO' }}</span>
           </div>
           <div class="nd-detail-section">
             <span class="nd-field-label">Nome</span>
@@ -191,14 +193,21 @@ onMounted(() => { void ensureTecnicosLoaded() })
             <span class="nd-field-label">E-mail</span>
             <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.email }}</span>
           </div>
-          <div class="nd-detail-footer">
-            <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
-              <Pencil :size="12" /> Editar colaborador
-            </button>
+          <div class="nd-detail-section">
+            <span class="nd-field-label">Perfil</span>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.admin ? 'Administrador' : 'Técnico' }}</span>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        <DialogFooter>
+          <DialogClose as-child>
+            <button type="button" class="nd-btn-secondary">FECHAR</button>
+          </DialogClose>
+          <button class="nd-btn-primary" type="button" @click="openEditFromDetail">
+            <Pencil :size="12" /> Editar técnico
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
@@ -347,34 +356,10 @@ onMounted(() => { void ensureTecnicosLoaded() })
 .nd-card-name { font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 4px 0 2px; line-height: 1.3; }
 .nd-card-email { font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--nd-text-secondary); flex: 1; }
 .nd-card-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--nd-border); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-:deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
-.nd-detail { display: flex; flex-direction: column; gap: 28px; }
-.nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
-.nd-tag--lg { font-size: 11px; padding: 4px 12px; }
-.nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
-.nd-detail-value { font-family: 'Montserrat', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
-.nd-detail-value--secondary { font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-secondary); }
-.nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
-:deep(.nd-sheet) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
-.nd-sheet-header { margin-bottom: 32px; }
-.nd-sheet-title { font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0 !important; color: var(--nd-text-display) !important; }
-.nd-form { display: flex; flex-direction: column; gap: 24px; }
-.nd-field { display: flex; flex-direction: column; gap: 8px; }
-.nd-field-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--nd-text-disabled); }
-.nd-field-input { background: transparent; border: none; border-bottom: 1px solid var(--nd-border-visible); outline: none; padding: 8px 0; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-primary); transition: border-color 150ms ease-out; width: 100%; }
-.nd-field-input:focus { border-bottom-color: var(--nd-text-primary); }
-.nd-field-select { font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; cursor: pointer; }
-.nd-field-error { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
-.nd-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
-.nd-toggle { position: relative; width: 40px; height: 22px; border: none; border-radius: 999px; background: var(--nd-border-visible); cursor: pointer; transition: background 200ms ease-out; }
-.nd-toggle--on { background: var(--nd-text-display); }
-.nd-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--nd-text-disabled); transition: transform 200ms ease-out, background 200ms ease-out; }
-.nd-toggle--on .nd-toggle-thumb { transform: translateX(18px); background: var(--nd-bg); }
-.nd-toggle-label { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.01em; color: var(--nd-text-secondary); }
+
 .nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
 .nd-btn-primary:hover { background: var(--nd-action-hover); }
 .nd-btn-full { width: 100%; justify-content: center; }
-.nd-form-footer { margin-top: 16px; }
 
 .nd-fab { display: none; }
 

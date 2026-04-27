@@ -4,7 +4,7 @@ import { Search, Plus, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { getApiErrorMessage } from '@/shared/services/api'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import { useClientesStore } from '@/shared/composables/useClientesStore'
 import { useContratosStore } from '@/shared/composables/useContratosStore'
 import { useEquipamentosStore } from '@/shared/composables/useEquipamentosStore'
@@ -161,52 +161,38 @@ onMounted(() => {
 <template>
   <div class="nd-page">
 
-    <Sheet v-model:open="sheetOpen">
-      <SheetContent class="nd-sheet">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">{{ sheetMode === 'edit' ? 'Editar contrato' : 'Novo contrato' }}</SheetTitle>
-          <SheetDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar contrato' : 'Novo contrato' }}</SheetDescription>
-        </SheetHeader>
-        <form class="nd-form" @submit.prevent="submitForm">
-          <div class="nd-field">
+    <Dialog v-model:open="sheetOpen">
+      <DialogContent class="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar contrato' : 'Novo contrato' }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar contrato' : 'Novo contrato' }}</DialogDescription>
+        </DialogHeader>
+        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">Cliente *</label>
             <NdCombobox v-model="form.clientId" :options="clienteOptions" placeholder="Selecione o cliente" search-placeholder="Buscar cliente..." />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">DATA DE INÍCIO *</label>
+            <label class="nd-field-label">Data início *</label>
             <input v-model="form.initialDate" type="date" class="nd-field-input" required />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">Data de fim *</label>
+            <label class="nd-field-label">Data fim *</label>
             <input v-model="form.finalDate" type="date" class="nd-field-input" required />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">RECORRÊNCIA DE MANUTENÇÃO (DIAS) *</label>
-            <input v-model.number="form.recurrenceMaintenance" type="number" min="1" class="nd-field-input" placeholder="Ex: 30" required />
+            <label class="nd-field-label">Recorrência (meses) *</label>
+            <input v-model.number="form.recurrenceMaintenance" type="number" min="1" class="nd-field-input" required />
           </div>
-          <div class="nd-field">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">Equipamentos</label>
-            <NdMultiCombobox
-              v-model="form.equipmentIds"
-              :options="equipamentoOptions"
-              placeholder="Selecione os equipamentos"
-              search-placeholder="Buscar equipamento..."
-              singular-label="equipamento"
-              plural-label="equipamentos"
-            />
+            <NdMultiCombobox v-model="form.equipmentIds" :options="equipamentoOptions" placeholder="Selecione os equipamentos" search-placeholder="Buscar equipamento..." singular-label="equipamento" plural-label="equipamentos" />
           </div>
-          <div class="nd-field">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">Requisitos</label>
-            <NdMultiCombobox
-              v-model="form.requirementIds"
-              :options="requisitoOptions"
-              placeholder="Selecione os requisitos"
-              search-placeholder="Buscar requisito..."
-              singular-label="requisito"
-              plural-label="requisitos"
-            />
+            <NdMultiCombobox v-model="form.requirementIds" :options="requisitoOptions" placeholder="Selecione os requisitos" search-placeholder="Buscar requisito..." singular-label="requisito" plural-label="requisitos" />
           </div>
-          <div class="nd-field">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">Status</label>
             <div class="nd-toggle-row">
               <button type="button" class="nd-toggle" :class="{ 'nd-toggle--on': form.active }" @click="form.active = !form.active">
@@ -215,65 +201,53 @@ onMounted(() => {
               <span class="nd-toggle-label">{{ form.active ? 'Ativo' : 'Inativo' }}</span>
             </div>
           </div>
-          <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
-          <div class="nd-form-footer">
-            <button type="submit" class="nd-btn-primary nd-btn-full">
+          <div v-if="submitError" class="nd-field-error col-span-full">{{ submitError }}</div>
+          <DialogFooter class="col-span-full">
+            <DialogClose as-child>
+              <button type="button" class="nd-btn-secondary">CANCELAR</button>
+            </DialogClose>
+            <button type="submit" class="nd-btn-primary">
               {{ sheetMode === 'edit' ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR CONTRATO' }}
             </button>
-          </div>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
 
     <!-- DETAIL SHEET -->
-    <Sheet v-model:open="detailOpen">
-      <SheetContent class="nd-sheet nd-sheet--detail">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">Detalhes do contrato</SheetTitle>
-          <SheetDescription class="sr-only">Detalhes do contrato</SheetDescription>
-        </SheetHeader>
+    <Dialog v-model:open="detailOpen">
+      <DialogContent class="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">Detalhes do contrato</DialogTitle>
+          <DialogDescription class="sr-only">Detalhes do contrato</DialogDescription>
+        </DialogHeader>
         <div v-if="detailItem" class="nd-detail">
           <div class="nd-detail-status-row">
-            <span class="nd-tag nd-tag--lg" :style="{ color: contratoStatus(detailItem).color, borderColor: contratoStatus(detailItem).color }">{{ contratoStatus(detailItem).label }}</span>
-            <span class="nd-detail-id">#{{ String(detailItem.id).padStart(3, '0') }}</span>
+            <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'Ativo' : 'Inativo' }}</span>
           </div>
           <div class="nd-detail-section">
             <span class="nd-field-label">Cliente</span>
             <span class="nd-detail-value">{{ detailItem.client.name }}</span>
           </div>
           <div class="nd-detail-section">
-            <span class="nd-field-label">VIGÊNCIA</span>
-            <span class="nd-detail-value nd-detail-value--mono">{{ formatDate(detailItem.initialDate) }} → {{ formatDate(detailItem.finalDate) }}</span>
+            <span class="nd-field-label">Vigência</span>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.initialDate }} → {{ detailItem.finalDate }}</span>
           </div>
           <div class="nd-detail-section">
-            <span class="nd-field-label">RECORRÊNCIA</span>
-            <span class="nd-detail-value nd-detail-value--mono">{{ detailItem.recurrenceMaintenance }} dias</span>
-          </div>
-          <div class="nd-detail-section">
-            <span class="nd-field-label">EQUIPAMENTOS ({{ detailItem.equipments.length }})</span>
-            <div v-if="detailItem.equipments.length" class="nd-detail-list">
-              <div v-for="eq in detailItem.equipments" :key="eq.id_equipment" class="nd-detail-list-item">
-                <span class="nd-detail-list-dot" />{{ eq.name }}<span v-if="eq.model" class="nd-detail-list-sub">{{ eq.model }}</span>
-              </div>
-            </div>
-            <span v-else class="nd-detail-value--dim">Nenhum equipamento</span>
-          </div>
-          <div v-if="detailItem.requirements?.length" class="nd-detail-section">
-            <span class="nd-field-label">REQUISITOS ({{ detailItem.requirements.length }})</span>
-            <div class="nd-detail-list">
-              <div v-for="req in detailItem.requirements" :key="req.id" class="nd-detail-list-item">
-                <span class="nd-detail-list-dot" />{{ req.name }}
-              </div>
-            </div>
-          </div>
-          <div class="nd-detail-footer">
-            <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
-              <Pencil :size="12" /> Editar contrato
-            </button>
+            <span class="nd-field-label">Recorrência</span>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.recurrenceMaintenance }} meses</span>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        <DialogFooter>
+          <DialogClose as-child>
+            <button type="button" class="nd-btn-secondary">FECHAR</button>
+          </DialogClose>
+          <button class="nd-btn-primary" type="button" @click="openEditFromDetail">
+            <Pencil :size="12" /> Editar contrato
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
@@ -444,7 +418,7 @@ onMounted(() => {
 .nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
 .nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
 .nd-card-id { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.04em; color: var(--nd-text-disabled); }
-:deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
+
 .nd-detail { display: flex; flex-direction: column; gap: 28px; }
 .nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
 .nd-detail-id { font-family: 'Montserrat', sans-serif; font-size: 13px; letter-spacing: 0.06em; color: var(--nd-text-disabled); }
@@ -465,32 +439,8 @@ onMounted(() => {
 .nd-card-date-val { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.03em; color: var(--nd-text-secondary); }
 .nd-card-footer { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--nd-border); display: flex; align-items: center; gap: 16px; }
 .nd-card-meta-item { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.02em; color: var(--nd-text-disabled); }
-:deep(.nd-sheet) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
-.nd-sheet-header { margin-bottom: 32px; }
-.nd-sheet-title { font-family: 'Montserrat', sans-serif !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0 !important; color: var(--nd-text-display) !important; }
-.nd-form { display: flex; flex-direction: column; gap: 24px; }
-.nd-field { display: flex; flex-direction: column; gap: 8px; }
-.nd-field-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--nd-text-disabled); }
-.nd-field-hint { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-text-disabled); }
-.nd-field-input { background: transparent; border: none; border-bottom: 1px solid var(--nd-border-visible); outline: none; padding: 8px 0; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-primary); transition: border-color 150ms ease-out; width: 100%; }
-.nd-field-input:focus { border-bottom-color: var(--nd-text-primary); }
-.nd-field-select { font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; cursor: pointer; }
-.nd-field-error { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
-.nd-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
-.nd-toggle { position: relative; width: 40px; height: 22px; border: none; border-radius: 999px; background: var(--nd-border-visible); cursor: pointer; transition: background 200ms ease-out; }
-.nd-toggle--on { background: var(--nd-text-display); }
-.nd-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--nd-text-disabled); transition: transform 200ms ease-out, background 200ms ease-out; }
-.nd-toggle--on .nd-toggle-thumb { transform: translateX(18px); background: var(--nd-bg); }
-.nd-toggle-label { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.01em; color: var(--nd-text-secondary); }
-.nd-check-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding: 8px 0; }
-.nd-check-item { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0; }
-.nd-check { accent-color: var(--nd-action); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
-.nd-check-name { font-family: 'Montserrat', sans-serif; font-size: 13px; color: var(--nd-text-primary); }
-.nd-check-model { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-text-disabled); }
-.nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
-.nd-btn-primary:hover { background: var(--nd-action-hover); }
-.nd-btn-full { width: 100%; justify-content: center; }
-.nd-form-footer { margin-top: 16px; }
+
+
 
 .nd-fab { display: none; }
 
