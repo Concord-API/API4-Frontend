@@ -236,10 +236,14 @@ onMounted(() => { void ensureClientesLoaded() })
         <span class="nd-stat-val" style="color: var(--nd-accent)">{{ String(counts.inativos).padStart(2, '0') }}</span>
         <span class="nd-label">Inativos</span>
       </div>
-      <button class="nd-btn-primary" style="margin-left: auto" @click="openCreate">
+      <button class="nd-btn-primary nd-btn-desktop" style="margin-left: auto" @click="openCreate">
         <Plus :size="12" /> Novo cliente
       </button>
     </div>
+
+    <button class="nd-fab" @click="openCreate" aria-label="Novo cliente">
+      <Plus :size="20" />
+    </button>
 
     <div class="nd-search-row">
       <div class="nd-search">
@@ -384,12 +388,17 @@ onMounted(() => { void ensureClientesLoaded() })
 .nd-btn-full { width: 100%; justify-content: center; }
 .nd-form-footer { margin-top: 16px; }
 
+.nd-fab { display: none; }
+
 @media (max-width: 640px) {
   .nd-search-row { flex-direction: column; align-items: stretch; gap: 12px; }
   .nd-search-right { justify-content: space-between; }
   .nd-search { flex: 1; }
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
+  .nd-btn-desktop { display: none; }
+  .nd-fab { display: flex; align-items: center; justify-content: center; position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--nd-action); color: var(--nd-action-foreground); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); transition: background-color 150ms ease-out; z-index: 50; }
+  .nd-fab:hover { background: var(--nd-action-hover); }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
   .nd-grid { grid-template-columns: repeat(2, 1fr); }
