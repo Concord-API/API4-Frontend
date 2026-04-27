@@ -37,8 +37,13 @@ const activeTab = ref<'tecnicos' | 'requisitos'>('tecnicos')
 
 .equipe-nav {
   display: flex;
-  margin-bottom: 32px;
+  justify-content: center;
+  margin-top: -1.5rem;
+  margin-bottom: 1.5rem;
 }
+@media (min-width: 640px) { .equipe-nav { margin-top: -2rem; margin-bottom: 2rem; } }
+@media (min-width: 768px) { .equipe-nav { margin-top: -2.5rem; margin-bottom: 2.5rem; } }
+@media (min-width: 1024px) { .equipe-nav { margin-top: -3rem; margin-bottom: 3rem; } }
 
 .equipe-tab {
   font-family: 'Montserrat', sans-serif;
