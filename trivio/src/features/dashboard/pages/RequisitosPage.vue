@@ -313,9 +313,7 @@ onMounted(() => { void ensureRequisitosLoaded() })
 .nd-card-name { font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 6px 0 4px; line-height: 1.3; }
 .nd-card-desc { font-family: 'Montserrat', sans-serif; font-size: 13px; color: var(--nd-text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; flex: 1; }
 .nd-card-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--nd-border); }
-.nd-dialog-title { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--nd-text-display); }
-.nd-btn-secondary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: transparent; color: var(--nd-text-secondary); border: 1px solid var(--nd-border-visible); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: border-color 150ms ease-out; }
-.nd-btn-secondary:hover { border-color: var(--nd-text-secondary); }
+
 
 .nd-fab { display: none; }
 

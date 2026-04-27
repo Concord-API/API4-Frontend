@@ -372,9 +372,7 @@ onMounted(() => { void ensureClientesLoaded() })
 .nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
 .nd-btn-primary:hover { background: var(--nd-action-hover); }
 .nd-btn-full { width: 100%; justify-content: center; }
-.nd-dialog-title { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--nd-text-display); }
-.nd-btn-secondary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: transparent; color: var(--nd-text-secondary); border: 1px solid var(--nd-border-visible); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: border-color 150ms ease-out; }
-.nd-btn-secondary:hover { border-color: var(--nd-text-secondary); }
+
 
 .nd-fab { display: none; }
 

@@ -439,9 +439,7 @@ onMounted(() => {
 .nd-card-date-val { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.03em; color: var(--nd-text-secondary); }
 .nd-card-footer { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--nd-border); display: flex; align-items: center; gap: 16px; }
 .nd-card-meta-item { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.02em; color: var(--nd-text-disabled); }
-.nd-dialog-title { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--nd-text-display); }
-.nd-btn-secondary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: transparent; color: var(--nd-text-secondary); border: 1px solid var(--nd-border-visible); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: border-color 150ms ease-out; }
-.nd-btn-secondary:hover { border-color: var(--nd-text-secondary); }
+
 
 
 .nd-fab { display: none; }
