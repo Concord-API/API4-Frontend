@@ -64,11 +64,11 @@ onMounted(() => {
   <div class="nd-calendario-wrapper">
     <!-- Header -->
     <div class="cal-header">
-      <button @click="navegarSemana(-1)" class="cal-nav-btn">
+      <button type="button" class="cal-nav-btn" aria-label="Semana anterior" @click="navegarSemana(-1)">
         <ChevronLeft :size="20" />
       </button>
       <span class="cal-semana-label">{{ semanaLabel }}</span>
-      <button @click="navegarSemana(1)" class="cal-nav-btn">
+      <button type="button" class="cal-nav-btn" aria-label="Próxima semana" @click="navegarSemana(1)">
         <ChevronRight :size="20" />
       </button>
     </div>

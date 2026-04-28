@@ -116,7 +116,7 @@ export function useCalendario() {
     semanaLabel,
     tecnicoFiltro,
     tecnicos,
-    manutencoesDaSemana,
+    manutencoesDaSemana: readonly(manutencoesDaSemana),
     manutencoesFiltradas,
     loading,
     error,
