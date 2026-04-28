@@ -114,8 +114,8 @@ function isWeekActive(week: {date: Date}[]) {
   return week[0]?.date.getTime() === selectedWeekRange.value.start.getTime()
 }
 
-function onDayClick(cell: {date: Date}) {
-  emit('semana-click', cell.date)
+function onDayClick(cell?: {date: Date}) {
+  if (cell) emit('semana-click', cell.date)
 }
 
 const tecnicoOptions = computed<ComboboxOption[]>(() => [
