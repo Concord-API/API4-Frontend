@@ -111,7 +111,7 @@ const selectedWeekRange = computed(() => {
 })
 
 function isWeekActive(week: {date: Date}[]) {
-  return week[0].date.getTime() === selectedWeekRange.value.start.getTime()
+  return week[0]?.date.getTime() === selectedWeekRange.value.start.getTime()
 }
 
 function onDayClick(cell: {date: Date}) {
