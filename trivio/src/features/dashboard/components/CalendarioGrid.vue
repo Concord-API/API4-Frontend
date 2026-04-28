@@ -156,7 +156,7 @@ function labelHour(h: number): string {
           :dias="dias"
           :manutencoes="untimedMs"
           :scrollbar-width="scrollbarWidth"
-          @card-click="emit('card-expand', $event)"
+          @card-expand="emit('card-expand', $event)"
         />
 
         <div class="cal-scroll-area">
