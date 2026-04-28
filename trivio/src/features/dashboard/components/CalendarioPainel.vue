@@ -92,6 +92,15 @@ const calendarCells = computed<{day: number, date: Date, currentMonth: boolean}[
   return cells
 })
 
+const calendarWeeks = computed(() => {
+  const cells = calendarCells.value
+  const weeks = []
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7))
+  }
+  return weeks
+})
+
 const selectedWeekRange = computed(() => {
   const start = new Date(props.monday)
   start.setHours(0, 0, 0, 0)
@@ -150,27 +159,36 @@ const legendItems = [
       </div>
 
       <div class="cp-cal-grid">
-        <div
-          v-for="(h, i) in DAY_HEADERS"
-          :key="`h-${i}`"
-          class="cp-day-header"
-        >
-          {{ h }}
+        <div class="cp-day-headers">
+          <div
+            v-for="(h, i) in DAY_HEADERS"
+            :key="`h-${i}`"
+            class="cp-day-header"
+          >
+            {{ h }}
+          </div>
         </div>
 
-        <template v-for="(cell, idx) in calendarCells" :key="`c-${idx}`">
-          <button
-            type="button"
-            class="cp-day-btn"
-            :class="{ 
-              'cp-day-btn--active': isInSelectedWeek(cell),
-              'cp-day-btn--other-month': !cell.currentMonth
-            }"
-            @click="onDayClick(cell)"
+        <div class="cp-cal-weeks">
+          <div
+            v-for="(week, wIdx) in calendarWeeks"
+            :key="wIdx"
+            class="cp-week-row"
+            @click="onDayClick(week[0])"
           >
-            {{ cell.day }}
-          </button>
-        </template>
+            <div
+              v-for="(cell, idx) in week"
+              :key="`c-${idx}`"
+              class="cp-day-cell"
+              :class="{ 
+                'cp-day-cell--active': isInSelectedWeek(cell),
+                'cp-day-cell--other-month': !cell.currentMonth
+              }"
+            >
+              {{ cell.day }}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -263,9 +281,14 @@ const legendItems = [
 }
 
 .cp-cal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cp-day-headers {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 1px 0;
 }
 
 .cp-day-header {
@@ -280,12 +303,27 @@ const legendItems = [
   justify-content: center;
 }
 
-.cp-day-blank {
-  width: 100%;
-  height: 24px;
+.cp-cal-weeks {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
-.cp-day-btn {
+.cp-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 100ms ease-out;
+}
+.cp-week-row:hover {
+  background: color-mix(in srgb, var(--nd-border) 40%, transparent);
+}
+.cp-week-row:hover .cp-day-cell {
+  color: var(--nd-text-primary);
+}
+
+.cp-day-cell {
   width: 100%;
   height: 24px;
   display: flex;
@@ -295,28 +333,20 @@ const legendItems = [
   font-size: 11px;
   font-weight: 400;
   color: var(--nd-text-secondary);
-  background: transparent;
-  border: none;
   border-radius: 2px;
-  cursor: pointer;
-  transition: background 100ms ease-out, color 100ms ease-out;
-}
-.cp-day-btn:hover {
-  background: color-mix(in srgb, var(--nd-border) 60%, transparent);
-  color: var(--nd-text-primary);
 }
 
-.cp-day-btn--active {
+.cp-day-cell--active {
   background: color-mix(in srgb, var(--nd-action) 15%, transparent);
   color: var(--nd-action);
   font-weight: 600;
 }
-.cp-day-btn--active:hover {
+.cp-day-cell--active:hover {
   background: color-mix(in srgb, var(--nd-action) 22%, transparent);
   color: var(--nd-action);
 }
 
-.cp-day-btn--other-month {
+.cp-day-cell--other-month {
   color: var(--nd-text-disabled);
   opacity: 0.6;
 }

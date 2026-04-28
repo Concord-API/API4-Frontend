@@ -6,6 +6,7 @@ import type { DiaDaSemana } from '@/features/dashboard/composables/useCalendario
 const props = defineProps<{
   dias: DiaDaSemana[]
   manutencoes: ManutencaoAPI[]
+  scrollbarWidth: number
 }>()
 
 const emit = defineEmits<{
@@ -54,6 +55,7 @@ const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
         </button>
       </div>
     </div>
+    <div class="cal-scrollbar-spacer" :style="{ width: scrollbarWidth + 'px' }" />
   </div>
 </template>
 
@@ -116,4 +118,10 @@ const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
   box-sizing: border-box;
 }
 .cal-banner-chip:hover { filter: brightness(1.15); }
+
+.cal-scrollbar-spacer {
+  flex-shrink: 0;
+  border-left: 1px solid var(--nd-border);
+  background: var(--nd-surface);
+}
 </style>

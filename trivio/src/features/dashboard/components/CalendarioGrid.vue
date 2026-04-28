@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 import type { DiaDaSemana } from '@/features/dashboard/composables/useCalendario'
@@ -19,6 +19,19 @@ const emit = defineEmits<{
   'nova-manutencao-ctx': [dateStr: string, hour: number]
   'ir-para-hoje': []
 }>()
+
+const scrollbarWidth = ref(16)
+
+onMounted(() => {
+  const outer = document.createElement('div')
+  outer.style.visibility = 'hidden'
+  outer.style.overflow = 'scroll'
+  document.body.appendChild(outer)
+  const inner = document.createElement('div')
+  outer.appendChild(inner)
+  scrollbarWidth.value = outer.offsetWidth - inner.offsetWidth
+  outer.parentNode?.removeChild(outer)
+})
 
 const hours = computed(() => {
   const result: number[] = []
@@ -119,20 +132,24 @@ function labelHour(h: number): string {
   <div class="cal-grid-root">
     <div class="cal-header-row">
       <div class="cal-corner" />
-      <div
-        v-for="dia in dias"
-        :key="dia.dateStr"
-        class="cal-day-header"
-        :class="{ 'cal-day-header--today': dia.isToday }"
-      >
-        <span class="cal-day-label">{{ dia.label }}</span>
-        <span class="cal-day-num">{{ dia.date.getDate() }}</span>
+      <div class="cal-days-wrap">
+        <div
+          v-for="dia in dias"
+          :key="dia.dateStr"
+          class="cal-day-header"
+          :class="{ 'cal-day-header--today': dia.isToday }"
+        >
+          <span class="cal-day-label">{{ dia.label }}</span>
+          <span class="cal-day-num">{{ dia.date.getDate() }}</span>
+        </div>
       </div>
+      <div class="cal-scrollbar-spacer" :style="{ width: scrollbarWidth + 'px' }" />
     </div>
 
     <CalendarioBanner
       :dias="dias"
       :manutencoes="untimedMs"
+      :scrollbar-width="scrollbarWidth"
       @card-click="emit('card-click', $event)"
     />
 
@@ -207,7 +224,17 @@ function labelHour(h: number): string {
   border-bottom: 1px solid var(--nd-border-visible);
   background: var(--nd-surface);
 }
-.cal-corner { width: 48px; flex-shrink: 0; }
+.cal-corner { width: 48px; flex-shrink: 0; border-right: 1px solid var(--nd-border); }
+.cal-days-wrap {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.cal-scrollbar-spacer {
+  flex-shrink: 0;
+  border-left: 1px solid var(--nd-border);
+  background: var(--nd-surface);
+}
 .cal-day-header {
   flex: 1;
   display: flex;
@@ -215,8 +242,11 @@ function labelHour(h: number): string {
   align-items: center;
   justify-content: center;
   padding: 8px 4px;
-  border-left: 1px solid var(--nd-border);
+  border-right: 1px solid var(--nd-border);
   gap: 2px;
+}
+.cal-day-header:last-child {
+  border-right: none;
 }
 .cal-day-label {
   font-family: 'Montserrat', sans-serif;
