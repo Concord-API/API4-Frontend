@@ -147,61 +147,63 @@ function labelHour(h: number): string {
       <div class="cal-scrollbar-spacer" :style="{ width: scrollbarWidth + 'px' }" />
     </div>
 
-    <CalendarioBanner
-      :dias="dias"
-      :manutencoes="untimedMs"
-      :scrollbar-width="scrollbarWidth"
-      @card-click="emit('card-expand', $event)"
-    />
-
     <CalendarioContextMenu
       @nova-manutencao="onContextNovaManutencao"
       @ir-para-hoje="onContextIrParaHoje"
     >
-      <div class="cal-scroll-area">
-        <div class="cal-time-grid" :style="{ height: `${gridHeightPx}px` }">
-          <!-- Hour labels -->
-          <div class="cal-hour-labels">
-            <div
-              v-for="h in hours"
-              :key="h"
-              class="cal-hour-label"
-            >
-              {{ labelHour(h) }}
-            </div>
-          </div>
+      <div class="cal-ctx-wrap">
+        <CalendarioBanner
+          :dias="dias"
+          :manutencoes="untimedMs"
+          :scrollbar-width="scrollbarWidth"
+          @card-click="emit('card-expand', $event)"
+        />
 
-          <div class="cal-days-cols">
-            <div
-              v-for="(dia, di) in dias"
-              :key="dia.dateStr"
-              class="cal-day-col"
-              @contextmenu="ctxDateStr = dia.dateStr"
-            >
+        <div class="cal-scroll-area">
+          <div class="cal-time-grid" :style="{ height: `${gridHeightPx}px` }">
+            <!-- Hour labels -->
+            <div class="cal-hour-labels">
               <div
                 v-for="h in hours"
                 :key="h"
-                class="cal-hour-row"
-                :style="{ top: `${(h - GRID_START_HOUR) * ROW_HEIGHT_PX}px`, height: `${ROW_HEIGHT_PX}px`, borderTop: h === GRID_START_HOUR ? 'none' : undefined }"
-                @click="onCellClick(dia.dateStr, h)"
-                @contextmenu="ctxHour = h"
+                class="cal-hour-label"
               >
-                <div class="cal-hover-plus">
-                  <Plus :size="14" class="cal-plus-icon" />
-                </div>
+                {{ labelHour(h) }}
               </div>
+            </div>
 
-              <CalendarioCard
-                v-for="layout in cardsByDay[di] ?? []"
-                :key="layout.manutencao.id"
-                :manutencao="layout.manutencao"
-                :top-px="layout.topPx"
-                :height-px="layout.heightPx"
-                :left-percent="layout.leftPercent"
-                :width-percent="layout.widthPercent"
-                @click="emit('card-click', $event)"
-                @expand="emit('card-expand', $event)"
-              />
+            <div class="cal-days-cols">
+              <div
+                v-for="(dia, di) in dias"
+                :key="dia.dateStr"
+                class="cal-day-col"
+                @contextmenu="ctxDateStr = dia.dateStr"
+              >
+                <div
+                  v-for="h in hours"
+                  :key="h"
+                  class="cal-hour-row"
+                  :style="{ top: `${(h - GRID_START_HOUR) * ROW_HEIGHT_PX}px`, height: `${ROW_HEIGHT_PX}px`, borderTop: h === GRID_START_HOUR ? 'none' : undefined }"
+                  @click="onCellClick(dia.dateStr, h)"
+                  @contextmenu="ctxHour = h"
+                >
+                  <div class="cal-hover-plus">
+                    <Plus :size="14" class="cal-plus-icon" />
+                  </div>
+                </div>
+
+                <CalendarioCard
+                  v-for="layout in cardsByDay[di] ?? []"
+                  :key="layout.manutencao.id"
+                  :manutencao="layout.manutencao"
+                  :top-px="layout.topPx"
+                  :height-px="layout.heightPx"
+                  :left-percent="layout.leftPercent"
+                  :width-percent="layout.widthPercent"
+                  @click="emit('card-click', $event)"
+                  @expand="emit('card-expand', $event)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -218,12 +220,23 @@ function labelHour(h: number): string {
   overflow: hidden;
   border: 1px solid var(--nd-border-visible);
   border-radius: 6px;
+  background: #fff;
+}
+
+:root.dark .cal-grid-root,
+.dark .cal-grid-root {
+  background: var(--nd-bg);
 }
 
 .cal-header-row {
   display: flex;
   flex-shrink: 0;
   border-bottom: 1px solid var(--nd-border-visible);
+  background: #fff;
+}
+
+:root.dark .cal-header-row,
+.dark .cal-header-row {
   background: var(--nd-surface);
 }
 .cal-corner { width: 48px; flex-shrink: 0; border-right: 1px solid var(--nd-border); }
@@ -235,7 +248,7 @@ function labelHour(h: number): string {
 .cal-scrollbar-spacer {
   flex-shrink: 0;
   border-left: 1px solid var(--nd-border);
-  background: var(--nd-surface);
+  background: inherit;
 }
 .cal-day-header {
   flex: 1;
@@ -267,6 +280,13 @@ function labelHour(h: number): string {
 }
 .cal-day-header--today .cal-day-label { color: var(--nd-action); }
 .cal-day-header--today .cal-day-num { color: var(--nd-action); font-weight: 600; }
+
+.cal-ctx-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 
 .cal-scroll-area {
   flex: 1;

@@ -63,7 +63,7 @@ const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
 .cal-banner {
   display: flex;
   border-bottom: 1px solid var(--nd-border-visible);
-  background: var(--nd-surface);
+  background: inherit;
   min-height: 28px;
 }
 

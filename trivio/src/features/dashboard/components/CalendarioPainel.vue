@@ -226,6 +226,11 @@ const legendItems = [
   display: flex;
   flex-direction: column;
   font-family: 'Montserrat', sans-serif;
+  background: #fff;
+}
+
+:root.dark .cp-sidebar,
+.dark .cp-sidebar {
   background: var(--nd-surface);
 }
 
