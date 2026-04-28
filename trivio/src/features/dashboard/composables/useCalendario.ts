@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, readonly } from 'vue'
 import { manutencaoService, type ManutencaoAPI } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
@@ -41,10 +41,13 @@ function buildDays(monday: Date): DiaDaSemana[] {
   })
 }
 
-export function useSemanaLabel(monday: Date): string {
+function formatSemanaLabel(monday: Date): string {
   const end = new Date(monday)
   end.setDate(monday.getDate() + 6)
   const fmtDay = (d: Date) => `${String(d.getDate()).padStart(2, '0')} ${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d.getMonth()]}`
+  if (monday.getFullYear() !== end.getFullYear()) {
+    return `${fmtDay(monday)} ${monday.getFullYear()} – ${fmtDay(end)} ${end.getFullYear()}`
+  }
   if (monday.getMonth() === end.getMonth()) {
     return `${String(monday.getDate()).padStart(2, '0')}–${fmtDay(end)} ${monday.getFullYear()}`
   }
@@ -61,7 +64,7 @@ export function useCalendario() {
 
   const diasDaSemana = computed(() => buildDays(monday.value))
 
-  const semanaLabel = computed(() => useSemanaLabel(monday.value))
+  const semanaLabel = computed(() => formatSemanaLabel(monday.value))
 
   const manutencoesFiltradas = computed(() => {
     if (!tecnicoFiltro.value) return manutencoesDaSemana.value
@@ -102,13 +105,13 @@ export function useCalendario() {
     void carregarSemana()
   }
 
-  function irParaSemanaDosDia(date: Date) {
+  function irParaSemanaDoDia(date: Date) {
     monday.value = getMonday(date)
     void carregarSemana()
   }
 
   return {
-    monday,
+    monday: readonly(monday),
     diasDaSemana,
     semanaLabel,
     tecnicoFiltro,
@@ -120,6 +123,6 @@ export function useCalendario() {
     carregarSemana,
     carregarTecnicos,
     navegarSemana,
-    irParaSemanaDosDia,
+    irParaSemanaDoDia,
   }
 }
