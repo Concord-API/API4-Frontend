@@ -17,8 +17,8 @@ const emit = defineEmits<{
 }>()
 
 // ── Mini Calendar state ───────────────────────────────────────
-const viewMonth = ref(props.monday.getMonth())
-const viewYear = ref(props.monday.getFullYear())
+const viewMonth = ref(0)
+const viewYear = ref(0)
 
 watch(
   () => props.monday,
@@ -26,6 +26,7 @@ watch(
     viewMonth.value = newMonday.getMonth()
     viewYear.value = newMonday.getFullYear()
   },
+  { immediate: true },
 )
 
 const MONTH_NAMES = [
@@ -72,15 +73,19 @@ const calendarCells = computed<(number | null)[]>(() => {
   return cells
 })
 
-// Determine if a cell day belongs to the currently selected week
+// Compute selected week boundaries once per monday change (not per-cell)
+const selectedWeekRange = computed(() => {
+  const start = new Date(props.monday)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+})
+
 function isInSelectedWeek(day: number): boolean {
   const cellDate = new Date(viewYear.value, viewMonth.value, day)
-  const weekStart = new Date(props.monday)
-  weekStart.setHours(0, 0, 0, 0)
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekEnd.getDate() + 6)
-  weekEnd.setHours(23, 59, 59, 999)
-  return cellDate >= weekStart && cellDate <= weekEnd
+  return cellDate >= selectedWeekRange.value.start && cellDate <= selectedWeekRange.value.end
 }
 
 function onDayClick(day: number) {
