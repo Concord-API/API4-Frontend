@@ -79,7 +79,7 @@ onMounted(() => {
       <CalendarioGrid
         :dias="diasDaSemana"
         :manutencoes="manutencoesFiltradas"
-        @card-click="abrirDetalhe"
+        @card-expand="abrirDetalhe"
         @cell-click="abrirCriacao"
         @nova-manutencao-ctx="abrirCriacao"
         @ir-para-hoje="navegarSemana(0)"

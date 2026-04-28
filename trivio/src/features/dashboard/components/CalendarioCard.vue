@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
+import CalendarioPopover from './CalendarioPopover.vue'
 
 const props = defineProps<{
   manutencao: ManutencaoAPI
@@ -12,7 +14,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   click: [manutencao: ManutencaoAPI]
+  expand: [manutencao: ManutencaoAPI]
 }>()
+
+const popoverOpen = ref(false)
 
 const hoje = new Date()
 hoje.setHours(0, 0, 0, 0)
@@ -70,34 +75,59 @@ const cardStyle = computed(() => ({
   height: `${Math.max(props.heightPx, 24)}px`,
   left: `${props.leftPercent}%`,
   width: `calc(${props.widthPercent}% - 4px)`,
-  zIndex: 10,
+  zIndex: popoverOpen.value ? 20 : 10,
 }))
+
+function onDoubleClick() {
+  popoverOpen.value = false
+  emit('expand', props.manutencao)
+}
+
+function onPopoverExpand(m: ManutencaoAPI) {
+  popoverOpen.value = false
+  emit('expand', m)
+}
 </script>
 
 <template>
-  <div
-    class="cal-card"
-    :style="[cardStyle, { '--card-color': statusColor }]"
-    :title="statusLabel"
-    @click.stop="emit('click', manutencao)"
-  >
-    <div class="cal-card-label">{{ label }}</div>
-    <div v-if="horario" class="cal-card-horario">{{ horario }}</div>
-    <div class="cal-card-avatares">
+  <Popover v-model:open="popoverOpen">
+    <PopoverTrigger as-child>
       <div
-        v-for="emp in avatares"
-        :key="emp.employeeId"
-        class="cal-card-avatar"
-        :style="{ background: hashColor(emp.employeeId) }"
-        :title="emp.name"
+        class="cal-card"
+        :style="[cardStyle, { '--card-color': statusColor }]"
+        :title="statusLabel"
+        @dblclick.stop="onDoubleClick"
       >
-        {{ emp.name.charAt(0).toUpperCase() }}
+        <div class="cal-card-label">{{ label }}</div>
+        <div v-if="horario" class="cal-card-horario">{{ horario }}</div>
+        <div class="cal-card-avatares">
+          <div
+            v-for="emp in avatares"
+            :key="emp.employeeId"
+            class="cal-card-avatar"
+            :style="{ background: hashColor(emp.employeeId) }"
+            :title="emp.name"
+          >
+            {{ emp.name.charAt(0).toUpperCase() }}
+          </div>
+          <div v-if="manutencao.employees.length > 3" class="cal-card-avatar cal-card-avatar--more">
+            +{{ manutencao.employees.length - 3 }}
+          </div>
+        </div>
       </div>
-      <div v-if="manutencao.employees.length > 3" class="cal-card-avatar cal-card-avatar--more">
-        +{{ manutencao.employees.length - 3 }}
-      </div>
-    </div>
-  </div>
+    </PopoverTrigger>
+    <PopoverContent
+      side="right"
+      :side-offset="8"
+      align="start"
+      class="cpv-popover-content"
+    >
+      <CalendarioPopover
+        :manutencao="manutencao"
+        @expand="onPopoverExpand"
+      />
+    </PopoverContent>
+  </Popover>
 </template>
 
 <style scoped>
@@ -158,5 +188,15 @@ const cardStyle = computed(() => ({
   background: var(--nd-border-visible);
   color: var(--nd-text-secondary);
   font-size: 6px;
+}
+
+.cpv-popover-content {
+  padding: 12px !important;
+  width: auto !important;
+  max-width: 300px !important;
+  border: 1px solid var(--nd-border-visible) !important;
+  background: var(--nd-surface) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
 }
 </style>

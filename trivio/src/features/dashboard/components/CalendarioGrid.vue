@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'card-click': [manutencao: ManutencaoAPI]
+  'card-expand': [manutencao: ManutencaoAPI]
   'cell-click': [dateStr: string, hour: number]
   'nova-manutencao-ctx': [dateStr: string, hour: number]
   'ir-para-hoje': []
@@ -199,6 +200,7 @@ function labelHour(h: number): string {
                 :left-percent="layout.leftPercent"
                 :width-percent="layout.widthPercent"
                 @click="emit('card-click', $event)"
+                @expand="emit('card-expand', $event)"
               />
             </div>
           </div>
