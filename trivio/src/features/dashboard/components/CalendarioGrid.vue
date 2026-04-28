@@ -52,19 +52,23 @@ function computeCardLayouts(ms: ManutencaoAPI[]): CardLayout[] {
   interface Slot { manutencao: ManutencaoAPI; col: number; totalCols: number }
   const slots: Slot[] = sorted.map(m => ({ manutencao: m, col: 0, totalCols: 1 }))
 
+  const processed = new Set<number>()
   for (let i = 0; i < slots.length; i++) {
+    if (processed.has(i)) continue
     const group: number[] = [i]
+    let groupMaxEnd = new Date(slots[i]!.manutencao.endTime!).getTime()
     for (let j = i + 1; j < slots.length; j++) {
-      const aEnd = new Date(slots[i]!.manutencao.endTime!).getTime()
       const bStart = new Date(slots[j]!.manutencao.startTime!).getTime()
-      if (bStart < aEnd) group.push(j)
+      if (bStart < groupMaxEnd) {
+        group.push(j)
+        groupMaxEnd = Math.max(groupMaxEnd, new Date(slots[j]!.manutencao.endTime!).getTime())
+      }
     }
-    if (group.length > 1) {
-      group.forEach((idx, pos) => {
-        slots[idx]!.col = pos
-        slots[idx]!.totalCols = group.length
-      })
-    }
+    group.forEach((idx, pos) => {
+      slots[idx]!.col = pos
+      slots[idx]!.totalCols = group.length
+      processed.add(idx)
+    })
   }
 
   return slots.map(({ manutencao, col, totalCols }) => {
