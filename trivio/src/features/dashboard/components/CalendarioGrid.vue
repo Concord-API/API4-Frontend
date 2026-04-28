@@ -151,7 +151,7 @@ function labelHour(h: number): string {
       :dias="dias"
       :manutencoes="untimedMs"
       :scrollbar-width="scrollbarWidth"
-      @card-click="emit('card-click', $event)"
+      @card-click="emit('card-expand', $event)"
     />
 
     <CalendarioContextMenu
