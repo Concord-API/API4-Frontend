@@ -34,12 +34,7 @@ const emit = defineEmits<{
   </ContextMenuRoot>
 </template>
 
-<style scoped>
-/* scoped styles for anything inside the component template directly */
-</style>
-
 <style>
-/* global unscoped — needed for portal content */
 .cal-ctx-content {
   background: var(--nd-surface-raised, var(--nd-surface));
   border: 1px solid var(--nd-border-visible);

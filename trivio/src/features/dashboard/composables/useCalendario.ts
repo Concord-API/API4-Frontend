@@ -9,8 +9,8 @@ export const ROW_HEIGHT_PX = 48
 
 export interface DiaDaSemana {
   date: Date
-  label: string    // "seg", "ter", etc.
-  dateStr: string  // "YYYY-MM-DD"
+  label: string
+  dateStr: string
   isToday: boolean
 }
 
@@ -90,7 +90,6 @@ export function useCalendario() {
     try {
       tecnicos.value = await tecnicoService.listar()
     } catch {
-      // silent — filtro de técnico simplesmente não popula
     }
   }
 

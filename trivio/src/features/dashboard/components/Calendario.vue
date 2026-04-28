@@ -46,13 +46,10 @@ function abrirCriacao(dateStr: string, hour: number) {
 
 function onSaved() { void carregarSemana() }
 
-// ── Painel handlers ───────────────────────────────────────────────────────────
-
 function onTecnicoFiltro(t: TecnicoAPI | null) {
   tecnicoFiltro.value = t
 }
 
-// ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 onMounted(() => {
   void carregarSemana()
@@ -62,7 +59,6 @@ onMounted(() => {
 
 <template>
   <div class="nd-calendario-wrapper">
-    <!-- Header -->
     <div class="cal-header">
       <button type="button" class="cal-nav-btn" aria-label="Semana anterior" @click="navegarSemana(-1)">
         <ChevronLeft :size="20" />
@@ -73,15 +69,12 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Error state -->
     <div v-if="error" class="cal-error">{{ error }}</div>
 
-    <!-- Loading state -->
     <div v-else-if="loading && !manutencoesFiltradas.length" class="cal-loading">
       Carregando...
     </div>
 
-    <!-- Main content -->
     <div v-else class="cal-main">
       <CalendarioGrid
         :dias="diasDaSemana"
@@ -100,7 +93,6 @@ onMounted(() => {
       />
     </div>
 
-    <!-- Modal -->
     <CalendarioModal
       v-model:open="modalOpen"
       v-model:mode="modalMode"

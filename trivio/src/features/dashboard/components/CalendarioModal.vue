@@ -17,17 +17,15 @@ import { contratoService, type ContratoAPI } from '@/shared/services/contratoSer
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ModalMode = 'detalhe' | 'edicao' | 'criacao'
 
 export interface CriacaoContext {
-  dateStr: string  // "YYYY-MM-DD"
-  hour: number     // 0-23
+  dateStr: string
+  hour: number
   tecnico: TecnicoAPI | null
 }
 
-// ── Props / Emits ─────────────────────────────────────────────────────────────
 
 const props = defineProps<{
   open: boolean
@@ -42,7 +40,6 @@ const emit = defineEmits<{
   saved: []
 }>()
 
-// ── Internal mode (allows switching detalhe ↔ edicao without closing) ─────────
 
 const internalMode = ref<ModalMode>(props.mode)
 
@@ -50,7 +47,6 @@ watch(() => props.mode, (newMode) => {
   internalMode.value = newMode
 })
 
-// ── Data loading ──────────────────────────────────────────────────────────────
 
 const contratos = ref<ContratoAPI[]>([])
 const tecnicos = ref<TecnicoAPI[]>([])
@@ -61,13 +57,9 @@ async function carregarDados() {
     contratos.value = c
     tecnicos.value = t
   } catch {
-    // Silent — form dropdowns may be empty, user will see empty options
+
   }
 }
-
-// Load on first open (not onMounted) so data is always fresh
-
-// ── Dropdown options ──────────────────────────────────────────────────────────
 
 const contratoOptions = computed(() =>
   contratos.value.map(c => ({ value: c.id, label: `#${String(c.id).padStart(3, '0')} — ${c.client.name}` })),
@@ -88,8 +80,6 @@ const statusOptions = [
   { value: 'STARTED', label: 'Em andamento' },
   { value: 'COMPLETED', label: 'Concluída' },
 ]
-
-// ── Form state ────────────────────────────────────────────────────────────────
 
 interface FormState {
   contractId: number | null
@@ -149,16 +139,15 @@ function formFromContext(ctx: CriacaoContext): FormState {
 
 const form = ref<FormState>(defaultForm())
 
-// Re-initialize form whenever modal opens/closes; always clear submitError
 watch(
   () => props.open,
   (isOpen) => {
-    submitError.value = null  // clear on every transition (open or close)
+    submitError.value = null
     if (!isOpen) {
-      internalMode.value = props.mode  // reset internal mode on close
+      internalMode.value = props.mode
       return
     }
-    void carregarDados()  // reload dropdowns on each open
+    void carregarDados()
     if (props.mode === 'edicao' && props.manutencao) {
       form.value = formFromManutencao(props.manutencao)
     } else if (props.mode === 'criacao' && props.criacaoContext) {
@@ -166,19 +155,15 @@ watch(
     } else if (props.mode === 'criacao') {
       form.value = defaultForm()
     }
-    // detalhe mode: no form needed
   },
 )
 
-// Also re-fill when transitioning to edicao from detalhe
 watch(internalMode, (mode) => {
   if (mode === 'edicao' && props.manutencao) {
     form.value = formFromManutencao(props.manutencao)
     submitError.value = null
   }
 })
-
-// ── Submit ────────────────────────────────────────────────────────────────────
 
 const submitError = ref<string | null>(null)
 const submitting = ref(false)
@@ -226,8 +211,6 @@ async function submitForm() {
   }
 }
 
-// ── Status display helpers ────────────────────────────────────────────────────
-
 function isPast(dateStr: string): boolean {
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
@@ -267,8 +250,6 @@ const horario = computed((): string | null => {
   return `${fmt(props.manutencao.startTime)} – ${fmt(props.manutencao.endTime)}`
 })
 
-// ── Modal open/close helpers ──────────────────────────────────────────────────
-
 function closeModal() {
   emit('update:open', false)
 }
@@ -283,19 +264,15 @@ function switchToDetalhe() {
   emit('update:mode', 'detalhe')
 }
 
-// Sync v-model:open binding
 function handleOpenChange(val: boolean) {
   emit('update:open', val)
 }
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string): string {
   const [y = '', m = '', d = ''] = dateStr.split('-')
   return `${d}/${m}/${y}`
 }
 
-// NdCombobox v-model needs string | number | null — wrap with typed computed
 const contractIdModel = computed<string | number | null>({
   get: () => form.value.contractId,
   set: (v) => { form.value.contractId = v === null ? null : Number(v) },
@@ -316,7 +293,6 @@ const statusModel = computed<string | number | null>({
   <Dialog :open="open" @update:open="handleOpenChange">
     <DialogContent class="sm:max-w-2xl">
 
-      <!-- ── DETALHE ──────────────────────────────────────────── -->
       <template v-if="internalMode === 'detalhe'">
         <DialogHeader>
           <DialogTitle class="nd-dialog-title">DETALHES DA MANUTENÇÃO</DialogTitle>
@@ -376,7 +352,6 @@ const statusModel = computed<string | number | null>({
         </DialogFooter>
       </template>
 
-      <!-- ── EDICAO / CRIACAO (shared form) ──────────────────────── -->
       <template v-else>
         <DialogHeader>
           <DialogTitle class="nd-dialog-title">
@@ -391,7 +366,6 @@ const statusModel = computed<string | number | null>({
           class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4"
           @submit.prevent="submitForm"
         >
-          <!-- Contrato -->
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Contrato *</label>
             <NdCombobox
@@ -402,7 +376,6 @@ const statusModel = computed<string | number | null>({
             />
           </div>
 
-          <!-- Data -->
           <div class="nd-field">
             <label class="nd-field-label">Data *</label>
             <input
@@ -413,7 +386,6 @@ const statusModel = computed<string | number | null>({
             />
           </div>
 
-          <!-- Tipo -->
           <div class="nd-field">
             <label class="nd-field-label">Tipo *</label>
             <NdCombobox
@@ -423,7 +395,6 @@ const statusModel = computed<string | number | null>({
             />
           </div>
 
-          <!-- Horário início -->
           <div class="nd-field">
             <label class="nd-field-label">Horário início</label>
             <input
@@ -433,7 +404,6 @@ const statusModel = computed<string | number | null>({
             />
           </div>
 
-          <!-- Horário fim -->
           <div class="nd-field">
             <label class="nd-field-label">Horário fim</label>
             <input
@@ -443,7 +413,6 @@ const statusModel = computed<string | number | null>({
             />
           </div>
 
-          <!-- Status -->
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Status *</label>
             <NdCombobox
@@ -453,7 +422,6 @@ const statusModel = computed<string | number | null>({
             />
           </div>
 
-          <!-- Técnicos -->
           <div class="nd-field col-span-full">
             <label class="nd-field-label">TÉCNICOS</label>
             <NdMultiCombobox
@@ -466,11 +434,9 @@ const statusModel = computed<string | number | null>({
             />
           </div>
 
-          <!-- Error -->
           <div v-if="submitError" class="nd-field-error col-span-full">{{ submitError }}</div>
 
           <DialogFooter class="col-span-full">
-            <!-- edicao: go back to detalhe; criacao: close modal -->
             <button
               v-if="internalMode === 'edicao'"
               type="button"

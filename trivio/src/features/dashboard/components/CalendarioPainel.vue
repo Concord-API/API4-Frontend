@@ -16,7 +16,6 @@ const emit = defineEmits<{
   'semana-click': [date: Date]
 }>()
 
-// ── Mini Calendar state ───────────────────────────────────────
 const viewMonth = ref(0)
 const viewYear = ref(0)
 
@@ -34,7 +33,6 @@ const MONTH_NAMES = [
   'jul', 'ago', 'set', 'out', 'nov', 'dez',
 ]
 
-// Day headers: Mon-based (S T Q Q S S D)
 const DAY_HEADERS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
 
 const monthLabel = computed(() => `${MONTH_NAMES[viewMonth.value]} ${viewYear.value}`)
@@ -57,23 +55,44 @@ function nextMonth() {
   }
 }
 
-// Build calendar cells: leading nulls + day numbers
-const calendarCells = computed<(number | null)[]>(() => {
+const calendarCells = computed<{day: number, date: Date, currentMonth: boolean}[]>(() => {
   const firstDay = new Date(viewYear.value, viewMonth.value, 1)
-  // JS getDay(): 0=Sun, 1=Mon ... 6=Sat
-  // Mon-based offset: Mon=0 ... Sun=6
   const jsDay = firstDay.getDay()
   const offset = jsDay === 0 ? 6 : jsDay - 1
 
   const daysInMonth = new Date(viewYear.value, viewMonth.value + 1, 0).getDate()
+  const daysInPrevMonth = new Date(viewYear.value, viewMonth.value, 0).getDate()
 
-  const cells: (number | null)[] = []
-  for (let i = 0; i < offset; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+  const cells: {day: number, date: Date, currentMonth: boolean}[] = []
+  
+  for (let i = offset - 1; i >= 0; i--) {
+    cells.push({ 
+      day: daysInPrevMonth - i, 
+      date: new Date(viewYear.value, viewMonth.value - 1, daysInPrevMonth - i),
+      currentMonth: false 
+    })
+  }
+  
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ 
+      day: d, 
+      date: new Date(viewYear.value, viewMonth.value, d),
+      currentMonth: true 
+    })
+  }
+  
+  const remaining = 42 - cells.length
+  for (let i = 1; i <= remaining; i++) {
+    cells.push({ 
+      day: i, 
+      date: new Date(viewYear.value, viewMonth.value + 1, i),
+      currentMonth: false 
+    })
+  }
+  
   return cells
 })
 
-// Compute selected week boundaries once per monday change (not per-cell)
 const selectedWeekRange = computed(() => {
   const start = new Date(props.monday)
   start.setHours(0, 0, 0, 0)
@@ -83,17 +102,14 @@ const selectedWeekRange = computed(() => {
   return { start, end }
 })
 
-function isInSelectedWeek(day: number): boolean {
-  const cellDate = new Date(viewYear.value, viewMonth.value, day)
-  return cellDate >= selectedWeekRange.value.start && cellDate <= selectedWeekRange.value.end
+function isInSelectedWeek(cell: {date: Date}): boolean {
+  return cell.date >= selectedWeekRange.value.start && cell.date <= selectedWeekRange.value.end
 }
 
-function onDayClick(day: number) {
-  const date = new Date(viewYear.value, viewMonth.value, day)
-  emit('semana-click', date)
+function onDayClick(cell: {date: Date}) {
+  emit('semana-click', cell.date)
 }
 
-// ── Technician filter ─────────────────────────────────────────
 const tecnicoOptions = computed<ComboboxOption[]>(() => [
   { value: -1, label: 'Todos os técnicos' },
   ...props.tecnicos.map((t) => ({ value: t.employeeId, label: t.name })),
@@ -113,7 +129,6 @@ const tecnicoModel = computed<string | number | null>({
   },
 })
 
-// ── Legend items ──────────────────────────────────────────────
 const legendItems = [
   { label: 'Agendada', color: 'var(--nd-action)' },
   { label: 'Em andamento', color: 'var(--nd-warning)' },
@@ -124,7 +139,6 @@ const legendItems = [
 
 <template>
   <aside class="cp-sidebar">
-    <!-- ── Section 1: Mini Calendar ────────────────────────── -->
     <section class="cp-section">
       <div class="cp-cal-header">
         <button type="button" class="cp-nav-btn" @click="prevMonth">
@@ -137,7 +151,6 @@ const legendItems = [
       </div>
 
       <div class="cp-cal-grid">
-        <!-- Day headers -->
         <div
           v-for="(h, i) in DAY_HEADERS"
           :key="`h-${i}`"
@@ -146,23 +159,22 @@ const legendItems = [
           {{ h }}
         </div>
 
-        <!-- Calendar cells -->
         <template v-for="(cell, idx) in calendarCells" :key="`c-${idx}`">
-          <div v-if="cell === null" class="cp-day-blank" />
           <button
-            v-else
             type="button"
             class="cp-day-btn"
-            :class="{ 'cp-day-btn--active': isInSelectedWeek(cell) }"
+            :class="{ 
+              'cp-day-btn--active': isInSelectedWeek(cell),
+              'cp-day-btn--other-month': !cell.currentMonth
+            }"
             @click="onDayClick(cell)"
           >
-            {{ cell }}
+            {{ cell.day }}
           </button>
         </template>
       </div>
     </section>
 
-    <!-- ── Section 2: Technician filter ───────────────────── -->
     <section class="cp-section">
       <p class="cp-section-label">TÉCNICO</p>
       <NdCombobox
@@ -173,7 +185,6 @@ const legendItems = [
       />
     </section>
 
-    <!-- ── Section 3: Legend ──────────────────────────────── -->
     <section class="cp-section cp-section--last">
       <p class="cp-section-label">LEGENDA</p>
       <ul class="cp-legend-list">
@@ -191,7 +202,6 @@ const legendItems = [
 </template>
 
 <style scoped>
-/* ── Sidebar container ───────────────────────────────────────── */
 .cp-sidebar {
   width: 200px;
   min-width: 200px;
@@ -204,7 +214,6 @@ const legendItems = [
   background: var(--nd-surface);
 }
 
-/* ── Sections ────────────────────────────────────────────────── */
 .cp-section {
   padding: 12px;
   border-bottom: 1px solid var(--nd-border);
@@ -213,17 +222,15 @@ const legendItems = [
   border-bottom: none;
 }
 
-/* ── Section label ───────────────────────────────────────────── */
 .cp-section-label {
   font-family: 'Montserrat', sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--nd-text-secondary);
   margin: 0 0 8px 0;
 }
 
-/* ── Calendar header ─────────────────────────────────────────── */
 .cp-cal-header {
   display: flex;
   align-items: center;
@@ -233,7 +240,7 @@ const legendItems = [
 
 .cp-month-label {
   font-family: 'Montserrat', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--nd-text-primary);
   text-transform: lowercase;
@@ -256,7 +263,6 @@ const legendItems = [
   background: color-mix(in srgb, var(--nd-border) 50%, transparent);
 }
 
-/* ── Calendar grid ───────────────────────────────────────────── */
 .cp-cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -265,7 +271,7 @@ const legendItems = [
 
 .cp-day-header {
   font-family: 'Montserrat', sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--nd-text-disabled);
   text-align: center;
@@ -287,7 +293,7 @@ const legendItems = [
   align-items: center;
   justify-content: center;
   font-family: 'Montserrat', sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--nd-text-secondary);
   background: transparent;
@@ -311,7 +317,11 @@ const legendItems = [
   color: var(--nd-action);
 }
 
-/* ── Legend ──────────────────────────────────────────────────── */
+.cp-day-btn--other-month {
+  color: var(--nd-text-disabled);
+  opacity: 0.6;
+}
+
 .cp-legend-list {
   list-style: none;
   margin: 0;
@@ -336,7 +346,7 @@ const legendItems = [
 
 .cp-legend-text {
   font-family: 'Montserrat', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--nd-text-secondary);
 }
 </style>
