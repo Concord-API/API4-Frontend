@@ -96,6 +96,7 @@ function onPopoverExpand(m: ManutencaoAPI) {
         class="cal-card"
         :style="[cardStyle, { '--card-color': statusColor }]"
         :title="statusLabel"
+        @click.stop
         @dblclick.stop="onDoubleClick"
       >
         <div class="cal-card-label">{{ label }}</div>
