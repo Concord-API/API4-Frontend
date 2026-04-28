@@ -13,7 +13,7 @@ import Calendario from '@/features/dashboard/components/Calendario.vue'
   display: flex;
   flex-direction: column;
   gap: 0;
-  height: 100%;
+  height: calc(100vh - 220px);
   overflow: hidden;
 }
 </style>

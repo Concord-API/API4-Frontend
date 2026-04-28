@@ -3,8 +3,8 @@ import { manutencaoService, type ManutencaoAPI } from '@/shared/services/manuten
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
 
-export const GRID_START_HOUR = 6
-export const GRID_END_HOUR = 22
+export const GRID_START_HOUR = 0
+export const GRID_END_HOUR = 23
 export const ROW_HEIGHT_PX = 48
 
 export interface DiaDaSemana {

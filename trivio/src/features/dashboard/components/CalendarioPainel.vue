@@ -33,7 +33,7 @@ const MONTH_NAMES = [
   'jul', 'ago', 'set', 'out', 'nov', 'dez',
 ]
 
-const DAY_HEADERS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
+const DAY_HEADERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 
 const monthLabel = computed(() => `${MONTH_NAMES[viewMonth.value]} ${viewYear.value}`)
 
@@ -57,8 +57,7 @@ function nextMonth() {
 
 const calendarCells = computed<{day: number, date: Date, currentMonth: boolean}[]>(() => {
   const firstDay = new Date(viewYear.value, viewMonth.value, 1)
-  const jsDay = firstDay.getDay()
-  const offset = jsDay === 0 ? 6 : jsDay - 1
+  const offset = firstDay.getDay()
 
   const daysInMonth = new Date(viewYear.value, viewMonth.value + 1, 0).getDate()
   const daysInPrevMonth = new Date(viewYear.value, viewMonth.value, 0).getDate()
