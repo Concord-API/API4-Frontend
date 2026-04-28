@@ -205,7 +205,7 @@ const statusModel = computed<string | number | null>({
 
 <template>
   <Dialog :open="open" @update:open="handleOpenChange">
-    <DialogContent class="cm-dialog">
+    <DialogContent :show-close-button="false" class="cm-dialog">
 
       <!-- ═══════ DETALHE ═══════ -->
       <template v-if="internalMode === 'detalhe'">
@@ -382,6 +382,7 @@ const statusModel = computed<string | number | null>({
 .cm-dialog {
   max-width: 680px !important;
   padding: 0 !important;
+  gap: 0 !important;
   overflow: hidden;
 }
 
