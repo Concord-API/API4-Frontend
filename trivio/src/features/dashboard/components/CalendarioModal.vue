@@ -295,7 +295,7 @@ function handleOpenChange(val: boolean) {
 
 function formatDate(dateStr: string): string {
   const [y = '', m = '', d = ''] = dateStr.split('-')
-  return `${d}/${m}/${y.slice(2)}`
+  return `${d}/${m}/${y}`
 }
 
 // NdCombobox v-model needs string | number | null — wrap with typed computed
