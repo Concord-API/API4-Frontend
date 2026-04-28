@@ -9,7 +9,7 @@ import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 import type { TecnicoAPI } from '@/shared/services/tecnicoService'
 
 const {
-  monday,
+  sunday,
   diasDaSemana,
   semanaLabel,
   tecnicoFiltro,
@@ -85,7 +85,7 @@ onMounted(() => {
         @ir-para-hoje="navegarSemana(0)"
       />
       <CalendarioPainel
-        :monday="monday"
+        :sunday="sunday"
         :tecnicos="tecnicos"
         :tecnico-filtro="tecnicoFiltro"
         @update:tecnico-filtro="onTecnicoFiltro"

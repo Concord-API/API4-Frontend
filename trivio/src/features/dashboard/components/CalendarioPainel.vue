@@ -6,7 +6,7 @@ import type { ComboboxOption } from '@/shared/components/ui/NdCombobox.vue'
 import type { TecnicoAPI } from '@/shared/services/tecnicoService'
 
 const props = defineProps<{
-  monday: Date
+  sunday: Date
   tecnicos: TecnicoAPI[]
   tecnicoFiltro: TecnicoAPI | null
 }>()
@@ -20,10 +20,10 @@ const viewMonth = ref(0)
 const viewYear = ref(0)
 
 watch(
-  () => props.monday,
-  (newMonday) => {
-    viewMonth.value = newMonday.getMonth()
-    viewYear.value = newMonday.getFullYear()
+  () => props.sunday,
+  (newSunday) => {
+    viewMonth.value = newSunday.getMonth()
+    viewYear.value = newSunday.getFullYear()
   },
   { immediate: true },
 )
@@ -102,7 +102,7 @@ const calendarWeeks = computed(() => {
 })
 
 const selectedWeekRange = computed(() => {
-  const start = new Date(props.monday)
+  const start = new Date(props.sunday)
   start.setHours(0, 0, 0, 0)
   const end = new Date(start)
   end.setDate(end.getDate() + 6)
@@ -110,8 +110,8 @@ const selectedWeekRange = computed(() => {
   return { start, end }
 })
 
-function isInSelectedWeek(cell: {date: Date}): boolean {
-  return cell.date >= selectedWeekRange.value.start && cell.date <= selectedWeekRange.value.end
+function isWeekActive(week: {date: Date}[]) {
+  return week[0].date.getTime() === selectedWeekRange.value.start.getTime()
 }
 
 function onDayClick(cell: {date: Date}) {
@@ -174,16 +174,14 @@ const legendItems = [
             v-for="(week, wIdx) in calendarWeeks"
             :key="wIdx"
             class="cp-week-row"
+            :class="{ 'cp-week-row--active': isWeekActive(week) }"
             @click="onDayClick(week[0])"
           >
             <div
               v-for="(cell, idx) in week"
               :key="`c-${idx}`"
               class="cp-day-cell"
-              :class="{ 
-                'cp-day-cell--active': isInSelectedWeek(cell),
-                'cp-day-cell--other-month': !cell.currentMonth
-              }"
+              :class="{ 'cp-day-cell--other-month': !cell.currentMonth }"
             >
               {{ cell.day }}
             </div>
@@ -323,6 +321,17 @@ const legendItems = [
   color: var(--nd-text-primary);
 }
 
+.cp-week-row--active {
+  background: color-mix(in srgb, var(--nd-action) 15%, transparent);
+}
+.cp-week-row--active .cp-day-cell {
+  color: var(--nd-action);
+  font-weight: 600;
+}
+.cp-week-row--active:hover {
+  background: color-mix(in srgb, var(--nd-action) 22%, transparent);
+}
+
 .cp-day-cell {
   width: 100%;
   height: 24px;
@@ -334,16 +343,6 @@ const legendItems = [
   font-weight: 400;
   color: var(--nd-text-secondary);
   border-radius: 2px;
-}
-
-.cp-day-cell--active {
-  background: color-mix(in srgb, var(--nd-action) 15%, transparent);
-  color: var(--nd-action);
-  font-weight: 600;
-}
-.cp-day-cell--active:hover {
-  background: color-mix(in srgb, var(--nd-action) 22%, transparent);
-  color: var(--nd-action);
 }
 
 .cp-day-cell--other-month {
