@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import {
   Dialog,
@@ -50,12 +50,6 @@ watch(() => props.mode, (newMode) => {
   internalMode.value = newMode
 })
 
-watch(() => props.open, (isOpen) => {
-  if (!isOpen) {
-    internalMode.value = props.mode
-  }
-})
-
 // ── Data loading ──────────────────────────────────────────────────────────────
 
 const contratos = ref<ContratoAPI[]>([])
@@ -71,7 +65,7 @@ async function carregarDados() {
   }
 }
 
-onMounted(carregarDados)
+// Load on first open (not onMounted) so data is always fresh
 
 // ── Dropdown options ──────────────────────────────────────────────────────────
 
@@ -155,14 +149,16 @@ function formFromContext(ctx: CriacaoContext): FormState {
 
 const form = ref<FormState>(defaultForm())
 
-// Re-initialize form whenever modal opens or mode/source data changes
+// Re-initialize form whenever modal opens/closes; always clear submitError
 watch(
   () => props.open,
   (isOpen) => {
+    submitError.value = null  // clear on every transition (open or close)
     if (!isOpen) {
-      submitError.value = null
+      internalMode.value = props.mode  // reset internal mode on close
       return
     }
+    void carregarDados()  // reload dropdowns on each open
     if (props.mode === 'edicao' && props.manutencao) {
       form.value = formFromManutencao(props.manutencao)
     } else if (props.mode === 'criacao' && props.criacaoContext) {
@@ -232,16 +228,19 @@ async function submitForm() {
 
 // ── Status display helpers ────────────────────────────────────────────────────
 
-const hoje = new Date()
-hoje.setHours(0, 0, 0, 0)
+function isPast(dateStr: string): boolean {
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  const d = new Date(dateStr)
+  d.setHours(0, 0, 0, 0)
+  return d < hoje
+}
 
 const statusColor = computed((): string => {
   if (!props.manutencao) return 'var(--nd-action)'
   const s = props.manutencao.status
   if (s === 'SCHEDULED') {
-    const d = new Date(props.manutencao.date)
-    d.setHours(0, 0, 0, 0)
-    if (d < hoje) return 'var(--nd-accent)'
+    if (isPast(props.manutencao.date)) return 'var(--nd-accent)'
     return 'var(--nd-action)'
   }
   if (s === 'STARTED') return 'var(--nd-warning)'
@@ -252,9 +251,7 @@ const statusLabel = computed((): string => {
   if (!props.manutencao) return ''
   const s = props.manutencao.status
   if (s === 'SCHEDULED') {
-    const d = new Date(props.manutencao.date)
-    d.setHours(0, 0, 0, 0)
-    if (d < hoje) return 'ATRASADA'
+    if (isPast(props.manutencao.date)) return 'ATRASADA'
     return 'AGENDADA'
   }
   if (s === 'STARTED') return 'EM ANDAMENTO'
