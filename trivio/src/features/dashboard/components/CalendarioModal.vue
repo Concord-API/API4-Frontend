@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Clock, Tag, Calendar, Users, Building2 } from 'lucide-vue-next'
+import { Clock, Tag, Calendar, Users, Building2, Edit2 } from 'lucide-vue-next'
 import {
   Dialog,
   DialogClose,
@@ -220,10 +220,9 @@ const statusModel = computed<string | number | null>({
             <div class="cm-top-bar">
               <span class="cm-tag" :style="{ color: statusColor, borderColor: statusColor }">{{ statusLabel }}</span>
               <div class="cm-top-actions">
-                <button type="button" class="nd-btn-secondary cm-btn-sm" @click="switchToEdicao">Editar</button>
-                <DialogClose as-child>
-                  <button type="button" class="nd-btn-secondary cm-btn-sm">Fechar</button>
-                </DialogClose>
+                <button type="button" class="cm-icon-btn" @click="switchToEdicao" title="Editar">
+                  <Edit2 :size="14" />
+                </button>
               </div>
             </div>
 
@@ -421,6 +420,25 @@ const statusModel = computed<string | number | null>({
 .cm-btn-sm {
   padding: 5px 12px !important;
   font-size: 11px !important;
+}
+
+.cm-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--nd-text-secondary);
+  transition: all 150ms ease-out;
+}
+
+.cm-icon-btn:hover {
+  background: var(--nd-surface-raised);
+  color: var(--nd-text-primary);
+  border-color: var(--nd-border);
 }
 
 .cm-tag {
