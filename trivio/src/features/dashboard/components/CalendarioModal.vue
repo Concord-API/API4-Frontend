@@ -381,9 +381,12 @@ const statusModel = computed<string | number | null>({
 <style scoped>
 .cm-dialog {
   max-width: 680px !important;
+  width: 680px !important;
   padding: 0 !important;
   gap: 0 !important;
-  overflow: hidden;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .cm-layout {
