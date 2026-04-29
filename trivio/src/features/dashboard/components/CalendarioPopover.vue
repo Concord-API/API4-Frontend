@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Maximize2, Copy, Clock, Tag, Users } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
+import { Badge } from '@/shared/components/ui/badge'
 
 const props = defineProps<{
   manutencao: ManutencaoAPI
@@ -135,11 +136,17 @@ function onExpand() {
           <div
             v-for="emp in manutencao.employees.slice(0, 4)"
             :key="emp.employeeId"
-            class="cpv-avatar"
-            :style="{ background: hashColor(emp.employeeId) }"
-            :title="emp.name"
+            class="cpv-avatar-wrapper group relative flex"
           >
-            {{ emp.name.charAt(0).toUpperCase() }}
+            <div
+              class="cpv-avatar"
+              :style="{ background: hashColor(emp.employeeId) }"
+            >
+              {{ emp.name.charAt(0).toUpperCase() }}
+            </div>
+            <Badge variant="secondary" class="absolute bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-md">
+              {{ emp.name }}
+            </Badge>
           </div>
           <span v-if="manutencao.employees.length > 4" class="cpv-avatar-more">
             +{{ manutencao.employees.length - 4 }}
@@ -265,6 +272,13 @@ function onExpand() {
   gap: 4px;
 }
 
+.cpv-avatar-wrapper {
+  margin-left: -2px;
+}
+.cpv-avatar-wrapper:first-of-type {
+  margin-left: 0;
+}
+
 .cpv-avatar {
   width: 20px;
   height: 20px;
@@ -276,10 +290,7 @@ function onExpand() {
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
-  margin-left: -2px;
-}
-.cpv-avatar:first-of-type {
-  margin-left: 0;
+  border: 1px solid var(--nd-surface);
 }
 
 .cpv-avatar-more {

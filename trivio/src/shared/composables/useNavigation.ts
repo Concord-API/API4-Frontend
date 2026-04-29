@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useAuth } from './useAuth'
 import type { RouteLocationRaw } from 'vue-router'
-import { Home, Wrench, Briefcase, Users, Calendar, MapPin, History } from 'lucide-vue-next'
+import { Home, Wrench, Briefcase, Users, Calendar, MapPin, History, Package } from 'lucide-vue-next'
 
 export interface NavigationItem {
   id: string
@@ -30,6 +30,7 @@ export function useNavigation() {
             { id: '2', title: 'Manutenção', icon: Wrench, route: { name: 'dashboard-manutencoes' } },
             { id: '3', title: 'Contratos', icon: Briefcase, route: { name: 'dashboard-carteira' } },
             { id: '4', title: 'Técnico', icon: Users, route: { name: 'dashboard-tecnicos' } },
+            { id: '5', title: 'Equipamentos', icon: Package, route: { name: 'dashboard-equipamentos' } },
           ]
         }
       ]
