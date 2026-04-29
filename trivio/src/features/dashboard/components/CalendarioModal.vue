@@ -17,6 +17,7 @@ import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
+import { useAuth } from '@/shared/composables/useAuth'
 import { useNominatim } from '@/shared/composables/useNominatim'
 
 const { reverseGeocode } = useNominatim()
@@ -41,6 +42,9 @@ const emit = defineEmits<{
   'update:mode': [value: ModalMode]
   saved: []
 }>()
+
+const { currentUser } = useAuth()
+const isTechnician = computed(() => currentUser.value?.role === 'technician')
 
 const internalMode = ref<ModalMode>(props.mode)
 watch(() => props.mode, (v) => { internalMode.value = v })
@@ -246,7 +250,7 @@ const statusModel = computed<string | number | null>({
             <div class="cm-top-bar">
               <span class="cm-tag" :style="{ color: statusColor, borderColor: statusColor }">{{ statusLabel }}</span>
               <div class="cm-top-actions">
-                <button type="button" class="cm-icon-btn" @click="switchToEdicao" title="Editar">
+                <button v-if="!isTechnician" type="button" class="cm-icon-btn" @click="switchToEdicao" title="Editar">
                   <Edit2 :size="14" />
                 </button>
               </div>
