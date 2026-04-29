@@ -11,12 +11,14 @@ const props = defineProps<{
   leftPercent: number
   widthPercent: number
   isTechnician?: boolean
+  previewEndTime?: string
 }>()
 
 const emit = defineEmits<{
   click: [manutencao: ManutencaoAPI]
   expand: [manutencao: ManutencaoAPI]
   'drag-start': [event: DragEvent, manutencao: ManutencaoAPI]
+  'drag-end': []
   'resize-start': [event: MouseEvent, manutencao: ManutencaoAPI]
 }>()
 
@@ -56,9 +58,13 @@ const label = computed(() =>
   props.manutencao.contract?.client?.name ?? props.manutencao.type
 )
 
+const isResizing = computed(() => props.previewEndTime != null)
+
 const horario = computed(() => {
-  if (!props.manutencao.startTime || !props.manutencao.endTime) return null
-  return `${props.manutencao.startTime} – ${props.manutencao.endTime}`
+  if (!props.manutencao.startTime) return null
+  const end = props.previewEndTime ?? props.manutencao.endTime
+  if (!end) return null
+  return `${props.manutencao.startTime} – ${end}`
 })
 
 function hashColor(id: number): string {
@@ -93,10 +99,12 @@ function onPopoverExpand(m: ManutencaoAPI) {
     <PopoverTrigger as-child>
       <div
         class="cal-card"
+        :class="{ 'cal-card--resizing': isResizing }"
         :style="[cardStyle, { '--card-color': statusColor }]"
         :title="statusLabel"
-        :draggable="!isTechnician"
+        :draggable="!isTechnician && !isResizing"
         @dragstart.stop="!isTechnician && emit('drag-start', $event, manutencao)"
+        @dragend="emit('drag-end')"
         @click.stop
         @dblclick.stop="onDoubleClick"
       >
@@ -154,6 +162,11 @@ function onPopoverExpand(m: ManutencaoAPI) {
   box-sizing: border-box;
 }
 .cal-card:hover { filter: brightness(1.15); }
+.cal-card--resizing {
+  outline: 1.5px solid var(--card-color);
+  filter: brightness(1.1);
+  user-select: none;
+}
 
 .cal-resize-handle {
   position: absolute;
@@ -165,8 +178,9 @@ function onPopoverExpand(m: ManutencaoAPI) {
   border-radius: 0 0 4px 4px;
   transition: background 120ms ease-out;
 }
-.cal-resize-handle:hover {
-  background: color-mix(in srgb, var(--card-color) 40%, transparent);
+.cal-resize-handle:hover,
+.cal-card--resizing .cal-resize-handle {
+  background: color-mix(in srgb, var(--card-color) 55%, transparent);
 }
 
 .cal-card-label {

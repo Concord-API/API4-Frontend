@@ -2,17 +2,21 @@
 import { computed, ref } from 'vue'
 import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
 import type { DiaDaSemana } from '@/features/dashboard/composables/useCalendario'
-import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
+import { Popover, PopoverContent, PopoverAnchor } from '@/shared/components/ui/popover'
 import CalendarioPopover from './CalendarioPopover.vue'
 
 const props = defineProps<{
   dias: DiaDaSemana[]
   manutencoes: ManutencaoAPI[]
   scrollbarWidth: number
+  isTechnician?: boolean
 }>()
 
 const emit = defineEmits<{
   'card-expand': [manutencao: ManutencaoAPI]
+  'drag-start': [event: DragEvent, manutencao: ManutencaoAPI]
+  'drag-end': []
+  'banner-drop': [id: number, dateStr: string]
 }>()
 
 function statusColor(m: ManutencaoAPI): string {
@@ -33,33 +37,62 @@ const porDia = computed(() =>
   )
 )
 
-const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
+const openPopovers = ref<Record<number, boolean>>({})
 
 function onChipExpand(m: ManutencaoAPI) {
   emit('card-expand', m)
 }
+
+function onChipDragStart(e: DragEvent, m: ManutencaoAPI) {
+  if (props.isTechnician) return
+  openPopovers.value[m.id] = false
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(m.id))
+  }
+  emit('drag-start', e, m)
+}
+
+function onColDrop(e: DragEvent, dateStr: string) {
+  if (props.isTechnician) return
+  e.preventDefault()
+  const id = Number(e.dataTransfer?.getData('text/plain'))
+  if (!id) return
+  emit('banner-drop', id, dateStr)
+}
 </script>
 
 <template>
-  <div v-if="hasAny" class="cal-banner">
+  <div class="cal-banner">
     <div class="cal-banner-label">sem horário</div>
     <div class="cal-banner-cols">
       <div
         v-for="(ms, i) in porDia"
         :key="i"
         class="cal-banner-col"
+        @dragover.prevent
+        @drop="onColDrop($event, dias[i]!.dateStr)"
       >
-        <Popover v-for="m in ms" :key="m.id">
-          <PopoverTrigger as-child>
-            <button
+        <Popover
+          v-for="m in ms"
+          :key="m.id"
+          :open="!!openPopovers[m.id]"
+          @update:open="(v) => (openPopovers[m.id] = v)"
+        >
+          <PopoverAnchor as-child>
+            <div
               class="cal-banner-chip"
               :style="{ '--chip-color': statusColor(m) }"
               :title="m.contract?.client?.name ?? m.type"
+              :draggable="!isTechnician"
+              @dragstart="onChipDragStart($event, m)"
+              @dragend="emit('drag-end')"
+              @click.stop="openPopovers[m.id] = !openPopovers[m.id]"
               @dblclick.stop="onChipExpand(m)"
             >
               {{ m.contract?.client?.name ?? m.type }}
-            </button>
-          </PopoverTrigger>
+            </div>
+          </PopoverAnchor>
           <PopoverContent
             side="bottom"
             :side-offset="4"
@@ -125,21 +158,23 @@ function onChipExpand(m: ManutencaoAPI) {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-height: 32px;
 }
 .cal-banner-col:last-child { border-right: none; }
 
 .cal-banner-chip {
-  all: unset;
-  display: block;
+  display: flex;
+  align-items: center;
   background: color-mix(in srgb, var(--chip-color) 13%, transparent);
   border-left: 2px solid var(--chip-color);
   color: var(--chip-color);
   font-family: 'Montserrat', sans-serif;
   font-size: 9px;
   font-weight: 600;
-  padding: 2px 4px;
+  padding: 0 4px;
+  height: 24px;
   border-radius: 0 2px 2px 0;
-  cursor: pointer;
+  cursor: grab;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -147,6 +182,7 @@ function onChipExpand(m: ManutencaoAPI) {
   transition: filter 100ms ease-out;
   box-sizing: border-box;
 }
+.cal-banner-chip:active { cursor: grabbing; }
 .cal-banner-chip:hover { filter: brightness(1.15); }
 
 
