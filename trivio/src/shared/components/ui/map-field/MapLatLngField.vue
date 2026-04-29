@@ -64,7 +64,7 @@ function onLngInput(e: Event) {
       title="Selecionar no mapa"
       @click="pickerOpen = true"
     >
-      <MapPin :size="14" />
+      <MapPin :size="16" />
     </button>
   </div>
 
@@ -91,5 +91,11 @@ function onLngInput(e: Event) {
 .mlf-map-btn {
   margin-bottom: 1px;
   flex-shrink: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--nd-border-visible) !important;
+  background: var(--nd-surface-raised) !important;
+  color: var(--nd-text-primary) !important;
+  border-radius: 6px;
 }
+
 </style>

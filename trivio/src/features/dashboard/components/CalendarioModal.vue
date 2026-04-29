@@ -352,7 +352,6 @@ const statusModel = computed<string | number | null>({
                     v-model:model-lat="form.latitude"
                     v-model:model-lng="form.longitude"
                   />
-                  <span class="nd-field-hint">Opcional — usa a localização do contrato se vazio</span>
                 </div>
               </div>
 

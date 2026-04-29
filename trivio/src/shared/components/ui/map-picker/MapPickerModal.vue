@@ -99,7 +99,7 @@ function cancel() {
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="mp-content" :show-close-button="false">
+    <DialogContent class="mp-content !w-[95vw] !max-w-[1100px] !max-h-[90dvh]" :show-close-button="false">
       <DialogHeader class="sr-only">
         <DialogTitle>Selecionar localização</DialogTitle>
         <DialogDescription>Busque um endereço ou clique no mapa para selecionar</DialogDescription>
@@ -157,8 +157,9 @@ function cancel() {
 
 <style scoped>
 .mp-content {
-  width: 95vw;
-  max-width: 700px;
+  width: min(95vw, 1100px) !important;
+  max-width: min(95vw, 1100px) !important;
+  max-height: 90dvh !important;
   padding: 0;
   gap: 0;
   overflow: hidden;
@@ -216,22 +217,25 @@ function cancel() {
 
 .mp-map-wrap {
   flex: 1;
+  min-height: 0;
   position: relative;
 }
 
 .mp-map {
   width: 100%;
-  height: 380px;
+  height: clamp(200px, 50dvh, 500px);
 }
 
 .mp-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   padding: 12px 16px;
   border-top: 1px solid var(--nd-border);
   background: var(--nd-surface-raised);
+  flex-shrink: 0;
 }
 
 .mp-coords {

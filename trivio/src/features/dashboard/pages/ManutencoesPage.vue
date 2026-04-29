@@ -234,7 +234,6 @@ onMounted(carregarDados)
                 v-model:model-lat="form.latitude"
                 v-model:model-lng="form.longitude"
               />
-              <span class="nd-field-hint">Opcional — usa a localização do contrato se vazio</span>
             </div>
             <div class="nd-field col-span-full">
               <label class="nd-field-label">TÉCNICOS</label>
