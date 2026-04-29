@@ -113,6 +113,7 @@ onMounted(() => {
           @cell-click="abrirCriacao"
           @nova-manutencao-ctx="abrirCriacao"
           @ir-para-hoje="navegarSemana(0)"
+          @saved="onSaved"
         />
         <CalendarioPainel
           v-if="isDesktop"
