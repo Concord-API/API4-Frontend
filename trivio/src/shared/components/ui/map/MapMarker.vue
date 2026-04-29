@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { VMarker } from '@geoql/v-maplibre'
-import type { LngLatLike, MarkerOptions } from 'maplibre-gl'
+import { inject, onBeforeUnmount, watch } from 'vue'
+import { Marker, type LngLatLike, type MarkerOptions } from 'maplibre-gl'
+import { MAP_INJECTION_KEY } from './mapInjectionKey'
 
 export interface MapMarkerProps {
   coordinates: LngLatLike
@@ -16,21 +17,43 @@ const props = withDefaults(defineProps<MapMarkerProps>(), {
   scale: 1,
 })
 
-const markerOptions = computed<MarkerOptions>(() => ({
-  color: props.color,
-  draggable: props.draggable,
-  anchor: props.anchor,
-  offset: props.offset as unknown as MarkerOptions['offset'],
-  scale: props.scale,
-}))
-</script>
+const mapRef = inject(MAP_INJECTION_KEY)
+let marker: Marker | null = null
 
-<script lang="ts">
-import { computed } from 'vue'
+function buildMarker() {
+  if (!mapRef?.value || marker) return
+  marker = new Marker({
+    color: props.color,
+    draggable: props.draggable,
+    anchor: props.anchor,
+    offset: props.offset as unknown as MarkerOptions['offset'],
+    scale: props.scale,
+  })
+    .setLngLat(props.coordinates)
+    .addTo(mapRef.value)
+}
+
+watch(
+  () => mapRef?.value,
+  (m) => {
+    if (m) buildMarker()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.coordinates,
+  (c) => {
+    marker?.setLngLat(c)
+  },
+)
+
+onBeforeUnmount(() => {
+  marker?.remove()
+  marker = null
+})
 </script>
 
 <template>
-  <VMarker :coordinates="props.coordinates" :options="markerOptions">
-    <slot />
-  </VMarker>
+  <div style="display: none" />
 </template>

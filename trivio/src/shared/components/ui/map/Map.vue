@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { VMap } from '@geoql/v-maplibre'
 import { useColorMode } from '@vueuse/core'
-import { computed, type StyleValue } from 'vue'
-import type { MapOptions, StyleSpecification } from 'maplibre-gl'
+import { computed, onBeforeUnmount, onMounted, provide, ref, shallowRef, watch, type StyleValue } from 'vue'
+import maplibregl, { Map as MaplibreMap, type MapMouseEvent, type StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { MAP_INJECTION_KEY } from './mapInjectionKey'
 
 export interface MapProps {
   center?: [number, number]
@@ -16,7 +16,6 @@ export interface MapProps {
     light?: string | StyleSpecification
     dark?: string | StyleSpecification
   }
-  options?: Partial<Omit<MapOptions, 'container'>>
   class?: string
   style?: StyleValue
 }
@@ -29,11 +28,17 @@ const props = withDefaults(defineProps<MapProps>(), {
 })
 
 const emit = defineEmits<{
-  load: [map: maplibregl.Map]
-  click: [e: maplibregl.MapMouseEvent]
-  move: [e: maplibregl.MapMouseEvent]
-  zoom: [e: maplibregl.MapMouseEvent]
+  load: [map: MaplibreMap]
+  click: [e: MapMouseEvent]
+  move: [e: MapMouseEvent]
+  zoom: [e: MapMouseEvent]
 }>()
+
+const containerEl = ref<HTMLDivElement | null>(null)
+const mapRef = shallowRef<MaplibreMap | null>(null)
+const mapForChildren = shallowRef<MaplibreMap | null>(null)
+
+provide(MAP_INJECTION_KEY, mapForChildren)
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -52,29 +57,61 @@ const mapStyle = computed(() => {
   return isDark.value ? defaultStyles.dark : defaultStyles.light
 })
 
-const mapOptions = computed(() => ({
-  style: mapStyle.value,
-  center: props.center,
-  zoom: props.zoom,
-  bearing: props.bearing,
-  pitch: props.pitch,
-  minZoom: props.minZoom,
-  maxZoom: props.maxZoom,
-  container: '',
-  ...props.options,
-}) as MapOptions)
+onMounted(() => {
+  if (!containerEl.value) return
+  const map = new MaplibreMap({
+    container: containerEl.value,
+    style: mapStyle.value,
+    center: props.center,
+    zoom: props.zoom,
+    bearing: props.bearing,
+    pitch: props.pitch,
+    minZoom: props.minZoom,
+    maxZoom: props.maxZoom,
+  })
+  mapRef.value = map
+  map.on('load', () => {
+    mapForChildren.value = map
+    emit('load', map)
+  })
+  map.on('click', (e) => emit('click', e))
+  map.on('move', (e) => emit('move', e as unknown as MapMouseEvent))
+  map.on('zoom', (e) => emit('zoom', e as unknown as MapMouseEvent))
+})
+
+onBeforeUnmount(() => {
+  mapForChildren.value = null
+  mapRef.value?.remove()
+  mapRef.value = null
+})
+
+watch(mapStyle, (s) => {
+  mapRef.value?.setStyle(s)
+})
+
+watch(
+  () => props.center,
+  (c) => {
+    mapRef.value?.setCenter(c)
+  },
+)
+
+watch(
+  () => props.zoom,
+  (z) => {
+    mapRef.value?.setZoom(z)
+  },
+)
+
+void maplibregl
 </script>
 
 <template>
-  <VMap
-    :options="mapOptions"
+  <div
+    ref="containerEl"
     :class="['h-full w-full', props.class]"
     :style="props.style"
-    @loaded="(map: maplibregl.Map) => emit('load', map)"
-    @click="(e: maplibregl.MapMouseEvent) => emit('click', e)"
-    @move="(e: maplibregl.MapMouseEvent) => emit('move', e)"
-    @zoom="(e: maplibregl.MapMouseEvent) => emit('zoom', e)"
   >
     <slot />
-  </VMap>
+  </div>
 </template>

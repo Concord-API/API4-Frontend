@@ -17,19 +17,4 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
-  build: {
-    rollupOptions: {
-      external: [
-        '@luma.gl/engine',
-        '@deck.gl/layers',
-        '@deck.gl/aggregation-layers',
-        '@deck.gl/geo-layers',
-        '@deck.gl/mesh-layers',
-        '@deck.gl/mapbox',
-        '@developmentseed/geotiff',
-        '@developmentseed/deck.gl-geotiff',
-        'pmtiles',
-      ],
-    },
-  },
 })
