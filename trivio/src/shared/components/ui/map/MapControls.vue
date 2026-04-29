@@ -1,0 +1,41 @@
+<script setup lang="ts">
+import {
+  VControlNavigation,
+  VControlScale,
+  VControlGeolocate,
+  VControlFullscreen,
+} from '@geoql/v-maplibre'
+
+export interface MapControlsProps {
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  showNavigation?: boolean
+  showScale?: boolean
+  showGeolocate?: boolean
+  showFullscreen?: boolean
+}
+
+const props = withDefaults(defineProps<MapControlsProps>(), {
+  position: 'bottom-right',
+  showNavigation: true,
+  showScale: false,
+  showGeolocate: false,
+  showFullscreen: false,
+})
+
+const emit = defineEmits<{
+  geolocate: [position: GeolocationPosition]
+  geolocateError: [error: GeolocationPositionError]
+}>()
+</script>
+
+<template>
+  <VControlNavigation v-if="props.showNavigation" :position="props.position" />
+  <VControlScale v-if="props.showScale" :position="props.position" />
+  <VControlGeolocate
+    v-if="props.showGeolocate"
+    :position="props.position"
+    @geolocate="(e: GeolocationPosition) => emit('geolocate', e)"
+    @error="(e: GeolocationPositionError) => emit('geolocateError', e)"
+  />
+  <VControlFullscreen v-if="props.showFullscreen" :position="props.position" />
+</template>
