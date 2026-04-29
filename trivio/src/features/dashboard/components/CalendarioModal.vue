@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Clock, Tag, Calendar, Users, Building2, Edit2 } from 'lucide-vue-next'
+import { Clock, Tag, Calendar, Users, Building2, Edit2, MapPin } from 'lucide-vue-next'
 import {
   Dialog,
   DialogClose,
@@ -17,6 +17,9 @@ import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
+import { useNominatim } from '@/shared/composables/useNominatim'
+
+const { reverseGeocode } = useNominatim()
 
 export type ModalMode = 'detalhe' | 'edicao' | 'criacao'
 
@@ -115,6 +118,31 @@ watch(() => props.open, (isOpen) => {
 
 watch(internalMode, (mode) => {
   if (mode === 'edicao' && props.manutencao) { form.value = formFromManutencao(props.manutencao); submitError.value = null }
+})
+
+const enderecoDetalhe = ref<string | null>(null)
+const enderecoLoading = ref(false)
+
+async function resolverEnderecoDetalhe() {
+  if (!props.manutencao || props.manutencao.latitude == null || props.manutencao.longitude == null) {
+    enderecoDetalhe.value = null
+    return
+  }
+  enderecoLoading.value = true
+  enderecoDetalhe.value = await reverseGeocode(props.manutencao.latitude, props.manutencao.longitude)
+  enderecoLoading.value = false
+}
+
+watch(() => props.manutencao, () => {
+  if (internalMode.value === 'detalhe') {
+    void resolverEnderecoDetalhe()
+  }
+}, { immediate: true })
+
+watch(internalMode, (mode) => {
+  if (mode === 'detalhe') {
+    void resolverEnderecoDetalhe()
+  }
 })
 
 function toIso(dateStr: string, timeLocal: string): string | undefined {
@@ -263,6 +291,21 @@ const statusModel = computed<string | number | null>({
                 <div class="cm-info-content">
                   <span class="cm-info-label">Contrato</span>
                   <span class="cm-info-value">#{{ String(manutencao.contract.id).padStart(3, '0') }}</span>
+                </div>
+              </div>
+
+              <div v-if="enderecoLoading" class="cm-info-item">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value cpv-info-text--dim">Carregando endereço...</span>
+                </div>
+              </div>
+              <div v-else-if="enderecoDetalhe" class="cm-info-item cm-info-item--full">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value">{{ enderecoDetalhe }}</span>
                 </div>
               </div>
             </div>
@@ -493,6 +536,16 @@ const statusModel = computed<string | number | null>({
   display: flex;
   align-items: flex-start;
   gap: 10px;
+}
+
+.cm-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.cpv-info-text--dim {
+  color: var(--nd-text-disabled);
+  font-style: italic;
+  font-size: 13px;
 }
 
 .cm-info-icon {
