@@ -152,7 +152,7 @@ function isToday(dateStr: string): boolean {
             <span class="cal-day-num">{{ dia.date.getDate() }}</span>
           </div>
         </div>
-        <div class="cal-scrollbar-spacer" :style="{ width: `${scrollbarWidth}px` }" />
+
       </div>
 
       <CalendarioContextMenu
@@ -283,20 +283,13 @@ function isToday(dateStr: string): boolean {
   color: var(--nd-text-disabled);
   text-align: center;
 }
-:root.dark .cal-corner,
-.dark .cal-corner {
-  background: var(--nd-surface);
-}
+
 .cal-days-wrap {
   flex: 1;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
-.cal-scrollbar-spacer {
-  flex-shrink: 0;
-  border-left: 1px solid var(--nd-border);
-  background: inherit;
-}
+
 .cal-day-header {
   flex: 1;
   display: flex;
@@ -349,7 +342,7 @@ function isToday(dateStr: string): boolean {
   position: sticky;
   left: 0;
   z-index: 10;
-  background: #fff;
+  background: var(--nd-surface);
 }
 
 :root.dark .cal-hour-labels,
