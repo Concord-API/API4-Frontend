@@ -98,8 +98,20 @@ function onChipExpand(m: ManutencaoAPI) {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  text-align: right;
   padding-right: 6px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   border-right: 1px solid var(--nd-border);
+  box-sizing: border-box;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: #fff;
+}
+:root.dark .cal-banner-label,
+.dark .cal-banner-label {
+  background: var(--nd-bg);
 }
 
 .cal-banner-cols {
