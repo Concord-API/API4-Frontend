@@ -308,6 +308,20 @@ const statusModel = computed<string | number | null>({
                   <span class="cm-info-value">{{ enderecoDetalhe }}</span>
                 </div>
               </div>
+              <div v-else-if="manutencao.latitude != null && manutencao.longitude != null" class="cm-info-item cm-info-item--full">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value">{{ manutencao.latitude.toFixed(6) }}, {{ manutencao.longitude.toFixed(6) }}</span>
+                </div>
+              </div>
+              <div v-else class="cm-info-item">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value cpv-info-text--dim">Sem endereço</span>
+                </div>
+              </div>
             </div>
           </div>
 

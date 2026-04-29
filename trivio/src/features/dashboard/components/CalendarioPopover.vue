@@ -148,9 +148,17 @@ watch(() => props.manutencao, () => { void resolverEndereco() }, { immediate: tr
         <MapPin :size="12" class="cpv-info-icon" />
         <span class="cpv-info-text cpv-info-text--dim">Carregando endereço...</span>
       </div>
-      <div v-else-if="endereco" class="cpv-info-row">
+      <div v-else-if="endereco" class="cpv-info-row" :title="endereco">
         <MapPin :size="12" class="cpv-info-icon" />
         <span class="cpv-info-text cpv-address">{{ endereco }}</span>
+      </div>
+      <div v-else-if="manutencao.latitude != null && manutencao.longitude != null" class="cpv-info-row">
+        <MapPin :size="12" class="cpv-info-icon" />
+        <span class="cpv-info-text cpv-address">{{ manutencao.latitude.toFixed(6) }}, {{ manutencao.longitude.toFixed(6) }}</span>
+      </div>
+      <div v-else class="cpv-info-row">
+        <MapPin :size="12" class="cpv-info-icon" />
+        <span class="cpv-info-text cpv-info-text--dim">Sem endereço</span>
       </div>
     </div>
 
