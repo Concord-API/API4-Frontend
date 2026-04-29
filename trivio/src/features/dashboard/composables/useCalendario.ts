@@ -77,7 +77,8 @@ export function useCalendario() {
     try {
       const startDate = toDateStr(sunday.value)
       const endDate = toDateStr(diasDaSemana.value[6]!.date)
-      manutencoesDaSemana.value = await manutencaoService.listarPorSemana(startDate, endDate)
+      const resultado = await manutencaoService.listarPorSemana(startDate, endDate)
+      manutencoesDaSemana.value = resultado
     } catch (err) {
       error.value = getApiErrorMessage(err, 'Não foi possível carregar a agenda.')
     } finally {
