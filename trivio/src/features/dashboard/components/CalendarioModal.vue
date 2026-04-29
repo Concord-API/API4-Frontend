@@ -13,6 +13,7 @@ import {
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
+import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
@@ -76,10 +77,12 @@ interface FormState {
   endTimeLocal: string
   status: ManutencaoStatus
   employeeIds: number[]
+  latitude: number | null
+  longitude: number | null
 }
 
 function defaultForm(): FormState {
-  return { contractId: null, date: '', type: 'PREVENTIVA', startTimeLocal: '', endTimeLocal: '', status: 'SCHEDULED', employeeIds: [] }
+  return { contractId: null, date: '', type: 'PREVENTIVA', startTimeLocal: '', endTimeLocal: '', status: 'SCHEDULED', employeeIds: [], latitude: null, longitude: null }
 }
 
 function padHour(h: number): string { return `${String(h).padStart(2, '0')}:00` }
@@ -90,11 +93,11 @@ function formFromManutencao(m: ManutencaoAPI): FormState {
     const d = new Date(iso)
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
-  return { contractId: m.contract.id, date: m.date, type: m.type, startTimeLocal: toLocal(m.startTime), endTimeLocal: toLocal(m.endTime), status: m.status, employeeIds: m.employees.map(e => e.employeeId) }
+  return { contractId: m.contract.id, date: m.date, type: m.type, startTimeLocal: toLocal(m.startTime), endTimeLocal: toLocal(m.endTime), status: m.status, employeeIds: m.employees.map(e => e.employeeId), latitude: m.latitude ?? null, longitude: m.longitude ?? null }
 }
 
 function formFromContext(ctx: CriacaoContext): FormState {
-  return { contractId: null, date: ctx.dateStr, type: 'PREVENTIVA', startTimeLocal: padHour(ctx.hour), endTimeLocal: padHour(Math.min(ctx.hour + 1, 23)), status: 'SCHEDULED', employeeIds: ctx.tecnico ? [ctx.tecnico.employeeId] : [] }
+  return { contractId: null, date: ctx.dateStr, type: 'PREVENTIVA', startTimeLocal: padHour(ctx.hour), endTimeLocal: padHour(Math.min(ctx.hour + 1, 23)), status: 'SCHEDULED', employeeIds: ctx.tecnico ? [ctx.tecnico.employeeId] : [], latitude: null, longitude: null }
 }
 
 const form = ref<FormState>(defaultForm())
@@ -128,6 +131,9 @@ async function submitForm() {
     status: form.value.status, employeeIds: form.value.employeeIds,
     startTime: toIso(form.value.date, form.value.startTimeLocal),
     endTime: toIso(form.value.date, form.value.endTimeLocal),
+    ...(form.value.latitude != null && form.value.longitude != null
+      ? { latitude: form.value.latitude, longitude: form.value.longitude }
+      : {}),
   }
   try {
     if (internalMode.value === 'edicao' && props.manutencao) {
@@ -336,6 +342,17 @@ const statusModel = computed<string | number | null>({
                 <div class="nd-field cm-field-full">
                   <label class="nd-field-label">Status *</label>
                   <NdCombobox v-model="statusModel" :options="statusOptions" placeholder="Selecione o status" />
+                </div>
+              </div>
+
+              <div class="cm-form-row">
+                <div class="nd-field cm-field-full">
+                  <label class="nd-field-label">Localização</label>
+                  <MapLatLngField
+                    v-model:model-lat="form.latitude"
+                    v-model:model-lng="form.longitude"
+                  />
+                  <span class="nd-field-hint">Opcional — usa a localização do contrato se vazio</span>
                 </div>
               </div>
 
