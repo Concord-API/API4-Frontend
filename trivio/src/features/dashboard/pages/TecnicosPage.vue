@@ -174,7 +174,6 @@ onMounted(() => { void ensureTecnicosLoaded() })
       </DialogContent>
     </Dialog>
 
-    <!-- DETAIL DIALOG -->
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-xl">
         <DialogHeader>
@@ -253,7 +252,6 @@ onMounted(() => { void ensureTecnicosLoaded() })
       </div>
     </div>
 
-    <!-- TABLE VIEW -->
     <div v-if="viewMode === 'table'" class="nd-table-wrap">
       <table class="nd-table">
         <colgroup>
@@ -288,7 +286,6 @@ onMounted(() => { void ensureTecnicosLoaded() })
       </table>
     </div>
 
-    <!-- GRID VIEW -->
     <div v-else class="nd-grid">
       <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
       <div v-for="t in filtered" :key="t.employeeId" class="nd-card" @click="openDetail(t)">

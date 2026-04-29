@@ -237,7 +237,6 @@ onMounted(carregarDados)
         </DialogContent>
       </Dialog>
 
-    <!-- DETAIL DIALOG -->
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-2xl">
         <DialogHeader>
@@ -349,7 +348,6 @@ onMounted(carregarDados)
       </div>
     </div>
 
-    <!-- TABLE VIEW -->
     <div v-if="viewMode === 'table'" class="nd-table-wrap">
       <table class="nd-table">
         <colgroup>
@@ -384,7 +382,6 @@ onMounted(carregarDados)
       </table>
     </div>
 
-    <!-- GRID VIEW -->
     <div v-else class="nd-grid">
       <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
       <div v-for="m in filteredManutencoes" :key="m.id" class="nd-card" @click="openDetail(m)">

@@ -147,7 +147,6 @@ onMounted(() => { void ensureRequisitosLoaded() })
       </DialogContent>
     </Dialog>
 
-    <!-- DETAIL DIALOG -->
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-lg">
         <DialogHeader>
@@ -217,7 +216,6 @@ onMounted(() => { void ensureRequisitosLoaded() })
       </div>
     </div>
 
-    <!-- TABLE VIEW -->
     <div v-if="viewMode === 'table'" class="nd-table-wrap">
       <table class="nd-table">
         <colgroup>
@@ -248,7 +246,6 @@ onMounted(() => { void ensureRequisitosLoaded() })
       </table>
     </div>
 
-    <!-- GRID VIEW -->
     <div v-else class="nd-grid">
       <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
       <div v-for="r in filtered" :key="r.id" class="nd-card" @click="openDetail(r)">

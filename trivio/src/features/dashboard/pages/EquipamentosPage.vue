@@ -175,7 +175,6 @@ onMounted(() => { void ensureEquipamentosLoaded() })
       </DialogContent>
     </Dialog>
 
-    <!-- DETAIL DIALOG -->
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-lg">
         <DialogHeader>
@@ -245,7 +244,6 @@ onMounted(() => { void ensureEquipamentosLoaded() })
       </div>
     </div>
 
-    <!-- TABLE VIEW -->
     <div v-if="viewMode === 'table'" class="nd-table-wrap">
       <table class="nd-table">
         <colgroup>
@@ -278,7 +276,6 @@ onMounted(() => { void ensureEquipamentosLoaded() })
       </table>
     </div>
 
-    <!-- GRID VIEW -->
     <div v-else class="nd-grid">
       <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
       <div v-for="e in filtered" :key="e.id_equipment" class="nd-card" @click="openDetail(e)">
@@ -325,7 +322,6 @@ onMounted(() => { void ensureEquipamentosLoaded() })
 .nd-search-input { background: transparent; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; color: var(--nd-text-primary); width: 180px; }
 .nd-search-input::placeholder { color: var(--nd-text-disabled); }
 
-/* TABLE */
 .nd-table-wrap { overflow-x: auto; }
 .nd-table { width: 100%; border-collapse: collapse; }
 .nd-th { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--nd-text-secondary); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--nd-border-visible); white-space: nowrap; }
@@ -341,7 +337,6 @@ onMounted(() => { void ensureEquipamentosLoaded() })
 .nd-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
 .nd-empty { padding: 48px 0; font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-text-disabled); text-align: center; }
 
-/* GRID */
 .nd-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .nd-empty--grid { grid-column: 1 / -1; }
 .nd-card { background: var(--nd-surface); border: 1px solid var(--nd-border); border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 150ms ease-out; display: flex; flex-direction: column; gap: 6px; }
