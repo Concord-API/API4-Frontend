@@ -8,6 +8,10 @@ import { GRID_START_HOUR, GRID_END_HOUR, ROW_HEIGHT_PX } from '@/features/dashbo
 import CalendarioCard from './CalendarioCard.vue'
 import CalendarioBanner from './CalendarioBanner.vue'
 import CalendarioContextMenu from './CalendarioContextMenu.vue'
+import { useAuth } from '@/shared/composables/useAuth'
+
+const { currentUser } = useAuth()
+const isTechnician = computed(() => currentUser.value?.role === 'technician')
 
 const props = defineProps<{
   dias: DiaDaSemana[]
@@ -149,6 +153,7 @@ function isToday(dateStr: string): boolean {
 const draggedManutencao = ref<ManutencaoAPI | null>(null)
 
 function onDragStart(e: DragEvent, m: ManutencaoAPI) {
+  if (isTechnician.value) return
   draggedManutencao.value = m
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
@@ -157,6 +162,7 @@ function onDragStart(e: DragEvent, m: ManutencaoAPI) {
 }
 
 async function onDrop(e: DragEvent, dateStr: string, colEl: HTMLElement) {
+  if (isTechnician.value) return
   e.preventDefault()
   if (!draggedManutencao.value) return
   const m = draggedManutencao.value
@@ -205,6 +211,7 @@ const resizeStartY       = ref(0)
 const resizeStartEndMin  = ref(0)
 
 function onResizeStart(e: MouseEvent, m: ManutencaoAPI) {
+  if (isTechnician.value) return
   resizingManutencao.value = m
   resizeStartY.value = e.clientY
   const end = getHourMinute(m.endTime!)
@@ -282,6 +289,7 @@ async function onResizeEnd(e: MouseEvent) {
       </div>
 
       <CalendarioContextMenu
+        :is-technician="isTechnician"
         @nova-manutencao="onContextNovaManutencao"
         @ir-para-hoje="onContextIrParaHoje"
       >
@@ -318,11 +326,11 @@ async function onResizeEnd(e: MouseEvent) {
                     v-for="h in hours"
                     :key="h"
                     class="cal-hour-row"
-                    :style="{ top: `${(h - GRID_START_HOUR) * ROW_HEIGHT_PX}px`, height: `${ROW_HEIGHT_PX}px`, borderTop: h === GRID_START_HOUR ? 'none' : undefined }"
-                    @click="onCellClick(dia.dateStr, h)"
-                    @contextmenu="ctxHour = h"
+                    :style="{ top: `${(h - GRID_START_HOUR) * ROW_HEIGHT_PX}px`, height: `${ROW_HEIGHT_PX}px`, borderTop: h === GRID_START_HOUR ? 'none' : undefined, cursor: isTechnician ? 'default' : 'pointer' }"
+                    @click="!isTechnician && onCellClick(dia.dateStr, h)"
+                    @contextmenu="!isTechnician && (ctxHour = h)"
                   >
-                    <div class="cal-hover-plus">
+                    <div v-if="!isTechnician" class="cal-hover-plus">
                       <Plus :size="14" class="cal-plus-icon" />
                     </div>
                   </div>
@@ -335,6 +343,7 @@ async function onResizeEnd(e: MouseEvent) {
                     :height-px="layout.heightPx"
                     :left-percent="layout.leftPercent"
                     :width-percent="layout.widthPercent"
+                    :is-technician="isTechnician"
                     @click="emit('card-click', $event)"
                     @expand="emit('card-expand', $event)"
                     @drag-start="onDragStart"

@@ -12,6 +12,10 @@ const emit = defineEmits<{
   'nova-manutencao': []
   'ir-para-hoje': []
 }>()
+
+defineProps<{
+  isTechnician?: boolean
+}>()
 </script>
 
 <template>
@@ -21,7 +25,7 @@ const emit = defineEmits<{
     </ContextMenuTrigger>
     <ContextMenuPortal>
       <ContextMenuContent class="cal-ctx-content">
-        <ContextMenuItem class="cal-ctx-item" @select="emit('nova-manutencao')">
+        <ContextMenuItem v-if="!isTechnician" class="cal-ctx-item" @select="emit('nova-manutencao')">
           <Plus :size="12" class="cal-ctx-icon" />
           Nova Manutenção
         </ContextMenuItem>

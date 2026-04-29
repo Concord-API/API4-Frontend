@@ -41,7 +41,7 @@ export function useNavigation() {
         {
           title: 'Rotina de Campo',
           items: [
-            { id: '1', title: 'Minha Agenda', icon: Calendar, route: { name: 'dashboard-home' } },
+            { id: '1', title: 'Minha Agenda', icon: Calendar, route: { name: 'dashboard-tecnico-agenda' } },
             { id: '2', title: 'Locais de Atendimento', icon: MapPin, route: { name: 'dashboard-locais' } },
             { id: '3', title: 'Histórico de Execução', icon: History, route: { name: 'dashboard-historico' } }
           ]

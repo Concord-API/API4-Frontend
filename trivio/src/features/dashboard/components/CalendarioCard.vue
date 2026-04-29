@@ -10,6 +10,7 @@ const props = defineProps<{
   heightPx: number
   leftPercent: number
   widthPercent: number
+  isTechnician?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -94,8 +95,8 @@ function onPopoverExpand(m: ManutencaoAPI) {
         class="cal-card"
         :style="[cardStyle, { '--card-color': statusColor }]"
         :title="statusLabel"
-        draggable="true"
-        @dragstart.stop="emit('drag-start', $event, manutencao)"
+        :draggable="!isTechnician"
+        @dragstart.stop="!isTechnician && emit('drag-start', $event, manutencao)"
         @click.stop
         @dblclick.stop="onDoubleClick"
       >
@@ -118,6 +119,7 @@ function onPopoverExpand(m: ManutencaoAPI) {
 
         <!-- Handle de resize: puxe para redimensionar -->
         <div
+          v-if="!isTechnician"
           class="cal-resize-handle"
           @mousedown.stop.prevent="emit('resize-start', $event, manutencao)"
         />
