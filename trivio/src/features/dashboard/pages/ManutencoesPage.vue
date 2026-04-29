@@ -12,6 +12,7 @@ import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 import { MapLatLngField } from '@/shared/components/ui/map-field'
+import GeocodedAddress from '@/shared/components/ui/GeocodedAddress.vue'
 
 const activeTab = ref<'agenda' | 'manutencoes'>('agenda')
 
@@ -231,8 +232,8 @@ onMounted(carregarDados)
             <div class="nd-field col-span-full">
               <label class="nd-field-label">Localização</label>
               <MapLatLngField
-                v-model:model-lat="form.latitude"
-                v-model:model-lng="form.longitude"
+                v-model:modelLat="form.latitude"
+                v-model:modelLng="form.longitude"
               />
             </div>
             <div class="nd-field col-span-full">
@@ -405,6 +406,7 @@ onMounted(carregarDados)
           <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(m)"><Pencil :size="11" /></button>
         </div>
         <p class="nd-card-name">{{ m.contract.client.name }}</p>
+        <GeocodedAddress :lat="m.latitude" :lng="m.longitude" />
         <span class="nd-card-tipo">{{ m.type }}</span>
         <span class="nd-card-tecnicos">{{ m.employees.length }} TÉCNICO{{ m.employees.length !== 1 ? 's' : '' }}</span>
         <div class="nd-card-footer">

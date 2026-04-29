@@ -406,8 +406,8 @@ const statusModel = computed<string | number | null>({
                 <div class="nd-field cm-field-full">
                   <label class="nd-field-label">Localização</label>
                   <MapLatLngField
-                    v-model:model-lat="form.latitude"
-                    v-model:model-lng="form.longitude"
+                    v-model:modelLat="form.latitude"
+                    v-model:modelLng="form.longitude"
                   />
                 </div>
               </div>
