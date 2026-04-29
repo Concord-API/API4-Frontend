@@ -11,6 +11,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
+import { MapLatLngField } from '@/shared/components/ui/map-field'
 
 const activeTab = ref<'agenda' | 'manutencoes'>('agenda')
 
@@ -47,6 +48,8 @@ const defaultForm = () => ({
   type: 'PREVENTIVA' as ManutencaoTipo,
   status: 'SCHEDULED' as ManutencaoStatus,
   employeeIds: [] as number[],
+  latitude: null as number | null,
+  longitude: null as number | null,
 })
 
 const form = ref(defaultForm())
@@ -64,6 +67,8 @@ function openEdit(m: ManutencaoAPI) {
     type: m.type,
     status: m.status,
     employeeIds: m.employees.map(e => e.employeeId),
+    latitude: m.latitude ?? null,
+    longitude: m.longitude ?? null,
   }
   editingId.value = m.id; sheetMode.value = 'edit'; sheetOpen.value = true
 }
@@ -136,6 +141,9 @@ async function submitForm() {
     type: form.value.type,
     status: form.value.status,
     employeeIds: form.value.employeeIds,
+    ...(form.value.latitude != null && form.value.longitude != null
+      ? { latitude: form.value.latitude, longitude: form.value.longitude }
+      : {}),
   }
   try {
     if (sheetMode.value === 'edit' && editingId.value) {
@@ -219,6 +227,14 @@ onMounted(carregarDados)
             <div class="nd-field col-span-full">
               <label class="nd-field-label">Status *</label>
               <NdCombobox v-model="form.status" :options="statusOptions" placeholder="Selecione o status" />
+            </div>
+            <div class="nd-field col-span-full">
+              <label class="nd-field-label">Localização</label>
+              <MapLatLngField
+                v-model:model-lat="form.latitude"
+                v-model:model-lng="form.longitude"
+              />
+              <span class="nd-field-hint">Opcional — usa a localização do contrato se vazio</span>
             </div>
             <div class="nd-field col-span-full">
               <label class="nd-field-label">TÉCNICOS</label>
