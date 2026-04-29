@@ -74,7 +74,6 @@ function onChipExpand(m: ManutencaoAPI) {
         </Popover>
       </div>
     </div>
-    <div class="cal-scrollbar-spacer" :style="{ width: scrollbarWidth + 'px' }" />
   </div>
 </template>
 
@@ -107,7 +106,7 @@ function onChipExpand(m: ManutencaoAPI) {
   position: sticky;
   left: 0;
   z-index: 10;
-  background: #fff;
+  background: var(--nd-surface);
 }
 :root.dark .cal-banner-label,
 .dark .cal-banner-label {
@@ -150,11 +149,6 @@ function onChipExpand(m: ManutencaoAPI) {
 }
 .cal-banner-chip:hover { filter: brightness(1.15); }
 
-.cal-scrollbar-spacer {
-  flex-shrink: 0;
-  border-left: 1px solid var(--nd-border);
-  background: inherit;
-}
 
 .cpv-popover-content {
   padding: 12px !important;
