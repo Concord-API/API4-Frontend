@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Maximize2, Copy, Clock, Tag, Users } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
+import { Maximize2, Copy, Clock, Tag, Users, MapPin } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
 import { Badge } from '@/shared/components/ui/badge'
+import { useNominatim } from '@/shared/composables/useNominatim'
+
+const { reverseGeocode } = useNominatim()
 
 const props = defineProps<{
   manutencao: ManutencaoAPI
@@ -95,6 +98,19 @@ function copiarResumo() {
 function onExpand() {
   emit('expand', props.manutencao)
 }
+
+const endereco = ref<string | null>(null)
+const enderecoLoading = ref(false)
+
+async function resolverEndereco() {
+  const m = props.manutencao
+  if (m.latitude == null || m.longitude == null) { endereco.value = null; return }
+  enderecoLoading.value = true
+  endereco.value = await reverseGeocode(m.latitude, m.longitude)
+  enderecoLoading.value = false
+}
+
+watch(() => props.manutencao, () => { void resolverEndereco() }, { immediate: true })
 </script>
 
 <template>
@@ -126,6 +142,23 @@ function onExpand() {
       <div class="cpv-info-row">
         <Tag :size="12" class="cpv-info-icon" />
         <span class="cpv-info-text">{{ tipoLabel }}</span>
+      </div>
+
+      <div v-if="enderecoLoading" class="cpv-info-row">
+        <MapPin :size="12" class="cpv-info-icon" />
+        <span class="cpv-info-text cpv-info-text--dim">Carregando endereço...</span>
+      </div>
+      <div v-else-if="endereco" class="cpv-info-row" :title="endereco">
+        <MapPin :size="12" class="cpv-info-icon" />
+        <span class="cpv-info-text cpv-address">{{ endereco }}</span>
+      </div>
+      <div v-else-if="manutencao.latitude != null && manutencao.longitude != null" class="cpv-info-row">
+        <MapPin :size="12" class="cpv-info-icon" />
+        <span class="cpv-info-text cpv-address">{{ manutencao.latitude.toFixed(6) }}, {{ manutencao.longitude.toFixed(6) }}</span>
+      </div>
+      <div v-else class="cpv-info-row">
+        <MapPin :size="12" class="cpv-info-icon" />
+        <span class="cpv-info-text cpv-info-text--dim">Sem endereço</span>
       </div>
     </div>
 
@@ -256,6 +289,13 @@ function onExpand() {
 .cpv-info-text--dim {
   color: var(--nd-text-disabled);
   font-style: italic;
+}
+
+.cpv-address {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .cpv-footer {

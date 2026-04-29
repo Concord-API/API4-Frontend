@@ -100,28 +100,30 @@ onMounted(() => {
 
     <div v-if="error" class="cal-error">{{ error }}</div>
 
-    <div v-else-if="loading && !manutencoesFiltradas.length" class="cal-loading">
-      Carregando...
-    </div>
+    <template v-else>
+      <div v-if="loading && !manutencoesFiltradas.length" class="cal-loading">
+        Carregando...
+      </div>
 
-    <div v-else class="cal-main">
-      <CalendarioGrid
-        :dias="diasDaSemana"
-        :manutencoes="manutencoesFiltradas"
-        @card-expand="abrirDetalhe"
-        @cell-click="abrirCriacao"
-        @nova-manutencao-ctx="abrirCriacao"
-        @ir-para-hoje="navegarSemana(0)"
-      />
-      <CalendarioPainel
-        v-if="isDesktop"
-        :sunday="sunday"
-        :tecnicos="tecnicos"
-        :tecnico-filtro="tecnicoFiltro"
-        @update:tecnico-filtro="onTecnicoFiltro"
-        @semana-click="irParaSemanaDoDia"
-      />
-    </div>
+      <div v-show="!loading || manutencoesFiltradas.length" class="cal-main">
+        <CalendarioGrid
+          :dias="diasDaSemana"
+          :manutencoes="manutencoesFiltradas"
+          @card-expand="abrirDetalhe"
+          @cell-click="abrirCriacao"
+          @nova-manutencao-ctx="abrirCriacao"
+          @ir-para-hoje="navegarSemana(0)"
+        />
+        <CalendarioPainel
+          v-if="isDesktop"
+          :sunday="sunday"
+          :tecnicos="tecnicos"
+          :tecnico-filtro="tecnicoFiltro"
+          @update:tecnico-filtro="onTecnicoFiltro"
+          @semana-click="irParaSemanaDoDia"
+        />
+      </div>
+    </template>
 
     <CalendarioModal
       v-model:open="modalOpen"

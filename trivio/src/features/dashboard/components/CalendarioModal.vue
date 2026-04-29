@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Clock, Tag, Calendar, Users, Building2, Edit2 } from 'lucide-vue-next'
+import { Clock, Tag, Calendar, Users, Building2, Edit2, MapPin } from 'lucide-vue-next'
 import {
   Dialog,
   DialogClose,
@@ -13,9 +13,13 @@ import {
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
+import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
+import { useNominatim } from '@/shared/composables/useNominatim'
+
+const { reverseGeocode } = useNominatim()
 
 export type ModalMode = 'detalhe' | 'edicao' | 'criacao'
 
@@ -76,10 +80,12 @@ interface FormState {
   endTimeLocal: string
   status: ManutencaoStatus
   employeeIds: number[]
+  latitude: number | null
+  longitude: number | null
 }
 
 function defaultForm(): FormState {
-  return { contractId: null, date: '', type: 'PREVENTIVA', startTimeLocal: '', endTimeLocal: '', status: 'SCHEDULED', employeeIds: [] }
+  return { contractId: null, date: '', type: 'PREVENTIVA', startTimeLocal: '', endTimeLocal: '', status: 'SCHEDULED', employeeIds: [], latitude: null, longitude: null }
 }
 
 function padHour(h: number): string { return `${String(h).padStart(2, '0')}:00` }
@@ -90,11 +96,11 @@ function formFromManutencao(m: ManutencaoAPI): FormState {
     const d = new Date(iso)
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
-  return { contractId: m.contract.id, date: m.date, type: m.type, startTimeLocal: toLocal(m.startTime), endTimeLocal: toLocal(m.endTime), status: m.status, employeeIds: m.employees.map(e => e.employeeId) }
+  return { contractId: m.contract.id, date: m.date, type: m.type, startTimeLocal: toLocal(m.startTime), endTimeLocal: toLocal(m.endTime), status: m.status, employeeIds: m.employees.map(e => e.employeeId), latitude: m.latitude ?? null, longitude: m.longitude ?? null }
 }
 
 function formFromContext(ctx: CriacaoContext): FormState {
-  return { contractId: null, date: ctx.dateStr, type: 'PREVENTIVA', startTimeLocal: padHour(ctx.hour), endTimeLocal: padHour(Math.min(ctx.hour + 1, 23)), status: 'SCHEDULED', employeeIds: ctx.tecnico ? [ctx.tecnico.employeeId] : [] }
+  return { contractId: null, date: ctx.dateStr, type: 'PREVENTIVA', startTimeLocal: padHour(ctx.hour), endTimeLocal: padHour(Math.min(ctx.hour + 1, 23)), status: 'SCHEDULED', employeeIds: ctx.tecnico ? [ctx.tecnico.employeeId] : [], latitude: null, longitude: null }
 }
 
 const form = ref<FormState>(defaultForm())
@@ -114,6 +120,31 @@ watch(internalMode, (mode) => {
   if (mode === 'edicao' && props.manutencao) { form.value = formFromManutencao(props.manutencao); submitError.value = null }
 })
 
+const enderecoDetalhe = ref<string | null>(null)
+const enderecoLoading = ref(false)
+
+async function resolverEnderecoDetalhe() {
+  if (!props.manutencao || props.manutencao.latitude == null || props.manutencao.longitude == null) {
+    enderecoDetalhe.value = null
+    return
+  }
+  enderecoLoading.value = true
+  enderecoDetalhe.value = await reverseGeocode(props.manutencao.latitude, props.manutencao.longitude)
+  enderecoLoading.value = false
+}
+
+watch(() => props.manutencao, () => {
+  if (internalMode.value === 'detalhe') {
+    void resolverEnderecoDetalhe()
+  }
+}, { immediate: true })
+
+watch(internalMode, (mode) => {
+  if (mode === 'detalhe') {
+    void resolverEnderecoDetalhe()
+  }
+})
+
 function toIso(dateStr: string, timeLocal: string): string | undefined {
   if (!dateStr || !timeLocal) return undefined
   return new Date(`${dateStr}T${timeLocal}`).toISOString()
@@ -128,6 +159,9 @@ async function submitForm() {
     status: form.value.status, employeeIds: form.value.employeeIds,
     startTime: toIso(form.value.date, form.value.startTimeLocal),
     endTime: toIso(form.value.date, form.value.endTimeLocal),
+    ...(form.value.latitude != null && form.value.longitude != null
+      ? { latitude: form.value.latitude, longitude: form.value.longitude }
+      : {}),
   }
   try {
     if (internalMode.value === 'edicao' && props.manutencao) {
@@ -259,6 +293,35 @@ const statusModel = computed<string | number | null>({
                   <span class="cm-info-value">#{{ String(manutencao.contract.id).padStart(3, '0') }}</span>
                 </div>
               </div>
+
+              <div v-if="enderecoLoading" class="cm-info-item">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value cpv-info-text--dim">Carregando endereço...</span>
+                </div>
+              </div>
+              <div v-else-if="enderecoDetalhe" class="cm-info-item cm-info-item--full">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value">{{ enderecoDetalhe }}</span>
+                </div>
+              </div>
+              <div v-else-if="manutencao.latitude != null && manutencao.longitude != null" class="cm-info-item cm-info-item--full">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value">{{ manutencao.latitude.toFixed(6) }}, {{ manutencao.longitude.toFixed(6) }}</span>
+                </div>
+              </div>
+              <div v-else class="cm-info-item">
+                <MapPin :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Endereço</span>
+                  <span class="cm-info-value cpv-info-text--dim">Sem endereço</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -336,6 +399,16 @@ const statusModel = computed<string | number | null>({
                 <div class="nd-field cm-field-full">
                   <label class="nd-field-label">Status *</label>
                   <NdCombobox v-model="statusModel" :options="statusOptions" placeholder="Selecione o status" />
+                </div>
+              </div>
+
+              <div class="cm-form-row">
+                <div class="nd-field cm-field-full">
+                  <label class="nd-field-label">Localização</label>
+                  <MapLatLngField
+                    v-model:modelLat="form.latitude"
+                    v-model:modelLng="form.longitude"
+                  />
                 </div>
               </div>
 
@@ -477,6 +550,16 @@ const statusModel = computed<string | number | null>({
   display: flex;
   align-items: flex-start;
   gap: 10px;
+}
+
+.cm-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.cpv-info-text--dim {
+  color: var(--nd-text-disabled);
+  font-style: italic;
+  font-size: 13px;
 }
 
 .cm-info-icon {
