@@ -18,10 +18,10 @@ export interface ManutencaoAPI {
   type: ManutencaoTipo
   status: ManutencaoStatus
   employees: Array<{ employeeId: number; name: string; email: string; admin: boolean; active: boolean }>
-  /** Full ISO 8601 timestamp for scheduled start — e.g. "2026-04-28T08:00:00.000Z". Optional. */
   startTime?: string
-  /** Full ISO 8601 timestamp for scheduled end — e.g. "2026-04-28T16:00:00.000Z". Optional. */
   endTime?: string
+  latitude?: number
+  longitude?: number
 }
 
 export interface ManutencaoRequest {
@@ -31,15 +31,14 @@ export interface ManutencaoRequest {
   type: ManutencaoTipo
   status: ManutencaoStatus
   employeeIds: number[]
-  /** Full ISO 8601 timestamp — optional, for scheduled start time. */
   startTime?: string
-  /** Full ISO 8601 timestamp — optional, for scheduled end time. */
   endTime?: string
+  latitude?: number
+  longitude?: number
 }
 
 export const manutencaoService = {
   listar: () => api.get<ManutencaoAPI[]>('/maintenances'),
-  /** Fetch maintenances within a week. startDate/endDate are YYYY-MM-DD plain dates (not timestamps). */
   listarPorSemana: (startDate: string, endDate: string) => {
     const params = new URLSearchParams({ startDate, endDate })
     return api.get<ManutencaoAPI[]>(`/maintenances?${params}`)
