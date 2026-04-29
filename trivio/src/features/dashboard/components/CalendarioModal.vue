@@ -205,9 +205,8 @@ const statusModel = computed<string | number | null>({
 
 <template>
   <Dialog :open="open" @update:open="handleOpenChange">
-    <DialogContent :show-close-button="false" class="max-w-[680px] w-[680px] p-0 gap-0 overflow-hidden flex flex-col !rounded-lg border-0 shadow-xl">
+    <DialogContent :show-close-button="false" class="w-[95vw] sm:w-[680px] max-w-[680px] p-0 gap-0 overflow-hidden flex flex-col !rounded-lg border-0 shadow-xl">
 
-      <!-- ═══════ DETALHE ═══════ -->
       <template v-if="internalMode === 'detalhe'">
         <DialogHeader class="sr-only">
           <DialogTitle>Detalhes da manutenção</DialogTitle>
@@ -215,7 +214,6 @@ const statusModel = computed<string | number | null>({
         </DialogHeader>
 
         <div v-if="manutencao" class="cm-layout">
-          <!-- Coluna principal -->
           <div class="cm-main">
             <div class="cm-top-bar">
               <span class="cm-tag" :style="{ color: statusColor, borderColor: statusColor }">{{ statusLabel }}</span>
@@ -264,7 +262,6 @@ const statusModel = computed<string | number | null>({
             </div>
           </div>
 
-          <!-- Coluna lateral - Técnicos -->
           <div class="cm-aside">
             <div class="cm-aside-header">
               <Users :size="14" class="cm-info-icon" />
@@ -284,7 +281,6 @@ const statusModel = computed<string | number | null>({
         </div>
       </template>
 
-      <!-- ═══════ CRIAÇÃO / EDIÇÃO ═══════ -->
       <template v-else>
         <DialogHeader class="sr-only">
           <DialogTitle>{{ internalMode === 'edicao' ? 'Editar manutenção' : 'Nova manutenção' }}</DialogTitle>
@@ -347,7 +343,6 @@ const statusModel = computed<string | number | null>({
             </form>
           </div>
 
-          <!-- Coluna lateral - Técnicos -->
           <div class="cm-aside">
             <div class="cm-aside-header">
               <Users :size="14" class="cm-info-icon" />
@@ -511,7 +506,6 @@ const statusModel = computed<string | number | null>({
   color: var(--nd-text-primary);
 }
 
-/* ── Aside ── */
 .cm-aside-header {
   display: flex;
   align-items: center;
@@ -587,7 +581,6 @@ const statusModel = computed<string | number | null>({
   margin: 0;
 }
 
-/* ── Form ── */
 .cm-form-title {
   font-family: 'Montserrat', sans-serif;
   font-size: 15px;
@@ -614,5 +607,28 @@ const statusModel = computed<string | number | null>({
 
 .cm-field-full {
   flex: 1;
+}
+
+@media (max-width: 640px) {
+  .cm-layout {
+    flex-direction: column;
+    min-height: auto;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .cm-aside {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--nd-border);
+  }
+  .cm-form-row--half {
+    flex-direction: column;
+  }
+  .cm-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .cm-main {
+    padding: 16px;
+  }
 }
 </style>

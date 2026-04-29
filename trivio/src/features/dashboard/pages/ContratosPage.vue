@@ -293,7 +293,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- TABLE VIEW -->
     <div v-if="viewMode === 'table'" class="nd-table-wrap">
       <table class="nd-table">
         <colgroup>
@@ -332,7 +331,6 @@ onMounted(() => {
       </table>
     </div>
 
-    <!-- GRID VIEW -->
     <div v-else class="nd-grid">
       <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
       <div
@@ -451,7 +449,6 @@ onMounted(() => {
   .nd-search { flex: 1; }
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
-  /* tabela densa: força scroll horizontal para não partir layout */
   .nd-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .nd-btn-desktop { display: none; }
   .nd-fab { display: flex; align-items: center; justify-content: center; position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--nd-action); color: var(--nd-action-foreground); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); transition: background-color 150ms ease-out; z-index: 50; }

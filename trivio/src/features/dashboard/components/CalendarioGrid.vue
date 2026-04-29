@@ -225,11 +225,10 @@ function isToday(dateStr: string): boolean {
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: hidden;
-  overflow-x: auto;
+  overflow: auto;
   border: 1px solid var(--nd-border-visible);
   border-radius: 6px;
-  background: #fff;
+  background: var(--nd-surface);
 }
 
 .cal-grid-inner {
@@ -237,6 +236,7 @@ function isToday(dateStr: string): boolean {
   flex-direction: column;
   flex: 1;
   min-width: 600px;
+  min-height: max-content;
 }
 
 :root.dark .cal-grid-root,
@@ -248,21 +248,40 @@ function isToday(dateStr: string): boolean {
   display: flex;
   flex-shrink: 0;
   border-bottom: 1px solid var(--nd-border-visible);
-  background: #fff;
+  background: var(--nd-surface);
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 
 :root.dark .cal-header-row,
 .dark .cal-header-row {
-  background: var(--nd-surface);
+  background: var(--nd-bg);
 }
+
 .cal-corner {
   width: 48px;
   flex-shrink: 0;
   border-right: 1px solid var(--nd-border);
   position: sticky;
   left: 0;
-  z-index: 10;
-  background: #fff;
+  z-index: 40;
+  background: var(--nd-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+:root.dark .cal-corner,
+.dark .cal-corner {
+  background: var(--nd-bg);
+}
+
+.cal-corner-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--nd-text-disabled);
+  text-align: center;
 }
 :root.dark .cal-corner,
 .dark .cal-corner {
@@ -318,8 +337,6 @@ function isToday(dateStr: string): boolean {
 
 .cal-scroll-area {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 .cal-time-grid {
   display: flex;
