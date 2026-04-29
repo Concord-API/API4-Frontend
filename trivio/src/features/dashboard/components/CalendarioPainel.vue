@@ -234,6 +234,15 @@ const legendItems = [
   background: var(--nd-surface);
 }
 
+@media (max-width: 1024px) {
+  .cp-sidebar {
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: transparent !important;
+  }
+}
+
 .cp-section {
   padding: 12px;
   border-bottom: 1px solid var(--nd-border);
