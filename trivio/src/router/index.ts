@@ -84,6 +84,12 @@ const router = createRouter({
           component: () => import('@/features/dashboard/pages/HomePage.vue')
         },
         {
+          path: 'minha-agenda',
+          name: 'dashboard-tecnico-agenda',
+          meta: { breadcrumb: 'minha agenda', roles: ['technician'] },
+          component: () => import('@/features/dashboard/pages/AgendaTecnicoPage.vue')
+        },
+        {
           path: 'agenda',
           name: 'dashboard-agenda',
           meta: { breadcrumb: 'agenda' },

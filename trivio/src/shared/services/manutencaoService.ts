@@ -38,9 +38,14 @@ export interface ManutencaoRequest {
 }
 
 export const manutencaoService = {
-  listar: () => api.get<ManutencaoAPI[]>('/maintenances'),
-  listarPorSemana: (startDate: string, endDate: string) => {
+  listar: (employeeId?: number) => {
+    const params = new URLSearchParams()
+    if (employeeId) params.append('employeeId', employeeId.toString())
+    return api.get<ManutencaoAPI[]>(`/maintenances${params.toString() ? '?' + params.toString() : ''}`)
+  },
+  listarPorSemana: (startDate: string, endDate: string, employeeId?: number) => {
     const params = new URLSearchParams({ startDate, endDate })
+    if (employeeId) params.append('employeeId', employeeId.toString())
     return api.get<ManutencaoAPI[]>(`/maintenances?${params}`)
   },
   buscar: (id: number) => api.get<ManutencaoAPI>(`/maintenances/${id}`),

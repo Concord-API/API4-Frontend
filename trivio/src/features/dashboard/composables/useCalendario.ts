@@ -2,6 +2,7 @@ import { ref, computed, readonly } from 'vue'
 import { manutencaoService, type ManutencaoAPI } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
+import { useAuth } from '@/shared/composables/useAuth'
 
 export const GRID_START_HOUR = 0
 export const GRID_END_HOUR = 23
@@ -54,6 +55,7 @@ function formatSemanaLabel(sunday: Date): string {
 }
 
 export function useCalendario() {
+  const { currentUser } = useAuth()
   const sunday = ref<Date>(getSunday(new Date()))
   const tecnicoFiltro = ref<TecnicoAPI | null>(null)
   const tecnicos = ref<TecnicoAPI[]>([])
@@ -77,7 +79,9 @@ export function useCalendario() {
     try {
       const startDate = toDateStr(sunday.value)
       const endDate = toDateStr(diasDaSemana.value[6]!.date)
-      const resultado = await manutencaoService.listarPorSemana(startDate, endDate)
+      const isTechnician = currentUser.value?.role === 'technician'
+      const employeeId = isTechnician ? Number(currentUser.value?.id) : undefined
+      const resultado = await manutencaoService.listarPorSemana(startDate, endDate, employeeId)
       manutencoesDaSemana.value = resultado
     } catch (err) {
       error.value = getApiErrorMessage(err, 'Não foi possível carregar a agenda.')
