@@ -2,7 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { Search, Plus, Pencil } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
+import { contratoService, type ContratoAPI, type ContratoRequest } from '@/shared/services/contratoService'
+import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { getApiErrorMessage } from '@/shared/services/api'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import { useClientesStore } from '@/shared/composables/useClientesStore'
@@ -41,6 +42,8 @@ const defaultForm = () => ({
   active: true,
   equipmentIds: [] as number[],
   requirementIds: [] as number[],
+  latitude: null as number | null,
+  longitude: null as number | null,
 })
 
 const form = ref(defaultForm())
@@ -70,6 +73,8 @@ function openEdit(c: ContratoAPI) {
     active: c.active,
     equipmentIds: c.equipments.map(e => e.id_equipment),
     requirementIds: (c.requirements ?? []).map(r => r.id),
+    latitude: c.latitude,
+    longitude: c.longitude,
   }
   editingId.value = c.id; sheetMode.value = 'edit'; sheetOpen.value = true
 }
@@ -111,8 +116,13 @@ function contratoStatus(c: ContratoAPI): { label: string; color: string } {
 
 async function submitForm() {
   if (!form.value.clientId) { submitError.value = 'Selecione um cliente.'; toast.error(submitError.value); return }
+  if (form.value.latitude == null || form.value.longitude == null) {
+    submitError.value = 'Selecione a localização no mapa.'
+    toast.error(submitError.value)
+    return
+  }
   submitError.value = null
-  const payload = {
+  const payload: ContratoRequest = {
     clientId: form.value.clientId,
     initialDate: form.value.initialDate,
     finalDate: form.value.finalDate,
@@ -120,6 +130,8 @@ async function submitForm() {
     active: form.value.active,
     equipmentIds: form.value.equipmentIds,
     requirementIds: form.value.requirementIds,
+    latitude: form.value.latitude,
+    longitude: form.value.longitude,
   }
   try {
     if (sheetMode.value === 'edit' && editingId.value) {
@@ -191,6 +203,14 @@ onMounted(() => {
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Requisitos</label>
             <NdMultiCombobox v-model="form.requirementIds" :options="requisitoOptions" placeholder="Selecione os requisitos" search-placeholder="Buscar requisito..." singular-label="requisito" plural-label="requisitos" />
+          </div>
+          <div class="nd-field col-span-full">
+            <label class="nd-field-label">Localização *</label>
+            <MapLatLngField
+              v-model:model-lat="form.latitude"
+              v-model:model-lng="form.longitude"
+              :required="true"
+            />
           </div>
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Status</label>
