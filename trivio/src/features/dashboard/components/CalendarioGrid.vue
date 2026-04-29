@@ -151,6 +151,30 @@ function isToday(dateStr: string): boolean {
 
 // ─── DRAG-AND-DROP ──────────────────────────────────────────────────────────
 const draggedManutencao = ref<ManutencaoAPI | null>(null)
+const dragOverDate      = ref<string | null>(null)
+const dragOverTopPx     = ref(0)
+
+function draggedDurationMin(): number {
+  const m = draggedManutencao.value
+  if (!m) return 60
+  if (m.startTime && m.endTime) {
+    const s = getHourMinute(m.startTime)
+    const e = getHourMinute(m.endTime)
+    return (e.h * 60 + e.m) - (s.h * 60 + s.m)
+  }
+  return 60
+}
+
+const dragGhostHeightPx = computed(() => (draggedDurationMin() / 60) * ROW_HEIGHT_PX)
+const dragGhostEndTime = computed(() => {
+  if (dragOverDate.value == null) return ''
+  const startMin = (dragOverTopPx.value / ROW_HEIGHT_PX) * 60
+  const endMin = startMin + draggedDurationMin()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const startStr = `${pad(Math.floor(startMin / 60))}:${pad(startMin % 60)}`
+  const endStr = `${pad(Math.floor(endMin / 60))}:${pad(endMin % 60)}`
+  return `${startStr} – ${endStr}`
+})
 
 function onDragStart(e: DragEvent, m: ManutencaoAPI) {
   if (isTechnician.value) return
@@ -161,12 +185,37 @@ function onDragStart(e: DragEvent, m: ManutencaoAPI) {
   }
 }
 
+function onColDragOver(e: DragEvent, dateStr: string, colEl: HTMLElement) {
+  if (isTechnician.value || !draggedManutencao.value) return
+  e.preventDefault()
+  const rect = colEl.getBoundingClientRect()
+  const y = e.clientY - rect.top
+  const halfHourPx = ROW_HEIGHT_PX / 2
+  const snappedMinutes = Math.round(y / halfHourPx) * 30
+  const durationMin = draggedDurationMin()
+  const clampedStart = Math.max(0, Math.min(24 * 60 - durationMin, snappedMinutes))
+  dragOverDate.value = dateStr
+  dragOverTopPx.value = (clampedStart / 60) * ROW_HEIGHT_PX
+}
+
+function onColDragLeave(e: DragEvent, colEl: HTMLElement) {
+  const related = e.relatedTarget as Node | null
+  if (related && colEl.contains(related)) return
+  if (dragOverDate.value != null) dragOverDate.value = null
+}
+
+function onDragEnd() {
+  draggedManutencao.value = null
+  dragOverDate.value = null
+}
+
 async function onDrop(e: DragEvent, dateStr: string, colEl: HTMLElement) {
   if (isTechnician.value) return
   e.preventDefault()
   if (!draggedManutencao.value) return
   const m = draggedManutencao.value
   draggedManutencao.value = null
+  dragOverDate.value = null
 
   const rect = colEl.getBoundingClientRect()
   const y = e.clientY - rect.top
@@ -175,9 +224,11 @@ async function onDrop(e: DragEvent, dateStr: string, colEl: HTMLElement) {
   // snap to 30-min intervals
   const snappedMinutes = Math.round(y / halfHourPx) * 30
 
-  const start = getHourMinute(m.startTime!)
-  const end   = getHourMinute(m.endTime!)
-  const durationMinutes = (end.h * 60 + end.m) - (start.h * 60 + start.m)
+  const start = m.startTime ? getHourMinute(m.startTime) : null
+  const end   = m.endTime   ? getHourMinute(m.endTime)   : null
+  const durationMinutes = (start && end)
+    ? (end.h * 60 + end.m) - (start.h * 60 + start.m)
+    : 60
 
   const clampedStart  = Math.max(0, Math.min(24 * 60 - durationMinutes, snappedMinutes))
   const clampedEnd    = clampedStart + durationMinutes
@@ -205,10 +256,36 @@ async function onDrop(e: DragEvent, dateStr: string, colEl: HTMLElement) {
   }
 }
 
+async function onBannerDrop(id: number, dateStr: string) {
+  if (isTechnician.value) return
+  const m = props.manutencoes.find(x => x.id === id)
+  if (!m) return
+  if (m.date === dateStr && !m.startTime && !m.endTime) return
+
+  try {
+    await manutencaoService.atualizar(m.id, {
+      contractId: m.contract.id,
+      date: dateStr,
+      preventive: m.type === 'PREVENTIVA',
+      type: m.type,
+      status: m.status,
+      employeeIds: m.employees.map(emp => emp.employeeId),
+      startTime: '',
+      endTime: '',
+      ...(m.latitude != null && m.longitude != null ? { latitude: m.latitude, longitude: m.longitude } : {}),
+    })
+    toast.success('Manutenção movida para sem horário.')
+    emit('saved')
+  } catch {
+    toast.error('Erro ao mover a manutenção.')
+  }
+}
+
 // ─── RESIZE ──────────────────────────────────────────────────────────────────
-const resizingManutencao = ref<ManutencaoAPI | null>(null)
-const resizeStartY       = ref(0)
-const resizeStartEndMin  = ref(0)
+const resizingManutencao  = ref<ManutencaoAPI | null>(null)
+const resizeStartY        = ref(0)
+const resizeStartEndMin   = ref(0)
+const resizePreviewEndMin = ref<number | null>(null)
 
 function onResizeStart(e: MouseEvent, m: ManutencaoAPI) {
   if (isTechnician.value) return
@@ -216,33 +293,38 @@ function onResizeStart(e: MouseEvent, m: ManutencaoAPI) {
   resizeStartY.value = e.clientY
   const end = getHourMinute(m.endTime!)
   resizeStartEndMin.value = end.h * 60 + end.m
+  resizePreviewEndMin.value = resizeStartEndMin.value
 
   window.addEventListener('mousemove', onResizeMove)
   window.addEventListener('mouseup', onResizeEnd)
 }
 
-function onResizeMove(_e: MouseEvent) {
-  // preview not implemented – snap on mouseup
+function onResizeMove(e: MouseEvent) {
+  if (!resizingManutencao.value) return
+  const m = resizingManutencao.value
+  const deltaY = e.clientY - resizeStartY.value
+  const halfHourPx = ROW_HEIGHT_PX / 2
+  const deltaMinutes = Math.round(deltaY / halfHourPx) * 30
+  const start = getHourMinute(m.startTime!)
+  const startMinutes = start.h * 60 + start.m
+  resizePreviewEndMin.value = Math.max(startMinutes + 30, Math.min(24 * 60 - 1, resizeStartEndMin.value + deltaMinutes))
 }
 
-async function onResizeEnd(e: MouseEvent) {
+async function onResizeEnd(_e: MouseEvent) {
   window.removeEventListener('mousemove', onResizeMove)
   window.removeEventListener('mouseup', onResizeEnd)
 
   if (!resizingManutencao.value) return
   const m = resizingManutencao.value
+  const newEndMin = resizePreviewEndMin.value!
+
   resizingManutencao.value = null
-
-  const deltaY = e.clientY - resizeStartY.value
-  const halfHourPx = ROW_HEIGHT_PX / 2
-
-  // snap delta to 30-min intervals
-  const deltaMinutes = Math.round(deltaY / halfHourPx) * 30
-  if (deltaMinutes === 0) return
+  resizePreviewEndMin.value = null
 
   const start = getHourMinute(m.startTime!)
   const startMinutes = start.h * 60 + start.m
-  const newEndMin = Math.max(startMinutes + 30, Math.min(24 * 60 - 1, resizeStartEndMin.value + deltaMinutes))
+  if (newEndMin === resizeStartEndMin.value) return
+  if (newEndMin <= startMinutes) return
 
   const pad = (n: number) => String(n).padStart(2, '0')
   const endTime = `${pad(Math.floor(newEndMin / 60))}:${pad(newEndMin % 60)}`
@@ -264,6 +346,18 @@ async function onResizeEnd(e: MouseEvent) {
   } catch {
     toast.error('Erro ao redimensionar.')
   }
+}
+
+function resizePreviewFor(id: number): { heightPx: number; endTime: string } | null {
+  if (resizingManutencao.value?.id !== id || resizePreviewEndMin.value == null) return null
+  const m = resizingManutencao.value
+  const start = getHourMinute(m.startTime!)
+  const startMin = start.h * 60 + start.m
+  const durationMin = resizePreviewEndMin.value - startMin
+  const heightPx = (durationMin / 60) * ROW_HEIGHT_PX
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const endTime = `${pad(Math.floor(resizePreviewEndMin.value / 60))}:${pad(resizePreviewEndMin.value % 60)}`
+  return { heightPx, endTime }
 }
 </script>
 
@@ -298,7 +392,11 @@ async function onResizeEnd(e: MouseEvent) {
             :dias="dias"
             :manutencoes="untimedMs"
             :scrollbar-width="scrollbarWidth"
+            :is-technician="isTechnician"
             @card-expand="emit('card-expand', $event)"
+            @drag-start="onDragStart"
+            @drag-end="onDragEnd"
+            @banner-drop="onBannerDrop"
           />
 
           <div class="cal-scroll-area">
@@ -319,7 +417,8 @@ async function onResizeEnd(e: MouseEvent) {
                   :key="dia.dateStr"
                   class="cal-day-col"
                   @contextmenu="ctxDateStr = dia.dateStr"
-                  @dragover.prevent
+                  @dragover="onColDragOver($event, dia.dateStr, $event.currentTarget as HTMLElement)"
+                  @dragleave="onColDragLeave($event, $event.currentTarget as HTMLElement)"
                   @drop="onDrop($event, dia.dateStr, $event.currentTarget as HTMLElement)"
                 >
                   <div
@@ -340,15 +439,25 @@ async function onResizeEnd(e: MouseEvent) {
                     :key="layout.manutencao.id"
                     :manutencao="layout.manutencao"
                     :top-px="layout.topPx"
-                    :height-px="layout.heightPx"
+                    :height-px="resizePreviewFor(layout.manutencao.id)?.heightPx ?? layout.heightPx"
                     :left-percent="layout.leftPercent"
                     :width-percent="layout.widthPercent"
                     :is-technician="isTechnician"
+                    :preview-end-time="resizePreviewFor(layout.manutencao.id)?.endTime"
                     @click="emit('card-click', $event)"
                     @expand="emit('card-expand', $event)"
                     @drag-start="onDragStart"
+                    @drag-end="onDragEnd"
                     @resize-start="onResizeStart"
                   />
+
+                  <div
+                    v-if="dragOverDate === dia.dateStr"
+                    class="cal-drag-ghost"
+                    :style="{ top: `${dragOverTopPx}px`, height: `${dragGhostHeightPx}px` }"
+                  >
+                    <span class="cal-drag-ghost-label">{{ dragGhostEndTime }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -514,6 +623,32 @@ async function onResizeEnd(e: MouseEvent) {
   border-right: 1px solid var(--nd-border);
 }
 .cal-day-col:last-child { border-right: none; }
+
+.cal-drag-ghost {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--nd-action) 18%, transparent);
+  border: 1.5px dashed var(--nd-action);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 15;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 2px;
+  box-sizing: border-box;
+}
+.cal-drag-ghost-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--nd-action);
+  background: var(--nd-surface);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
 
 .cal-hour-row {
   position: absolute;
