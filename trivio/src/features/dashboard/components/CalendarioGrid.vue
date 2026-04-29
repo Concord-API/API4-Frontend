@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Plus } from 'lucide-vue-next'
-import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
+import { toast } from 'vue-sonner'
+import { manutencaoService, type ManutencaoAPI } from '@/shared/services/manutencaoService'
 import type { DiaDaSemana } from '@/features/dashboard/composables/useCalendario'
 import { GRID_START_HOUR, GRID_END_HOUR, ROW_HEIGHT_PX } from '@/features/dashboard/composables/useCalendario'
 import CalendarioCard from './CalendarioCard.vue'
@@ -19,6 +20,7 @@ const emit = defineEmits<{
   'cell-click': [dateStr: string, hour: number]
   'nova-manutencao-ctx': [dateStr: string, hour: number]
   'ir-para-hoje': []
+  'saved': []
 }>()
 
 const scrollbarWidth = ref(16)
@@ -50,18 +52,21 @@ interface CardLayout {
   widthPercent: number
 }
 
-function getHourMinute(iso: string): { h: number; m: number } {
-  const d = new Date(iso)
-  return { h: d.getHours(), m: d.getMinutes() }
+function getHourMinute(timeStr: string): { h: number; m: number } {
+  if (!timeStr) return { h: 0, m: 0 }
+  const [h, m] = timeStr.split(':').map(Number)
+  return { h: h || 0, m: m || 0 }
 }
 
 function computeCardLayouts(ms: ManutencaoAPI[]): CardLayout[] {
   const timed = ms.filter(m => m.startTime && m.endTime)
   if (!timed.length) return []
 
-  const sorted = [...timed].sort((a, b) =>
-    new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
-  )
+  const sorted = [...timed].sort((a, b) => {
+    const startA = getHourMinute(a.startTime!)
+    const startB = getHourMinute(b.startTime!)
+    return (startA.h * 60 + startA.m) - (startB.h * 60 + startB.m)
+  })
 
   interface Slot { manutencao: ManutencaoAPI; col: number; totalCols: number }
   const slots: Slot[] = sorted.map(m => ({ manutencao: m, col: 0, totalCols: 1 }))
@@ -70,12 +75,19 @@ function computeCardLayouts(ms: ManutencaoAPI[]): CardLayout[] {
   for (let i = 0; i < slots.length; i++) {
     if (processed.has(i)) continue
     const group: number[] = [i]
-    let groupMaxEnd = new Date(slots[i]!.manutencao.endTime!).getTime()
+    let groupMaxEndMinutes = (() => {
+      const end = getHourMinute(slots[i]!.manutencao.endTime!)
+      return end.h * 60 + end.m
+    })()
+
     for (let j = i + 1; j < slots.length; j++) {
-      const bStart = new Date(slots[j]!.manutencao.startTime!).getTime()
-      if (bStart < groupMaxEnd) {
+      const bStart = getHourMinute(slots[j]!.manutencao.startTime!)
+      const bStartMinutes = bStart.h * 60 + bStart.m
+      
+      if (bStartMinutes < groupMaxEndMinutes) {
         group.push(j)
-        groupMaxEnd = Math.max(groupMaxEnd, new Date(slots[j]!.manutencao.endTime!).getTime())
+        const bEnd = getHourMinute(slots[j]!.manutencao.endTime!)
+        groupMaxEndMinutes = Math.max(groupMaxEndMinutes, bEnd.h * 60 + bEnd.m)
       }
     }
     group.forEach((idx, pos) => {
@@ -132,6 +144,120 @@ function isToday(dateStr: string): boolean {
   const today = new Date().toISOString().split('T')[0]
   return dateStr === today
 }
+
+// ─── DRAG-AND-DROP ──────────────────────────────────────────────────────────
+const draggedManutencao = ref<ManutencaoAPI | null>(null)
+
+function onDragStart(e: DragEvent, m: ManutencaoAPI) {
+  draggedManutencao.value = m
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(m.id))
+  }
+}
+
+async function onDrop(e: DragEvent, dateStr: string, colEl: HTMLElement) {
+  e.preventDefault()
+  if (!draggedManutencao.value) return
+  const m = draggedManutencao.value
+  draggedManutencao.value = null
+
+  const rect = colEl.getBoundingClientRect()
+  const y = e.clientY - rect.top
+  const halfHourPx = ROW_HEIGHT_PX / 2
+
+  // snap to 30-min intervals
+  const snappedMinutes = Math.round(y / halfHourPx) * 30
+
+  const start = getHourMinute(m.startTime!)
+  const end   = getHourMinute(m.endTime!)
+  const durationMinutes = (end.h * 60 + end.m) - (start.h * 60 + start.m)
+
+  const clampedStart  = Math.max(0, Math.min(24 * 60 - durationMinutes, snappedMinutes))
+  const clampedEnd    = clampedStart + durationMinutes
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const startTime = `${pad(Math.floor(clampedStart / 60))}:${pad(clampedStart % 60)}`
+  const endTime   = `${pad(Math.floor(clampedEnd   / 60))}:${pad(clampedEnd   % 60)}`
+
+  try {
+    await manutencaoService.atualizar(m.id, {
+      contractId: m.contract.id,
+      date: dateStr,
+      preventive: m.type === 'PREVENTIVA',
+      type: m.type,
+      status: m.status,
+      employeeIds: m.employees.map(emp => emp.employeeId),
+      startTime,
+      endTime,
+      ...(m.latitude != null && m.longitude != null ? { latitude: m.latitude, longitude: m.longitude } : {}),
+    })
+    toast.success('Manutenção movida.')
+    emit('saved')
+  } catch {
+    toast.error('Erro ao mover a manutenção.')
+  }
+}
+
+// ─── RESIZE ──────────────────────────────────────────────────────────────────
+const resizingManutencao = ref<ManutencaoAPI | null>(null)
+const resizeStartY       = ref(0)
+const resizeStartEndMin  = ref(0)
+
+function onResizeStart(e: MouseEvent, m: ManutencaoAPI) {
+  resizingManutencao.value = m
+  resizeStartY.value = e.clientY
+  const end = getHourMinute(m.endTime!)
+  resizeStartEndMin.value = end.h * 60 + end.m
+
+  window.addEventListener('mousemove', onResizeMove)
+  window.addEventListener('mouseup', onResizeEnd)
+}
+
+function onResizeMove(_e: MouseEvent) {
+  // preview not implemented – snap on mouseup
+}
+
+async function onResizeEnd(e: MouseEvent) {
+  window.removeEventListener('mousemove', onResizeMove)
+  window.removeEventListener('mouseup', onResizeEnd)
+
+  if (!resizingManutencao.value) return
+  const m = resizingManutencao.value
+  resizingManutencao.value = null
+
+  const deltaY = e.clientY - resizeStartY.value
+  const halfHourPx = ROW_HEIGHT_PX / 2
+
+  // snap delta to 30-min intervals
+  const deltaMinutes = Math.round(deltaY / halfHourPx) * 30
+  if (deltaMinutes === 0) return
+
+  const start = getHourMinute(m.startTime!)
+  const startMinutes = start.h * 60 + start.m
+  const newEndMin = Math.max(startMinutes + 30, Math.min(24 * 60 - 1, resizeStartEndMin.value + deltaMinutes))
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const endTime = `${pad(Math.floor(newEndMin / 60))}:${pad(newEndMin % 60)}`
+
+  try {
+    await manutencaoService.atualizar(m.id, {
+      contractId: m.contract.id,
+      date: m.date,
+      preventive: m.type === 'PREVENTIVA',
+      type: m.type,
+      status: m.status,
+      employeeIds: m.employees.map(emp => emp.employeeId),
+      startTime: m.startTime,
+      endTime,
+      ...(m.latitude != null && m.longitude != null ? { latitude: m.latitude, longitude: m.longitude } : {}),
+    })
+    toast.success('Duração atualizada.')
+    emit('saved')
+  } catch {
+    toast.error('Erro ao redimensionar.')
+  }
+}
 </script>
 
 <template>
@@ -185,6 +311,8 @@ function isToday(dateStr: string): boolean {
                   :key="dia.dateStr"
                   class="cal-day-col"
                   @contextmenu="ctxDateStr = dia.dateStr"
+                  @dragover.prevent
+                  @drop="onDrop($event, dia.dateStr, $event.currentTarget as HTMLElement)"
                 >
                   <div
                     v-for="h in hours"
@@ -209,6 +337,8 @@ function isToday(dateStr: string): boolean {
                     :width-percent="layout.widthPercent"
                     @click="emit('card-click', $event)"
                     @expand="emit('card-expand', $event)"
+                    @drag-start="onDragStart"
+                    @resize-start="onResizeStart"
                   />
                 </div>
               </div>

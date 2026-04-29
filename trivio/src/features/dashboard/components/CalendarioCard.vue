@@ -15,6 +15,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   click: [manutencao: ManutencaoAPI]
   expand: [manutencao: ManutencaoAPI]
+  'drag-start': [event: DragEvent, manutencao: ManutencaoAPI]
+  'resize-start': [event: MouseEvent, manutencao: ManutencaoAPI]
 }>()
 
 const popoverOpen = ref(false)
@@ -55,11 +57,7 @@ const label = computed(() =>
 
 const horario = computed(() => {
   if (!props.manutencao.startTime || !props.manutencao.endTime) return null
-  const fmt = (iso: string) => {
-    const d = new Date(iso)
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
-  }
-  return `${fmt(props.manutencao.startTime)}–${fmt(props.manutencao.endTime)}`
+  return `${props.manutencao.startTime} – ${props.manutencao.endTime}`
 })
 
 function hashColor(id: number): string {
@@ -72,9 +70,9 @@ const avatares = computed(() => props.manutencao.employees.slice(0, 3))
 const cardStyle = computed(() => ({
   position: 'absolute' as const,
   top: `${props.topPx}px`,
-  height: `${Math.max(props.heightPx, 24)}px`,
+  height: `${props.heightPx}px`,
   left: `${props.leftPercent}%`,
-  width: `calc(${props.widthPercent}% - 4px)`,
+  width: `${props.widthPercent}%`,
   zIndex: popoverOpen.value ? 20 : 10,
 }))
 
@@ -96,6 +94,8 @@ function onPopoverExpand(m: ManutencaoAPI) {
         class="cal-card"
         :style="[cardStyle, { '--card-color': statusColor }]"
         :title="statusLabel"
+        draggable="true"
+        @dragstart.stop="emit('drag-start', $event, manutencao)"
         @click.stop
         @dblclick.stop="onDoubleClick"
       >
@@ -115,6 +115,12 @@ function onPopoverExpand(m: ManutencaoAPI) {
             +{{ manutencao.employees.length - 3 }}
           </div>
         </div>
+
+        <!-- Handle de resize: puxe para redimensionar -->
+        <div
+          class="cal-resize-handle"
+          @mousedown.stop.prevent="emit('resize-start', $event, manutencao)"
+        />
       </div>
     </PopoverTrigger>
     <PopoverContent
@@ -146,6 +152,20 @@ function onPopoverExpand(m: ManutencaoAPI) {
   box-sizing: border-box;
 }
 .cal-card:hover { filter: brightness(1.15); }
+
+.cal-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  border-radius: 0 0 4px 4px;
+  transition: background 120ms ease-out;
+}
+.cal-resize-handle:hover {
+  background: color-mix(in srgb, var(--card-color) 40%, transparent);
+}
 
 .cal-card-label {
   font-family: 'Montserrat', sans-serif;

@@ -91,12 +91,7 @@ function defaultForm(): FormState {
 function padHour(h: number): string { return `${String(h).padStart(2, '0')}:00` }
 
 function formFromManutencao(m: ManutencaoAPI): FormState {
-  const toLocal = (iso: string | undefined): string => {
-    if (!iso) return ''
-    const d = new Date(iso)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
-  return { contractId: m.contract.id, date: m.date, type: m.type, startTimeLocal: toLocal(m.startTime), endTimeLocal: toLocal(m.endTime), status: m.status, employeeIds: m.employees.map(e => e.employeeId), latitude: m.latitude ?? null, longitude: m.longitude ?? null }
+  return { contractId: m.contract.id, date: m.date, type: m.type, startTimeLocal: m.startTime ? m.startTime.slice(0,5) : '', endTimeLocal: m.endTime ? m.endTime.slice(0,5) : '', status: m.status, employeeIds: m.employees.map(e => e.employeeId), latitude: m.latitude ?? null, longitude: m.longitude ?? null }
 }
 
 function formFromContext(ctx: CriacaoContext): FormState {
@@ -157,8 +152,8 @@ async function submitForm() {
     contractId: form.value.contractId, date: form.value.date,
     preventive: form.value.type === 'PREVENTIVA', type: form.value.type,
     status: form.value.status, employeeIds: form.value.employeeIds,
-    startTime: toIso(form.value.date, form.value.startTimeLocal),
-    endTime: toIso(form.value.date, form.value.endTimeLocal),
+    startTime: form.value.startTimeLocal || undefined,
+    endTime: form.value.endTimeLocal || undefined,
     ...(form.value.latitude != null && form.value.longitude != null
       ? { latitude: form.value.latitude, longitude: form.value.longitude }
       : {}),
@@ -198,8 +193,7 @@ const statusLabel = computed((): string => {
 
 const horario = computed((): string | null => {
   if (!props.manutencao?.startTime || !props.manutencao?.endTime) return null
-  const fmt = (iso: string) => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
-  return `${fmt(props.manutencao.startTime)} – ${fmt(props.manutencao.endTime)}`
+  return `${props.manutencao.startTime.slice(0, 5)} – ${props.manutencao.endTime.slice(0, 5)}`
 })
 
 const tipoLabel = computed(() => {
