@@ -50,18 +50,21 @@ interface CardLayout {
   widthPercent: number
 }
 
-function getHourMinute(iso: string): { h: number; m: number } {
-  const d = new Date(iso)
-  return { h: d.getHours(), m: d.getMinutes() }
+function getHourMinute(timeStr: string): { h: number; m: number } {
+  if (!timeStr) return { h: 0, m: 0 }
+  const [h, m] = timeStr.split(':').map(Number)
+  return { h: h || 0, m: m || 0 }
 }
 
 function computeCardLayouts(ms: ManutencaoAPI[]): CardLayout[] {
   const timed = ms.filter(m => m.startTime && m.endTime)
   if (!timed.length) return []
 
-  const sorted = [...timed].sort((a, b) =>
-    new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
-  )
+  const sorted = [...timed].sort((a, b) => {
+    const startA = getHourMinute(a.startTime!)
+    const startB = getHourMinute(b.startTime!)
+    return (startA.h * 60 + startA.m) - (startB.h * 60 + startB.m)
+  })
 
   interface Slot { manutencao: ManutencaoAPI; col: number; totalCols: number }
   const slots: Slot[] = sorted.map(m => ({ manutencao: m, col: 0, totalCols: 1 }))
@@ -70,12 +73,19 @@ function computeCardLayouts(ms: ManutencaoAPI[]): CardLayout[] {
   for (let i = 0; i < slots.length; i++) {
     if (processed.has(i)) continue
     const group: number[] = [i]
-    let groupMaxEnd = new Date(slots[i]!.manutencao.endTime!).getTime()
+    let groupMaxEndMinutes = (() => {
+      const end = getHourMinute(slots[i]!.manutencao.endTime!)
+      return end.h * 60 + end.m
+    })()
+
     for (let j = i + 1; j < slots.length; j++) {
-      const bStart = new Date(slots[j]!.manutencao.startTime!).getTime()
-      if (bStart < groupMaxEnd) {
+      const bStart = getHourMinute(slots[j]!.manutencao.startTime!)
+      const bStartMinutes = bStart.h * 60 + bStart.m
+      
+      if (bStartMinutes < groupMaxEndMinutes) {
         group.push(j)
-        groupMaxEnd = Math.max(groupMaxEnd, new Date(slots[j]!.manutencao.endTime!).getTime())
+        const bEnd = getHourMinute(slots[j]!.manutencao.endTime!)
+        groupMaxEndMinutes = Math.max(groupMaxEndMinutes, bEnd.h * 60 + bEnd.m)
       }
     }
     group.forEach((idx, pos) => {

@@ -55,11 +55,7 @@ const label = computed(() =>
 
 const horario = computed(() => {
   if (!props.manutencao.startTime || !props.manutencao.endTime) return null
-  const fmt = (iso: string) => {
-    const d = new Date(iso)
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
-  }
-  return `${fmt(props.manutencao.startTime)}–${fmt(props.manutencao.endTime)}`
+  return `${props.manutencao.startTime} – ${props.manutencao.endTime}`
 })
 
 function hashColor(id: number): string {
@@ -72,9 +68,9 @@ const avatares = computed(() => props.manutencao.employees.slice(0, 3))
 const cardStyle = computed(() => ({
   position: 'absolute' as const,
   top: `${props.topPx}px`,
-  height: `${Math.max(props.heightPx, 24)}px`,
+  height: `${props.heightPx}px`,
   left: `${props.leftPercent}%`,
-  width: `calc(${props.widthPercent}% - 4px)`,
+  width: `${props.widthPercent}%`,
   zIndex: popoverOpen.value ? 20 : 10,
 }))
 
