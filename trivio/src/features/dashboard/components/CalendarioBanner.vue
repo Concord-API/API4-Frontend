@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
 import type { DiaDaSemana } from '@/features/dashboard/composables/useCalendario'
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
+import CalendarioPopover from './CalendarioPopover.vue'
 
 const props = defineProps<{
   dias: DiaDaSemana[]
@@ -10,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'card-click': [manutencao: ManutencaoAPI]
+  'card-expand': [manutencao: ManutencaoAPI]
 }>()
 
 function statusColor(m: ManutencaoAPI): string {
@@ -32,6 +34,10 @@ const porDia = computed(() =>
 )
 
 const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
+
+function onChipExpand(m: ManutencaoAPI) {
+  emit('card-expand', m)
+}
 </script>
 
 <template>
@@ -43,16 +49,29 @@ const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
         :key="i"
         class="cal-banner-col"
       >
-        <button
-          v-for="m in ms"
-          :key="m.id"
-          class="cal-banner-chip"
-          :style="{ '--chip-color': statusColor(m) }"
-          :title="m.contract?.client?.name ?? m.type"
-          @click="emit('card-click', m)"
-        >
-          {{ m.contract?.client?.name ?? m.type }}
-        </button>
+        <Popover v-for="m in ms" :key="m.id">
+          <PopoverTrigger as-child>
+            <button
+              class="cal-banner-chip"
+              :style="{ '--chip-color': statusColor(m) }"
+              :title="m.contract?.client?.name ?? m.type"
+              @dblclick.stop="onChipExpand(m)"
+            >
+              {{ m.contract?.client?.name ?? m.type }}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="bottom"
+            :side-offset="4"
+            align="start"
+            class="cpv-popover-content"
+          >
+            <CalendarioPopover
+              :manutencao="m"
+              @expand="onChipExpand"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
     <div class="cal-scrollbar-spacer" :style="{ width: scrollbarWidth + 'px' }" />
@@ -63,7 +82,7 @@ const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
 .cal-banner {
   display: flex;
   border-bottom: 1px solid var(--nd-border-visible);
-  background: var(--nd-surface);
+  background: inherit;
   min-height: 28px;
 }
 
@@ -122,6 +141,16 @@ const hasAny = computed(() => porDia.value.some(ms => ms.length > 0))
 .cal-scrollbar-spacer {
   flex-shrink: 0;
   border-left: 1px solid var(--nd-border);
-  background: var(--nd-surface);
+  background: inherit;
+}
+
+.cpv-popover-content {
+  padding: 12px !important;
+  width: auto !important;
+  max-width: 300px !important;
+  border: 1px solid var(--nd-border-visible) !important;
+  background: var(--nd-surface) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
 }
 </style>

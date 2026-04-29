@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { Clock, Tag, Calendar, Users, Building2, Edit2 } from 'lucide-vue-next'
 import {
   Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog'
@@ -17,7 +17,6 @@ import { contratoService, type ContratoAPI } from '@/shared/services/contratoSer
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
 
-
 export type ModalMode = 'detalhe' | 'edicao' | 'criacao'
 
 export interface CriacaoContext {
@@ -25,7 +24,6 @@ export interface CriacaoContext {
   hour: number
   tecnico: TecnicoAPI | null
 }
-
 
 const props = defineProps<{
   open: boolean
@@ -40,13 +38,8 @@ const emit = defineEmits<{
   saved: []
 }>()
 
-
 const internalMode = ref<ModalMode>(props.mode)
-
-watch(() => props.mode, (newMode) => {
-  internalMode.value = newMode
-})
-
+watch(() => props.mode, (v) => { internalMode.value = v })
 
 const contratos = ref<ContratoAPI[]>([])
 const tecnicos = ref<TecnicoAPI[]>([])
@@ -54,27 +47,21 @@ const tecnicos = ref<TecnicoAPI[]>([])
 async function carregarDados() {
   try {
     const [c, t] = await Promise.all([contratoService.listar(), tecnicoService.listar()])
-    contratos.value = c
-    tecnicos.value = t
-  } catch {
-
-  }
+    contratos.value = c; tecnicos.value = t
+  } catch { /* silencioso */ }
 }
 
 const contratoOptions = computed(() =>
   contratos.value.map(c => ({ value: c.id, label: `#${String(c.id).padStart(3, '0')} — ${c.client.name}` })),
 )
-
 const tecnicoOptions = computed(() =>
   tecnicos.value.filter(t => t.active).map(t => ({ value: t.employeeId, label: t.name })),
 )
-
 const tipoOptions = [
   { value: 'PREVENTIVA', label: 'Preventiva' },
   { value: 'CORRETIVA', label: 'Corretiva' },
   { value: 'MELHORIA', label: 'Melhoria' },
 ]
-
 const statusOptions = [
   { value: 'SCHEDULED', label: 'Programada' },
   { value: 'STARTED', label: 'Em andamento' },
@@ -92,81 +79,40 @@ interface FormState {
 }
 
 function defaultForm(): FormState {
-  return {
-    contractId: null,
-    date: '',
-    type: 'PREVENTIVA',
-    startTimeLocal: '',
-    endTimeLocal: '',
-    status: 'SCHEDULED',
-    employeeIds: [],
-  }
+  return { contractId: null, date: '', type: 'PREVENTIVA', startTimeLocal: '', endTimeLocal: '', status: 'SCHEDULED', employeeIds: [] }
 }
 
-function padHour(h: number): string {
-  return `${String(h).padStart(2, '0')}:00`
-}
+function padHour(h: number): string { return `${String(h).padStart(2, '0')}:00` }
 
 function formFromManutencao(m: ManutencaoAPI): FormState {
-  const toLocalTime = (iso: string | undefined): string => {
+  const toLocal = (iso: string | undefined): string => {
     if (!iso) return ''
     const d = new Date(iso)
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
-  return {
-    contractId: m.contract.id,
-    date: m.date,
-    type: m.type,
-    startTimeLocal: toLocalTime(m.startTime),
-    endTimeLocal: toLocalTime(m.endTime),
-    status: m.status,
-    employeeIds: m.employees.map(e => e.employeeId),
-  }
+  return { contractId: m.contract.id, date: m.date, type: m.type, startTimeLocal: toLocal(m.startTime), endTimeLocal: toLocal(m.endTime), status: m.status, employeeIds: m.employees.map(e => e.employeeId) }
 }
 
 function formFromContext(ctx: CriacaoContext): FormState {
-  const endHour = Math.min(ctx.hour + 1, 23)
-  return {
-    contractId: null,
-    date: ctx.dateStr,
-    type: 'PREVENTIVA',
-    startTimeLocal: padHour(ctx.hour),
-    endTimeLocal: padHour(endHour),
-    status: 'SCHEDULED',
-    employeeIds: ctx.tecnico ? [ctx.tecnico.employeeId] : [],
-  }
+  return { contractId: null, date: ctx.dateStr, type: 'PREVENTIVA', startTimeLocal: padHour(ctx.hour), endTimeLocal: padHour(Math.min(ctx.hour + 1, 23)), status: 'SCHEDULED', employeeIds: ctx.tecnico ? [ctx.tecnico.employeeId] : [] }
 }
 
 const form = ref<FormState>(defaultForm())
-
-watch(
-  () => props.open,
-  (isOpen) => {
-    submitError.value = null
-    if (!isOpen) {
-      internalMode.value = props.mode
-      return
-    }
-    void carregarDados()
-    if (props.mode === 'edicao' && props.manutencao) {
-      form.value = formFromManutencao(props.manutencao)
-    } else if (props.mode === 'criacao' && props.criacaoContext) {
-      form.value = formFromContext(props.criacaoContext)
-    } else if (props.mode === 'criacao') {
-      form.value = defaultForm()
-    }
-  },
-)
-
-watch(internalMode, (mode) => {
-  if (mode === 'edicao' && props.manutencao) {
-    form.value = formFromManutencao(props.manutencao)
-    submitError.value = null
-  }
-})
-
 const submitError = ref<string | null>(null)
 const submitting = ref(false)
+
+watch(() => props.open, (isOpen) => {
+  submitError.value = null
+  if (!isOpen) { internalMode.value = props.mode; return }
+  void carregarDados()
+  if (props.mode === 'edicao' && props.manutencao) form.value = formFromManutencao(props.manutencao)
+  else if (props.mode === 'criacao' && props.criacaoContext) form.value = formFromContext(props.criacaoContext)
+  else if (props.mode === 'criacao') form.value = defaultForm()
+})
+
+watch(internalMode, (mode) => {
+  if (mode === 'edicao' && props.manutencao) { form.value = formFromManutencao(props.manutencao); submitError.value = null }
+})
 
 function toIso(dateStr: string, timeLocal: string): string | undefined {
   if (!dateStr || !timeLocal) return undefined
@@ -174,58 +120,36 @@ function toIso(dateStr: string, timeLocal: string): string | undefined {
 }
 
 async function submitForm() {
-  if (!form.value.contractId) {
-    toast.error('Selecione um contrato.')
-    return
-  }
-  submitError.value = null
-  submitting.value = true
-
+  if (!form.value.contractId) { toast.error('Selecione um contrato.'); return }
+  submitError.value = null; submitting.value = true
   const payload = {
-    contractId: form.value.contractId,
-    date: form.value.date,
-    preventive: form.value.type === 'PREVENTIVA',
-    type: form.value.type,
-    status: form.value.status,
-    employeeIds: form.value.employeeIds,
+    contractId: form.value.contractId, date: form.value.date,
+    preventive: form.value.type === 'PREVENTIVA', type: form.value.type,
+    status: form.value.status, employeeIds: form.value.employeeIds,
     startTime: toIso(form.value.date, form.value.startTimeLocal),
     endTime: toIso(form.value.date, form.value.endTimeLocal),
   }
-
   try {
     if (internalMode.value === 'edicao' && props.manutencao) {
-      await manutencaoService.atualizar(props.manutencao.id, payload)
-      toast.success('Manutenção atualizada.')
+      await manutencaoService.atualizar(props.manutencao.id, payload); toast.success('Manutenção atualizada.')
     } else {
-      await manutencaoService.criar(payload)
-      toast.success('Manutenção cadastrada com sucesso.')
+      await manutencaoService.criar(payload); toast.success('Manutenção cadastrada com sucesso.')
     }
-    emit('update:open', false)
-    emit('saved')
+    emit('update:open', false); emit('saved')
   } catch (error) {
     const msg = getApiErrorMessage(error, 'Não foi possível salvar a manutenção.')
-    submitError.value = msg
-    toast.error(msg)
-  } finally {
-    submitting.value = false
-  }
+    submitError.value = msg; toast.error(msg)
+  } finally { submitting.value = false }
 }
 
 function isPast(dateStr: string): boolean {
-  const hoje = new Date()
-  hoje.setHours(0, 0, 0, 0)
-  const d = new Date(dateStr)
-  d.setHours(0, 0, 0, 0)
-  return d < hoje
+  const h = new Date(); h.setHours(0,0,0,0); const d = new Date(dateStr); d.setHours(0,0,0,0); return d < h
 }
 
 const statusColor = computed((): string => {
   if (!props.manutencao) return 'var(--nd-action)'
   const s = props.manutencao.status
-  if (s === 'SCHEDULED') {
-    if (isPast(props.manutencao.date)) return 'var(--nd-accent)'
-    return 'var(--nd-action)'
-  }
+  if (s === 'SCHEDULED') return isPast(props.manutencao.date) ? 'var(--nd-accent)' : 'var(--nd-action)'
   if (s === 'STARTED') return 'var(--nd-warning)'
   return 'var(--nd-success)'
 })
@@ -233,56 +157,46 @@ const statusColor = computed((): string => {
 const statusLabel = computed((): string => {
   if (!props.manutencao) return ''
   const s = props.manutencao.status
-  if (s === 'SCHEDULED') {
-    if (isPast(props.manutencao.date)) return 'ATRASADA'
-    return 'AGENDADA'
-  }
+  if (s === 'SCHEDULED') return isPast(props.manutencao.date) ? 'ATRASADA' : 'AGENDADA'
   if (s === 'STARTED') return 'EM ANDAMENTO'
   return 'CONCLUÍDA'
 })
 
 const horario = computed((): string | null => {
   if (!props.manutencao?.startTime || !props.manutencao?.endTime) return null
-  const fmt = (iso: string) => {
-    const d = new Date(iso)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
+  const fmt = (iso: string) => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
   return `${fmt(props.manutencao.startTime)} – ${fmt(props.manutencao.endTime)}`
 })
 
-function closeModal() {
-  emit('update:open', false)
-}
-
-function switchToEdicao() {
-  internalMode.value = 'edicao'
-  emit('update:mode', 'edicao')
-}
-
-function switchToDetalhe() {
-  internalMode.value = 'detalhe'
-  emit('update:mode', 'detalhe')
-}
-
-function handleOpenChange(val: boolean) {
-  emit('update:open', val)
-}
+const tipoLabel = computed(() => {
+  const map: Record<string, string> = { PREVENTIVA: 'Preventiva', CORRETIVA: 'Corretiva', MELHORIA: 'Melhoria' }
+  return props.manutencao ? (map[props.manutencao.type] ?? props.manutencao.type) : ''
+})
 
 function formatDate(dateStr: string): string {
   const [y = '', m = '', d = ''] = dateStr.split('-')
-  return `${d}/${m}/${y}`
+  const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
+  const dateObj = new Date(Number(y), Number(m) - 1, Number(d))
+  return `${dias[dateObj.getDay()]}, ${d}/${m}/${y}`
 }
+
+function hashColor(id: number): string {
+  const palette = ['#7C3AED','#0EA5E9','#F97316','#EC4899','#14B8A6','#8B5CF6','#EF4444','#84CC16']
+  return palette[id % palette.length]!
+}
+
+function switchToEdicao() { internalMode.value = 'edicao'; emit('update:mode', 'edicao') }
+function switchToDetalhe() { internalMode.value = 'detalhe'; emit('update:mode', 'detalhe') }
+function handleOpenChange(val: boolean) { emit('update:open', val) }
 
 const contractIdModel = computed<string | number | null>({
   get: () => form.value.contractId,
   set: (v) => { form.value.contractId = v === null ? null : Number(v) },
 })
-
 const typeModel = computed<string | number | null>({
   get: () => form.value.type,
   set: (v) => { form.value.type = (v as ManutencaoTipo | null) ?? 'PREVENTIVA' },
 })
-
 const statusModel = computed<string | number | null>({
   get: () => form.value.status,
   set: (v) => { form.value.status = (v as ManutencaoStatus | null) ?? 'SCHEDULED' },
@@ -291,167 +205,172 @@ const statusModel = computed<string | number | null>({
 
 <template>
   <Dialog :open="open" @update:open="handleOpenChange">
-    <DialogContent class="sm:max-w-2xl">
+    <DialogContent :show-close-button="false" class="max-w-[680px] w-[680px] p-0 gap-0 overflow-hidden flex flex-col !rounded-lg border-0 shadow-xl">
 
+      <!-- ═══════ DETALHE ═══════ -->
       <template v-if="internalMode === 'detalhe'">
-        <DialogHeader>
-          <DialogTitle class="nd-dialog-title">DETALHES DA MANUTENÇÃO</DialogTitle>
-          <DialogDescription class="sr-only">Detalhes da manutenção selecionada</DialogDescription>
+        <DialogHeader class="sr-only">
+          <DialogTitle>Detalhes da manutenção</DialogTitle>
+          <DialogDescription>Detalhes da manutenção selecionada</DialogDescription>
         </DialogHeader>
 
-        <div v-if="manutencao" class="nd-detail">
-          <div class="nd-detail-status-row">
-            <span
-              class="nd-tag nd-tag--lg"
-              :style="{ color: statusColor, borderColor: statusColor }"
-            >{{ statusLabel }}</span>
-            <span class="nd-detail-tipo">{{ manutencao.type }}</span>
-          </div>
-
-          <div class="nd-detail-section">
-            <span class="nd-field-label">Cliente</span>
-            <span class="nd-detail-value">{{ manutencao.contract.client.name }}</span>
-          </div>
-
-          <div class="nd-detail-section">
-            <span class="nd-field-label">Data</span>
-            <span class="nd-detail-value nd-detail-value--mono">
-              {{ formatDate(manutencao.date) }}
-              <template v-if="horario"> · {{ horario }}</template>
-            </span>
-          </div>
-
-          <div class="nd-detail-section">
-            <span class="nd-field-label">Contrato</span>
-            <span class="nd-detail-value">#{{ String(manutencao.contract.id).padStart(3, '0') }}</span>
-          </div>
-
-          <div class="nd-detail-section">
-            <span class="nd-field-label">TÉCNICOS ({{ manutencao.employees.length }})</span>
-            <div v-if="manutencao.employees.length" class="nd-detail-list">
-              <div
-                v-for="emp in manutencao.employees"
-                :key="emp.employeeId"
-                class="nd-detail-list-item"
-              >
-                <span class="nd-detail-list-dot" />
-                {{ emp.name }}
+        <div v-if="manutencao" class="cm-layout">
+          <!-- Coluna principal -->
+          <div class="cm-main">
+            <div class="cm-top-bar">
+              <span class="cm-tag" :style="{ color: statusColor, borderColor: statusColor }">{{ statusLabel }}</span>
+              <div class="cm-top-actions">
+                <button type="button" class="cm-icon-btn" @click="switchToEdicao" title="Editar">
+                  <Edit2 :size="14" />
+                </button>
               </div>
             </div>
-            <span v-else class="nd-detail-value nd-detail-value--dim">Nenhum técnico alocado</span>
+
+            <h2 class="cm-client-name">{{ manutencao.contract.client.name }}</h2>
+            <span class="cm-contract-id">#{{ String(manutencao.contract.id).padStart(3, '0') }}</span>
+
+            <div class="cm-info-grid">
+              <div class="cm-info-item">
+                <Calendar :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Data</span>
+                  <span class="cm-info-value">{{ formatDate(manutencao.date) }}</span>
+                </div>
+              </div>
+
+              <div class="cm-info-item">
+                <Clock :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Horário</span>
+                  <span class="cm-info-value">{{ horario ?? 'Sem horário definido' }}</span>
+                </div>
+              </div>
+
+              <div class="cm-info-item">
+                <Tag :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Tipo</span>
+                  <span class="cm-info-value">{{ tipoLabel }}</span>
+                </div>
+              </div>
+
+              <div class="cm-info-item">
+                <Building2 :size="14" class="cm-info-icon" />
+                <div class="cm-info-content">
+                  <span class="cm-info-label">Contrato</span>
+                  <span class="cm-info-value">#{{ String(manutencao.contract.id).padStart(3, '0') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna lateral - Técnicos -->
+          <div class="cm-aside">
+            <div class="cm-aside-header">
+              <Users :size="14" class="cm-info-icon" />
+              <span class="cm-aside-title">Técnicos</span>
+              <span class="cm-aside-count">{{ manutencao.employees.length }}</span>
+            </div>
+            <div v-if="manutencao.employees.length" class="cm-tecnico-list">
+              <div v-for="emp in manutencao.employees" :key="emp.employeeId" class="cm-tecnico-item">
+                <div class="cm-tecnico-avatar" :style="{ background: hashColor(emp.employeeId) }">
+                  {{ emp.name.charAt(0).toUpperCase() }}
+                </div>
+                <span class="cm-tecnico-name">{{ emp.name }}</span>
+              </div>
+            </div>
+            <p v-else class="cm-no-tecnico">Nenhum técnico alocado</p>
           </div>
         </div>
-
-        <DialogFooter>
-          <DialogClose as-child>
-            <button type="button" class="nd-btn-secondary">FECHAR</button>
-          </DialogClose>
-          <button type="button" class="nd-btn-primary" @click="switchToEdicao">
-            Editar
-          </button>
-        </DialogFooter>
       </template>
 
+      <!-- ═══════ CRIAÇÃO / EDIÇÃO ═══════ -->
       <template v-else>
-        <DialogHeader>
-          <DialogTitle class="nd-dialog-title">
-            {{ internalMode === 'edicao' ? 'EDITAR MANUTENÇÃO' : 'NOVA MANUTENÇÃO' }}
-          </DialogTitle>
-          <DialogDescription class="sr-only">
-            {{ internalMode === 'edicao' ? 'Editar manutenção' : 'Nova manutenção' }}
-          </DialogDescription>
+        <DialogHeader class="sr-only">
+          <DialogTitle>{{ internalMode === 'edicao' ? 'Editar manutenção' : 'Nova manutenção' }}</DialogTitle>
+          <DialogDescription>{{ internalMode === 'edicao' ? 'Editar manutenção' : 'Nova manutenção' }}</DialogDescription>
         </DialogHeader>
 
-        <form
-          class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4"
-          @submit.prevent="submitForm"
-        >
-          <div class="nd-field col-span-full">
-            <label class="nd-field-label">Contrato *</label>
-            <NdCombobox
-              v-model="contractIdModel"
-              :options="contratoOptions"
-              placeholder="Selecione o contrato"
-              search-placeholder="Buscar contrato..."
-            />
+        <div class="cm-layout">
+          <div class="cm-main">
+            <div class="cm-top-bar">
+              <h2 class="cm-form-title">{{ internalMode === 'edicao' ? 'Editar manutenção' : 'Nova manutenção' }}</h2>
+              <div class="cm-top-actions">
+                <button type="submit" form="cm-form" class="nd-btn-primary cm-btn-sm" :disabled="submitting">
+                  {{ internalMode === 'edicao' ? 'Salvar' : 'Cadastrar' }}
+                </button>
+                <button v-if="internalMode === 'edicao'" type="button" class="nd-btn-secondary cm-btn-sm" @click="switchToDetalhe">Cancelar</button>
+                <DialogClose v-else as-child>
+                  <button type="button" class="nd-btn-secondary cm-btn-sm">Cancelar</button>
+                </DialogClose>
+              </div>
+            </div>
+
+            <form id="cm-form" class="cm-form" @submit.prevent="submitForm">
+              <div class="cm-form-row">
+                <div class="nd-field cm-field-full">
+                  <label class="nd-field-label">Contrato *</label>
+                  <NdCombobox v-model="contractIdModel" :options="contratoOptions" placeholder="Selecione o contrato" search-placeholder="Buscar contrato..." />
+                </div>
+              </div>
+
+              <div class="cm-form-row cm-form-row--half">
+                <div class="nd-field">
+                  <label class="nd-field-label">Data *</label>
+                  <input v-model="form.date" type="date" class="nd-field-input" required />
+                </div>
+                <div class="nd-field">
+                  <label class="nd-field-label">Tipo *</label>
+                  <NdCombobox v-model="typeModel" :options="tipoOptions" placeholder="Selecione o tipo" />
+                </div>
+              </div>
+
+              <div class="cm-form-row cm-form-row--half">
+                <div class="nd-field">
+                  <label class="nd-field-label">Horário início</label>
+                  <input v-model="form.startTimeLocal" type="time" class="nd-field-input" />
+                </div>
+                <div class="nd-field">
+                  <label class="nd-field-label">Horário fim</label>
+                  <input v-model="form.endTimeLocal" type="time" class="nd-field-input" />
+                </div>
+              </div>
+
+              <div class="cm-form-row">
+                <div class="nd-field cm-field-full">
+                  <label class="nd-field-label">Status *</label>
+                  <NdCombobox v-model="statusModel" :options="statusOptions" placeholder="Selecione o status" />
+                </div>
+              </div>
+
+              <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
+            </form>
           </div>
 
-          <div class="nd-field">
-            <label class="nd-field-label">Data *</label>
-            <input
-              v-model="form.date"
-              type="date"
-              class="nd-field-input"
-              required
-            />
-          </div>
-
-          <div class="nd-field">
-            <label class="nd-field-label">Tipo *</label>
-            <NdCombobox
-              v-model="typeModel"
-              :options="tipoOptions"
-              placeholder="Selecione o tipo"
-            />
-          </div>
-
-          <div class="nd-field">
-            <label class="nd-field-label">Horário início</label>
-            <input
-              v-model="form.startTimeLocal"
-              type="time"
-              class="nd-field-input"
-            />
-          </div>
-
-          <div class="nd-field">
-            <label class="nd-field-label">Horário fim</label>
-            <input
-              v-model="form.endTimeLocal"
-              type="time"
-              class="nd-field-input"
-            />
-          </div>
-
-          <div class="nd-field col-span-full">
-            <label class="nd-field-label">Status *</label>
-            <NdCombobox
-              v-model="statusModel"
-              :options="statusOptions"
-              placeholder="Selecione o status"
-            />
-          </div>
-
-          <div class="nd-field col-span-full">
-            <label class="nd-field-label">TÉCNICOS</label>
+          <!-- Coluna lateral - Técnicos -->
+          <div class="cm-aside">
+            <div class="cm-aside-header">
+              <Users :size="14" class="cm-info-icon" />
+              <span class="cm-aside-title">Técnicos</span>
+            </div>
             <NdMultiCombobox
               v-model="form.employeeIds"
               :options="tecnicoOptions"
-              placeholder="Selecione os técnicos"
+              placeholder="Adicionar técnicos"
               search-placeholder="Buscar técnico..."
               singular-label="técnico"
               plural-label="técnicos"
             />
+            <div v-if="form.employeeIds.length" class="cm-tecnico-list cm-tecnico-list--form">
+              <div v-for="empId in form.employeeIds" :key="empId" class="cm-tecnico-item">
+                <div class="cm-tecnico-avatar" :style="{ background: hashColor(empId) }">
+                  {{ (tecnicos.find(t => t.employeeId === empId)?.name ?? '?').charAt(0).toUpperCase() }}
+                </div>
+                <span class="cm-tecnico-name">{{ tecnicos.find(t => t.employeeId === empId)?.name ?? `#${empId}` }}</span>
+              </div>
+            </div>
           </div>
-
-          <div v-if="submitError" class="nd-field-error col-span-full">{{ submitError }}</div>
-
-          <DialogFooter class="col-span-full">
-            <button
-              v-if="internalMode === 'edicao'"
-              type="button"
-              class="nd-btn-secondary"
-              @click="switchToDetalhe"
-            >CANCELAR</button>
-            <DialogClose v-else as-child>
-              <button type="button" class="nd-btn-secondary">CANCELAR</button>
-            </DialogClose>
-
-            <button type="submit" class="nd-btn-primary" :disabled="submitting">
-              {{ internalMode === 'edicao' ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR' }}
-            </button>
-          </DialogFooter>
-        </form>
+        </div>
       </template>
 
     </DialogContent>
@@ -459,47 +378,241 @@ const statusModel = computed<string | number | null>({
 </template>
 
 <style scoped>
-.nd-detail-tipo {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--nd-text-secondary);
+.cm-layout {
+  display: flex;
+  min-height: 320px;
 }
 
-.nd-detail-value--mono {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  letter-spacing: 0.04em;
-}
-
-.nd-detail-value--dim {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 11px;
-  color: var(--nd-text-disabled);
-}
-
-.nd-detail-list {
+.cm-main {
+  flex: 1;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 4px;
+  gap: 16px;
+  min-width: 0;
 }
 
-.nd-detail-list-item {
+.cm-aside {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--nd-surface-raised);
+  border-left: 1px solid var(--nd-border);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cm-top-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cm-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cm-btn-sm {
+  padding: 5px 12px !important;
+  font-size: 11px !important;
+}
+
+.cm-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--nd-text-secondary);
+  transition: all 150ms ease-out;
+}
+
+.cm-icon-btn:hover {
+  background: var(--nd-surface-raised);
+  color: var(--nd-text-primary);
+  border-color: var(--nd-border);
+}
+
+.cm-tag {
   font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border: 1px solid;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.cm-client-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--nd-text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.cm-contract-id {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  color: var(--nd-text-disabled);
+  letter-spacing: 0.03em;
+  margin-top: -8px;
+}
+
+.cm-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--nd-border);
+}
+
+.cm-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cm-info-icon {
+  color: var(--nd-text-disabled);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cm-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cm-info-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--nd-text-disabled);
+  text-transform: uppercase;
+}
+
+.cm-info-value {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
   color: var(--nd-text-primary);
 }
 
-.nd-detail-list-dot {
-  width: 5px;
-  height: 5px;
+/* ── Aside ── */
+.cm-aside-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--nd-border);
+}
+
+.cm-aside-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nd-text-secondary);
+}
+
+.cm-aside-count {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--nd-text-disabled);
+  background: var(--nd-border-visible);
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-left: auto;
+}
+
+.cm-tecnico-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cm-tecnico-list--form {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--nd-border);
+}
+
+.cm-tecnico-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cm-tecnico-avatar {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--nd-action);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
   flex-shrink: 0;
+}
+
+.cm-tecnico-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  color: var(--nd-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cm-no-tecnico {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  color: var(--nd-text-disabled);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Form ── */
+.cm-form-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--nd-text-display);
+  margin: 0;
+}
+
+.cm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cm-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.cm-form-row--half > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.cm-field-full {
+  flex: 1;
 }
 </style>

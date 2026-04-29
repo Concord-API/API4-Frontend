@@ -67,6 +67,7 @@ watch(sheetOpen, open => {
 const counts = computed(() => ({
   ativos: equipamentos.value.filter(e => e.active).length,
   inativos: equipamentos.value.filter(e => !e.active).length,
+  total: equipamentos.value.length,
 }))
 
 const filtered = computed(() => {
@@ -127,11 +128,7 @@ onMounted(() => { void ensureEquipamentosLoaded() })
 <template>
   <div class="nd-page">
 
-    <div class="nd-action-row nd-action-row--desktop">
-      <button class="nd-btn-primary" @click="openCreate">
-        <Plus :size="12" /> Novo equipamento
-      </button>
-    </div>
+
 
     <button class="nd-fab" @click="openCreate" aria-label="Novo equipamento">
       <Plus :size="20" />
@@ -215,14 +212,6 @@ onMounted(() => { void ensureEquipamentosLoaded() })
 
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
-    <div class="nd-hero">
-      <div class="nd-hero-number">
-        <span v-if="loading">—</span>
-        <span v-else>{{ String(equipamentos.length).padStart(2, '0') }}</span>
-      </div>
-      <span class="nd-label">Equipamentos cadastrados</span>
-    </div>
-
     <div class="nd-stats-row">
       <div class="nd-stat">
         <span class="nd-stat-val" style="color: var(--nd-success)">{{ String(counts.ativos).padStart(2, '0') }}</span>
@@ -233,6 +222,14 @@ onMounted(() => { void ensureEquipamentosLoaded() })
         <span class="nd-stat-val" style="color: var(--nd-accent)">{{ String(counts.inativos).padStart(2, '0') }}</span>
         <span class="nd-label">Inativos</span>
       </div>
+      <div class="nd-stat-sep" />
+      <div class="nd-stat">
+        <span class="nd-stat-val">{{ String(counts.total).padStart(2, '0') }}</span>
+        <span class="nd-label">Total</span>
+      </div>
+      <button class="nd-btn-primary nd-btn-desktop" style="margin-left: auto" @click="openCreate">
+        <Plus :size="12" /> CADASTRAR EQUIPAMENTO
+      </button>
     </div>
 
     <div class="nd-controls-row">
@@ -307,12 +304,13 @@ onMounted(() => { void ensureEquipamentosLoaded() })
 
 <style scoped>
 .nd-page { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
-.nd-action-row { display: flex; justify-content: flex-end; margin-bottom: 40px; }
 .nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
 .nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
-.nd-hero { display: flex; flex-direction: column; gap: 6px; margin-bottom: 32px; }
-.nd-hero-number { font-family: 'Montserrat', sans-serif; font-size: 80px; font-weight: 400; letter-spacing: -0.02em; line-height: 1.0; color: var(--nd-text-display); }
-.nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 32px; }
+.nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 28px; }
+
+.nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
+.nd-btn-primary:hover { background: var(--nd-action-hover); }
+.nd-btn-desktop { display: flex; }
 .nd-stat { display: flex; flex-direction: column; gap: 4px; }
 .nd-stat-val { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
 .nd-stat-sep { width: 1px; height: 28px; background: var(--nd-border-visible); }
@@ -368,7 +366,7 @@ onMounted(() => { void ensureEquipamentosLoaded() })
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
   .nd-hero-number { font-size: 56px; }
-  .nd-action-row--desktop { display: none; }
+  .nd-btn-desktop { display: none; }
   .nd-fab { display: flex; align-items: center; justify-content: center; position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--nd-action); color: var(--nd-action-foreground); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); transition: background-color 150ms ease-out; z-index: 50; }
   .nd-fab:hover { background: var(--nd-action-hover); }
 }
