@@ -81,7 +81,7 @@ const router = createRouter({
           path: 'historico',
           name: 'dashboard-historico',
           meta: { breadcrumb: 'historico', roles: ['technician'] },
-          component: () => import('@/features/dashboard/pages/HomePage.vue')
+          component: () => import('@/features/dashboard/pages/HistoricoExecucaoPage.vue')
         },
         {
           path: 'minha-agenda',
