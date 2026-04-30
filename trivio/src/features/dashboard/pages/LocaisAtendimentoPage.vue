@@ -21,8 +21,9 @@ const locais = computed(() =>
 )
 
 const mapCenter = computed<[number, number]>(() => {
-  if (locais.value.length === 0) return [-47.9, -15.8]
-  return [locais.value[0].longitude!, locais.value[0].latitude!]
+  const first = locais.value[0]
+  if (!first || first.longitude == null || first.latitude == null) return [-47.9, -15.8]
+  return [first.longitude, first.latitude]
 })
 
 const mapZoom = computed(() => locais.value.length === 0 ? 4 : 5)
@@ -30,7 +31,9 @@ const mapZoom = computed(() => locais.value.length === 0 ? 4 : 5)
 function fitBounds() {
   if (!mapInstance.value || locais.value.length === 0) return
   if (locais.value.length === 1) {
-    mapInstance.value.flyTo({ center: [locais.value[0].longitude!, locais.value[0].latitude!], zoom: 13 })
+    const first = locais.value[0]
+    if (!first || first.longitude == null || first.latitude == null) return
+    mapInstance.value.flyTo({ center: [first.longitude, first.latitude], zoom: 13 })
     return
   }
   const lngs = locais.value.map(m => m.longitude!)
