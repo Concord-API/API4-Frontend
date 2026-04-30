@@ -75,13 +75,13 @@ const router = createRouter({
           path: 'locais',
           name: 'dashboard-locais',
           meta: { breadcrumb: 'locais', roles: ['technician'] },
-          component: () => import('@/features/dashboard/pages/HomePage.vue')
+          component: () => import('@/features/dashboard/pages/LocaisAtendimentoPage.vue')
         },
         {
           path: 'historico',
           name: 'dashboard-historico',
           meta: { breadcrumb: 'historico', roles: ['technician'] },
-          component: () => import('@/features/dashboard/pages/HomePage.vue')
+          component: () => import('@/features/dashboard/pages/HistoricoExecucaoPage.vue')
         },
         {
           path: 'minha-agenda',
@@ -111,10 +111,16 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresGuest && hasSession) {
+    if (userRole === 'technician') return { name: 'dashboard-tecnico-agenda' }
     return { path: '/dashboard' }
   }
 
+  if (to.name === 'dashboard-home' && userRole === 'technician') {
+    return { name: 'dashboard-tecnico-agenda' }
+  }
+
   if (to.meta.roles && userRole && !to.meta.roles.includes(userRole)) {
+    if (userRole === 'technician') return { name: 'dashboard-tecnico-agenda' }
     return { path: '/dashboard' }
   }
 })

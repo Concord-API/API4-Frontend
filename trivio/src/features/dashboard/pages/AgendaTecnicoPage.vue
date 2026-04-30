@@ -101,7 +101,7 @@ onMounted(carregarDados)
         Agenda
       </button>
       <button class="manutencoes-tab" :class="{ 'manutencoes-tab--active': activeTab === 'manutencoes' }" @click="activeTab = 'manutencoes'">
-        Lista de Manutenções
+        Manutenções
       </button>
     </nav>
 
