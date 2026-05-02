@@ -9,6 +9,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import GeocodedAddress from '@/shared/components/ui/GeocodedAddress.vue'
+import NdDateRangePicker, { type DateRange } from '@/shared/components/ui/NdDateRangePicker.vue'
 
 const activeTab = ref<'agenda' | 'manutencoes'>('agenda')
 
@@ -23,6 +24,8 @@ function openDetail(m: ManutencaoAPI) {
 const manutencoes = ref<ManutencaoAPI[]>([])
 const searchQuery = ref('')
 const activeFilter = ref<'todas' | ManutencaoStatus>('todas')
+const filterContrato = ref<number | null>(null)
+const filterDate = ref<DateRange | null>(null)
 const viewMode = ref<'table' | 'grid'>('table')
 const loading = ref(false)
 const submitError = ref<string | null>(null)
@@ -40,6 +43,12 @@ function segmentsFor(count: number) { return Math.min(count, totalSegments.value
 const filteredManutencoes = computed(() => {
   let result = manutencoes.value
   if (activeFilter.value !== 'todas') result = result.filter(m => m.status === activeFilter.value)
+  if (filterContrato.value) result = result.filter(m => m.contract.id === filterContrato.value)
+  if (filterDate.value) {
+    const { start, end } = filterDate.value
+    if (start) result = result.filter(m => m.date >= start)
+    if (end) result = result.filter(m => m.date <= end)
+  }
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     result = result.filter(m =>
@@ -56,7 +65,7 @@ function statusColor(status: ManutencaoStatus) {
 }
 
 function statusLabel(status: ManutencaoStatus) {
-  if (status === 'COMPLETED') return 'CONCLUÍDA'
+  if (status === 'COMPLETED') return 'Concluída'
   if (status === 'STARTED') return 'Em andamento'
   return 'Programada'
 }
@@ -82,13 +91,32 @@ const filters = [
   { key: 'todas', label: 'Todas' },
   { key: 'SCHEDULED', label: 'Programadas' },
   { key: 'STARTED', label: 'Em andamento' },
-  { key: 'COMPLETED', label: 'CONCLUÍDAS' },
+  { key: 'COMPLETED', label: 'Concluída' },
 ] as const
 
 const filterOptions = filters.map(f => ({ value: f.key, label: f.label }))
 const filterValue = computed({
   get: () => activeFilter.value as string | number,
   set: (v) => { activeFilter.value = (v ?? 'todas') as typeof activeFilter.value },
+})
+
+const contratosUnicos = computed(() => {
+  const map = new Map<number, { id: number, name: string }>()
+  for (const m of manutencoes.value) {
+    if (!map.has(m.contract.id)) {
+      map.set(m.contract.id, { id: m.contract.id, name: m.contract.client.name })
+    }
+  }
+  return Array.from(map.values())
+})
+
+const filterContratoOptions = computed(() => [
+  { value: -1, label: 'Todos os contratos' },
+  ...contratosUnicos.value.map(c => ({ value: c.id, label: `#${String(c.id).padStart(3, '0')} — ${c.name}` })),
+])
+const filterContratoValue = computed({
+  get: () => filterContrato.value ?? -1,
+  set: (v) => { filterContrato.value = v === -1 ? null : (v as number) },
 })
 
 onMounted(carregarDados)
@@ -174,7 +202,7 @@ onMounted(carregarDados)
         <div class="nd-stat-sep" />
         <div class="nd-stat">
           <span class="nd-stat-val" style="color: var(--nd-success)">{{ counts.completed }}</span>
-          <span class="nd-label">CONCLUÍDAS</span>
+          <span class="nd-label">Concluídas</span>
         </div>
       </div>
 
@@ -192,7 +220,7 @@ onMounted(carregarDados)
           </div>
         </div>
         <div class="nd-progress-row">
-          <div class="nd-progress-label-col"><span class="nd-label">CONCLUÍDAS</span><span class="nd-label nd-label--dim">{{ counts.completed }}</span></div>
+          <div class="nd-progress-label-col"><span class="nd-label">Concluídas</span><span class="nd-label nd-label--dim">{{ counts.completed }}</span></div>
           <div class="nd-progress-bar">
             <div v-for="i in totalSegments" :key="i" class="nd-segment" :style="{ background: i <= segmentsFor(counts.completed) ? 'var(--nd-success)' : 'var(--nd-border)' }" />
           </div>
@@ -200,8 +228,14 @@ onMounted(carregarDados)
       </div>
 
       <div class="nd-controls-row">
-        <div class="nd-filter-select">
-          <NdCombobox v-model="filterValue" :options="filterOptions" placeholder="Filtrar" :search-placeholder="''" />
+        <div class="nd-controls-left">
+          <div class="nd-filter-select">
+            <NdCombobox v-model="filterValue" :options="filterOptions" placeholder="Status" :search-placeholder="''" />
+          </div>
+          <div class="nd-filter-select">
+            <NdCombobox v-model="filterContratoValue" :options="filterContratoOptions" placeholder="Contrato" search-placeholder="Buscar contrato..." />
+          </div>
+          <NdDateRangePicker v-model="filterDate" />
         </div>
         <div class="nd-controls-right">
           <div class="nd-search">
@@ -285,8 +319,9 @@ onMounted(carregarDados)
 .nd-progress-label-col { display: flex; gap: 8px; align-items: baseline; min-width: 150px; }
 .nd-progress-bar { flex: 1; display: flex; gap: 2px; height: 8px; }
 .nd-segment { flex: 1; height: 100%; }
-.nd-controls-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 16px; }
-.nd-controls-right { display: flex; align-items: center; gap: 16px; }
+.nd-controls-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 16px; flex-wrap: wrap; }
+.nd-controls-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; }
+.nd-controls-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
 .nd-filter-select { width: 160px; flex-shrink: 0; }
 .nd-search { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--nd-border-visible); padding-bottom: 6px; }
 .nd-search-icon { color: var(--nd-text-disabled); }
@@ -329,6 +364,7 @@ onMounted(carregarDados)
 
 @media (max-width: 640px) {
   .nd-controls-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .nd-controls-left { flex-direction: column; align-items: stretch; }
   .nd-controls-right { justify-content: space-between; }
   .nd-filter-select { width: 100%; }
   .nd-search { flex: 1; }

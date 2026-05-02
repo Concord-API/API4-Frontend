@@ -62,7 +62,7 @@ function statusColor(status: ManutencaoStatus) {
 }
 
 function statusLabel(status: ManutencaoStatus) {
-  if (status === 'COMPLETED') return 'CONCLUÍDA'
+  if (status === 'COMPLETED') return 'Concluída'
   if (status === 'STARTED') return 'Em andamento'
   return 'Programada'
 }

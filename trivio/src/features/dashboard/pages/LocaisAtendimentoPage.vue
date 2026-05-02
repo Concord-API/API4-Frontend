@@ -5,6 +5,8 @@ import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus } from '@/
 import { useAuth } from '@/shared/composables/useAuth'
 import { getApiErrorMessage } from '@/shared/services/api'
 import GeocodedAddress from '@/shared/components/ui/GeocodedAddress.vue'
+import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
+import NdDateRangePicker, { type DateRange } from '@/shared/components/ui/NdDateRangePicker.vue'
 import type { Map as MaplibreMap } from 'maplibre-gl'
 
 const manutencoes = ref<ManutencaoAPI[]>([])
@@ -16,9 +18,27 @@ const mapLoaded = ref(false)
 const dataLoaded = ref(false)
 const selectedId = ref<number | null>(null)
 
-const locais = computed(() =>
-  manutencoes.value.filter(m => m.latitude != null && m.longitude != null)
-)
+const isAdmin = computed(() => currentUser.value?.role !== 'technician')
+
+const activeFilter = ref<'todas' | ManutencaoStatus>('todas')
+const filterContrato = ref<number | null>(null)
+const filterTecnico = ref<number | null>(null)
+const filterDate = ref<DateRange | null>(null)
+
+const locais = computed(() => {
+  let result = manutencoes.value.filter(m => m.latitude != null && m.longitude != null)
+  
+  if (activeFilter.value !== 'todas') result = result.filter(m => m.status === activeFilter.value)
+  if (filterContrato.value) result = result.filter(m => m.contract.id === filterContrato.value)
+  if (filterTecnico.value) result = result.filter(m => m.employees.some(e => e.employeeId === filterTecnico.value))
+  if (filterDate.value) {
+    const { start, end } = filterDate.value
+    if (start) result = result.filter(m => m.date >= start)
+    if (end) result = result.filter(m => m.date <= end)
+  }
+  
+  return result
+})
 
 const mapCenter = computed<[number, number]>(() => {
   const first = locais.value[0]
@@ -64,7 +84,7 @@ function statusColor(status: ManutencaoStatus) {
 }
 
 function statusLabel(status: ManutencaoStatus) {
-  if (status === 'COMPLETED') return 'CONCLUÍDA'
+  if (status === 'COMPLETED') return 'Concluída'
   if (status === 'STARTED') return 'Em andamento'
   return 'Programada'
 }
@@ -73,6 +93,67 @@ function formatDate(dateStr: string) {
   const [y = '', m = '', d = ''] = dateStr.split('-')
   return `${d}/${m}/${y.slice(2)}`
 }
+
+import { watch } from 'vue'
+
+watch(locais, () => {
+  if (mapLoaded.value && dataLoaded.value) {
+    setTimeout(fitBounds, 100)
+  }
+})
+
+const filters = [
+  { key: 'todas', label: 'Todas' },
+  { key: 'SCHEDULED', label: 'Programadas' },
+  { key: 'STARTED', label: 'Em andamento' },
+  { key: 'COMPLETED', label: 'Concluída' },
+] as const
+
+const filterOptions = filters.map(f => ({ value: f.key, label: f.label }))
+const filterValue = computed({
+  get: () => activeFilter.value as string | number,
+  set: (v) => { activeFilter.value = (v ?? 'todas') as typeof activeFilter.value },
+})
+
+const contratosUnicos = computed(() => {
+  const map = new globalThis.Map<number, { id: number, name: string }>()
+  for (const m of manutencoes.value) {
+    if (!map.has(m.contract.id)) {
+      map.set(m.contract.id, { id: m.contract.id, name: m.contract.client.name })
+    }
+  }
+  return Array.from(map.values())
+})
+
+const filterContratoOptions = computed(() => [
+  { value: -1, label: 'Todos os contratos' },
+  ...contratosUnicos.value.map(c => ({ value: c.id, label: `#${String(c.id).padStart(3, '0')} — ${c.name}` })),
+])
+const filterContratoValue = computed({
+  get: () => filterContrato.value ?? -1,
+  set: (v) => { filterContrato.value = v === -1 ? null : (v as number) },
+})
+
+const tecnicosUnicos = computed(() => {
+  const map = new globalThis.Map<number, { id: number, name: string }>()
+  for (const m of manutencoes.value) {
+    for (const e of m.employees) {
+      if (!map.has(e.employeeId)) {
+        map.set(e.employeeId, { id: e.employeeId, name: e.name })
+      }
+    }
+  }
+  return Array.from(map.values())
+})
+
+const filterTecnicoOptions = computed(() => [
+  { value: -1, label: 'Todos os técnicos' },
+  ...tecnicosUnicos.value.map(t => ({ value: t.id, label: t.name })),
+])
+const filterTecnicoValue = computed({
+  get: () => filterTecnico.value ?? -1,
+  set: (v) => { filterTecnico.value = v === -1 ? null : (v as number) },
+})
 
 async function carregarDados() {
   loading.value = true; submitError.value = null
@@ -114,8 +195,22 @@ onMounted(carregarDados)
 
       <div class="la-list-panel">
         <div class="la-list-header">
-          <span class="la-list-title">Locais de atendimento</span>
+          <span class="la-list-title">Filtros</span>
           <span class="la-list-count">{{ locais.length }} {{ locais.length === 1 ? 'local' : 'locais' }}</span>
+        </div>
+        <div class="la-filters">
+          <div class="la-filter-item">
+            <NdDateRangePicker v-model="filterDate" class="la-w-full" />
+          </div>
+          <div class="la-filter-item">
+            <NdCombobox v-model="filterValue" :options="filterOptions" placeholder="Status" :search-placeholder="''" />
+          </div>
+          <div class="la-filter-item" v-if="isAdmin">
+            <NdCombobox v-model="filterTecnicoValue" :options="filterTecnicoOptions" placeholder="Técnico" search-placeholder="Buscar técnico..." />
+          </div>
+          <div class="la-filter-item">
+            <NdCombobox v-model="filterContratoValue" :options="filterContratoOptions" placeholder="Contrato" search-placeholder="Buscar contrato..." />
+          </div>
         </div>
 
         <div v-if="loading" class="la-empty">Carregando...</div>
@@ -206,6 +301,23 @@ onMounted(carregarDados)
   padding: 16px;
   border-bottom: 1px solid var(--nd-border);
   flex-shrink: 0;
+}
+
+.la-filters {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--nd-border);
+  flex-shrink: 0;
+}
+
+.la-filter-item {
+  width: 100%;
+}
+
+.la-w-full {
+  width: 100% !important;
 }
 
 .la-list-title {
