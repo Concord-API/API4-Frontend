@@ -193,7 +193,7 @@ onMounted(() => {
             <input v-model="form.finalDate" type="date" class="nd-field-input" required />
           </div>
           <div class="nd-field">
-            <label class="nd-field-label">Recorrência (meses) *</label>
+            <label class="nd-field-label">Recorrência (dias) *</label>
             <input v-model.number="form.recurrenceMaintenance" type="number" min="1" class="nd-field-input" required />
           </div>
           <div class="nd-field col-span-full">
