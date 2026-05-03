@@ -26,7 +26,7 @@ watch(() => [props.lat, props.lng], () => { void load() }, { immediate: true })
   <div class="geo-address">
     <MapPin :size="12" class="geo-icon" />
     <span v-if="loading" class="geo-text geo-dim">Carregando endereço...</span>
-    <span v-else-if="address" class="geo-text" :title="address">{{ address }}</span>
+    <span v-else-if="address" class="geo-text !text-wrap" :title="address">{{ address }}</span>
     <span v-else-if="lat != null && lng != null" class="geo-text">{{ lat.toFixed(6) }}, {{ lng.toFixed(6) }}</span>
     <span v-else class="geo-text geo-dim">Sem endereço</span>
   </div>
