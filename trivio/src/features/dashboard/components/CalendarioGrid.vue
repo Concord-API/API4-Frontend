@@ -365,9 +365,7 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
   <div class="cal-grid-root">
     <div class="cal-grid-inner">
       <div class="cal-header-row">
-        <div class="cal-corner">
-          <div class="cal-corner-label">SEM<br>HORÁRIO</div>
-        </div>
+        <div class="cal-corner" aria-hidden="true"></div>
         <div class="cal-days-wrap">
           <div
             v-for="dia in dias"
@@ -522,14 +520,6 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
 :root.dark .cal-corner,
 .dark .cal-corner {
   background: var(--nd-bg);
-}
-
-.cal-corner-label {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 8px;
-  font-weight: 600;
-  color: var(--nd-text-disabled);
-  text-align: center;
 }
 
 .cal-days-wrap {
