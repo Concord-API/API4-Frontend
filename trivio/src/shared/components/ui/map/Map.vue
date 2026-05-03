@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useColorMode } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, provide, ref, shallowRef, watch, type StyleValue } from 'vue'
 import maplibregl, { Map as MaplibreMap, type MapMouseEvent, type StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { useTheme } from '@/shared/composables/useTheme'
 import { MAP_INJECTION_KEY } from './mapInjectionKey'
 
 export interface MapProps {
@@ -40,8 +40,8 @@ const mapForChildren = shallowRef<MaplibreMap | null>(null)
 
 provide(MAP_INJECTION_KEY, mapForChildren)
 
-const colorMode = useColorMode()
-const isDark = computed(() => colorMode.value === 'dark')
+const { mode } = useTheme()
+const isDark = computed(() => mode.value === 'dark')
 
 const defaultStyles = {
   light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
