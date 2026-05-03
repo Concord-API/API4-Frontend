@@ -129,9 +129,9 @@ function onColDrop(e: DragEvent, dateStr: string) {
   text-transform: uppercase;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  text-align: right;
-  padding-right: 6px;
+  justify-content: center;
+  text-align: center;
+  padding-right: 0;
   padding-top: 4px;
   padding-bottom: 4px;
   border-right: 1px solid var(--nd-border);
