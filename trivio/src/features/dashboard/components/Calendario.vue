@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-vue-next'
 import { useMediaQuery } from '@vueuse/core'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/shared/components/ui/sheet'
@@ -9,8 +10,17 @@ import CalendarioPainel from './CalendarioPainel.vue'
 import CalendarioModal, { type ModalMode, type CriacaoContext } from './CalendarioModal.vue'
 import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 import type { TecnicoAPI } from '@/shared/services/tecnicoService'
+import { useAuth } from '@/shared/composables/useAuth'
 
 const isDesktop = useMediaQuery('(min-width: 1025px)')
+const route = useRoute()
+const { currentUser } = useAuth()
+const isTechnician = computed(() => {
+  const session = localStorage.getItem('trivio_session')
+  const sessionRole = session ? JSON.parse(session)?.user?.role : null
+  const role = String(currentUser.value?.role ?? sessionRole ?? '').toLowerCase()
+  return role === 'technician' || role === 'tecnico'
+})
 
 const {
   sunday,
@@ -52,10 +62,32 @@ function onTecnicoFiltro(t: TecnicoAPI | null) {
   tecnicoFiltro.value = t
 }
 
+function parseLocalDate(dateStr: string): Date | null {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  if (!year || !month || !day) return null
+  return new Date(year, month - 1, day)
+}
 
-onMounted(() => {
-  void carregarSemana()
+async function abrirManutencaoDaRota() {
+  const rawId = route.query.manutencao
+  const rawDate = route.query.date
+  const id = Number(Array.isArray(rawId) ? rawId[0] : rawId)
+  const dateStr = Array.isArray(rawDate) ? rawDate[0] : rawDate
+  if (!id) return
+
+  if (typeof dateStr === 'string') {
+    const date = parseLocalDate(dateStr)
+    if (date) await irParaSemanaDoDia(date)
+  }
+
+  const manutencao = manutencoesFiltradas.value.find(m => m.id === id)
+  if (manutencao) abrirDetalhe(manutencao)
+}
+
+onMounted(async () => {
+  await carregarSemana()
   void carregarTecnicos()
+  await abrirManutencaoDaRota()
 })
 </script>
 
@@ -89,6 +121,7 @@ onMounted(() => {
                 :sunday="sunday"
                 :tecnicos="tecnicos"
                 :tecnico-filtro="tecnicoFiltro"
+                :show-tecnico-filter="!isTechnician"
                 @update:tecnico-filtro="onTecnicoFiltro"
                 @semana-click="irParaSemanaDoDia"
               />
@@ -120,6 +153,7 @@ onMounted(() => {
           :sunday="sunday"
           :tecnicos="tecnicos"
           :tecnico-filtro="tecnicoFiltro"
+          :show-tecnico-filter="!isTechnician"
           @update:tecnico-filtro="onTecnicoFiltro"
           @semana-click="irParaSemanaDoDia"
         />

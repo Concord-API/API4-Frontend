@@ -11,7 +11,7 @@ import CalendarioContextMenu from './CalendarioContextMenu.vue'
 import { useAuth } from '@/shared/composables/useAuth'
 
 const { currentUser } = useAuth()
-const isTechnician = computed(() => currentUser.value?.role === 'technician')
+const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowerCase() === 'technician')
 
 const props = defineProps<{
   dias: DiaDaSemana[]
