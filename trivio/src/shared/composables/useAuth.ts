@@ -25,7 +25,11 @@ function restoreSession(): ApiSessionPayload | null {
   try {
     const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as ApiSessionPayload
+    const session = JSON.parse(raw) as ApiSessionPayload
+    const rawRole = String(session.user?.role ?? '').toUpperCase()
+    if (rawRole === 'MANAGER') session.user.role = 'manager'
+    if (rawRole === 'TECHNICIAN') session.user.role = 'technician'
+    return session
   } catch {
     return null
   }

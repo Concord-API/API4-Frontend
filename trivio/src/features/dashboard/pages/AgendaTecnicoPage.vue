@@ -78,7 +78,7 @@ function formatDate(dateStr: string) {
 async function carregarDados() {
   loading.value = true; submitError.value = null
   try {
-    const isTechnician = currentUser.value?.role === 'technician'
+    const isTechnician = String(currentUser.value?.role ?? '').toLowerCase() === 'technician'
     const employeeId = isTechnician ? Number(currentUser.value?.id) : undefined
     const m = await manutencaoService.listar(employeeId)
     manutencoes.value = m

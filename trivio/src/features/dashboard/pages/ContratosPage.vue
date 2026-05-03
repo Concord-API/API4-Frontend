@@ -13,6 +13,7 @@ import { useRequisitosStore } from '@/shared/composables/useRequisitosStore'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
+import NdDatePicker from '@/shared/components/ui/NdDatePicker.vue'
 
 const searchQuery = ref('')
 const activeFilter = ref<'todos' | 'ativo' | 'inativo' | 'vencido'>('todos')
@@ -116,6 +117,8 @@ function contratoStatus(c: ContratoAPI): { label: string; color: string } {
 
 async function submitForm() {
   if (!form.value.clientId) { submitError.value = 'Selecione um cliente.'; toast.error(submitError.value); return }
+  if (!form.value.initialDate) { submitError.value = 'Selecione a data de inicio.'; toast.error(submitError.value); return }
+  if (!form.value.finalDate) { submitError.value = 'Selecione a data de fim.'; toast.error(submitError.value); return }
   if (form.value.latitude == null || form.value.longitude == null) {
     submitError.value = 'Selecione a localização no mapa.'
     toast.error(submitError.value)
@@ -186,11 +189,11 @@ onMounted(() => {
           </div>
           <div class="nd-field">
             <label class="nd-field-label">Data início *</label>
-            <input v-model="form.initialDate" type="date" class="nd-field-input" required />
+            <NdDatePicker v-model="form.initialDate" placeholder="Selecionar inicio" required />
           </div>
           <div class="nd-field">
             <label class="nd-field-label">Data fim *</label>
-            <input v-model="form.finalDate" type="date" class="nd-field-input" required />
+            <NdDatePicker v-model="form.finalDate" placeholder="Selecionar fim" required />
           </div>
           <div class="nd-field">
             <label class="nd-field-label">Recorrência (dias) *</label>

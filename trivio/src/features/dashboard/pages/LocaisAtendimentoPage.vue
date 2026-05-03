@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Link as LinkIcon } from 'lucide-vue-next'
 import { Map, MapMarker, MapControls } from '@/shared/components/ui/map'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus } from '@/shared/services/manutencaoService'
 import { useAuth } from '@/shared/composables/useAuth'
@@ -18,9 +19,9 @@ const mapLoaded = ref(false)
 const dataLoaded = ref(false)
 const selectedId = ref<number | null>(null)
 
-const isAdmin = computed(() => currentUser.value?.role !== 'technician')
+const isAdmin = computed(() => String(currentUser.value?.role ?? '').toLowerCase() !== 'technician')
 
-const activeFilter = ref<'todas' | ManutencaoStatus>('todas')
+const activeFilter = ref<'todas' | ManutencaoStatus>('SCHEDULED')
 const filterContrato = ref<number | null>(null)
 const filterTecnico = ref<number | null>(null)
 const filterDate = ref<DateRange | null>(null)
@@ -47,6 +48,7 @@ const mapCenter = computed<[number, number]>(() => {
 })
 
 const mapZoom = computed(() => locais.value.length === 0 ? 4 : 5)
+const selectedLocal = computed(() => locais.value.find(m => m.id === selectedId.value) ?? null)
 
 function fitBounds() {
   if (!mapInstance.value || locais.value.length === 0) return
@@ -94,8 +96,6 @@ function formatDate(dateStr: string) {
   return `${d}/${m}/${y.slice(2)}`
 }
 
-import { watch } from 'vue'
-
 watch(locais, () => {
   if (mapLoaded.value && dataLoaded.value) {
     setTimeout(fitBounds, 100)
@@ -112,7 +112,7 @@ const filters = [
 const filterOptions = filters.map(f => ({ value: f.key, label: f.label }))
 const filterValue = computed({
   get: () => activeFilter.value as string | number,
-  set: (v) => { activeFilter.value = (v ?? 'todas') as typeof activeFilter.value },
+  set: (v) => { activeFilter.value = (v ?? 'SCHEDULED') as typeof activeFilter.value },
 })
 
 const contratosUnicos = computed(() => {
@@ -188,9 +188,30 @@ onMounted(carregarDados)
             :coordinates="[m.longitude!, m.latitude!]"
             :color="m.id === selectedId ? 'var(--nd-accent)' : '#6366f1'"
             :scale="m.id === selectedId ? 1.2 : 1"
+            @click="selectLocal(m)"
           />
           <MapControls position="top-right" />
         </Map>
+        <div v-if="selectedLocal" class="la-map-card">
+          <div class="la-map-card-top">
+            <span class="la-map-card-date">{{ formatDate(selectedLocal.date) }}</span>
+            <RouterLink
+              class="la-map-card-link"
+              :to="{ name: 'dashboard-agenda', query: { manutencao: selectedLocal.id, date: selectedLocal.date } }"
+              title="Abrir na agenda"
+            >
+              <LinkIcon :size="14" />
+            </RouterLink>
+          </div>
+          <p class="la-map-card-name">{{ selectedLocal.contract.client.name }}</p>
+          <span class="la-tag la-map-card-tag" :style="{ color: statusColor(selectedLocal.status), borderColor: statusColor(selectedLocal.status) }">
+            {{ statusLabel(selectedLocal.status) }}
+          </span>
+          <span class="la-map-card-tipo">{{ selectedLocal.type }}</span>
+          <div class="la-map-card-address">
+            <GeocodedAddress :lat="selectedLocal.latitude" :lng="selectedLocal.longitude" />
+          </div>
+        </div>
       </div>
 
       <div class="la-list-panel">
@@ -249,6 +270,7 @@ onMounted(carregarDados)
   height: 100%;
   min-height: 0;
   gap: 0;
+  overflow: hidden;
 }
 
 .la-error {
@@ -264,6 +286,8 @@ onMounted(carregarDados)
   display: flex;
   gap: 0;
   flex: 1;
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
   border: 1px solid var(--nd-border);
   border-radius: 12px;
@@ -280,7 +304,77 @@ onMounted(carregarDados)
 .la-map {
   width: 100%;
   height: 100%;
-  min-height: 340px;
+  min-height: 0;
+}
+
+.la-map-card {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 2;
+  width: min(280px, calc(100% - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--nd-border);
+  border-radius: 8px;
+  background: var(--nd-surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.la-map-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.la-map-card-date {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--nd-text-disabled);
+}
+
+.la-map-card-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--nd-border-visible);
+  border-radius: 6px;
+  color: var(--nd-text-secondary);
+  transition: border-color 150ms ease-out, color 150ms ease-out, background 150ms ease-out;
+}
+
+.la-map-card-link:hover {
+  background: var(--nd-surface-raised);
+  border-color: var(--nd-action);
+  color: var(--nd-action);
+}
+
+.la-map-card-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nd-text-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.la-map-card-tag {
+  width: fit-content;
+  margin-top: 2px;
+}
+
+.la-map-card-tipo,
+.la-map-card-address {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.01em;
+  color: var(--nd-text-disabled);
 }
 
 .la-list-panel {
@@ -288,6 +382,9 @@ onMounted(carregarDados)
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   border-left: 1px solid var(--nd-border);
   background: var(--nd-surface);
   overflow: hidden;
@@ -337,7 +434,11 @@ onMounted(carregarDados)
 
 .la-list {
   flex: 1;
+  height: 100%;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -425,15 +526,17 @@ onMounted(carregarDados)
   }
 
   .la-map-panel {
-    height: 280px;
+    height: clamp(220px, 36svh, 280px);
     flex: none;
   }
 
   .la-list-panel {
     width: 100%;
+    flex: 1;
+    min-height: 0;
     border-left: none;
     border-top: 1px solid var(--nd-border);
-    max-height: 320px;
   }
 }
+
 </style>
