@@ -9,6 +9,7 @@ const props = defineProps<{
   sunday: Date
   tecnicos: TecnicoAPI[]
   tecnicoFiltro: TecnicoAPI | null
+  showTecnicoFilter?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -190,7 +191,7 @@ const legendItems = [
       </div>
     </section>
 
-    <section class="cp-section">
+    <section v-if="showTecnicoFilter !== false" class="cp-section">
       <p class="cp-section-label">TÉCNICO</p>
       <NdCombobox
         v-model="tecnicoModel"

@@ -14,6 +14,7 @@ import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 import { MapLatLngField } from '@/shared/components/ui/map-field'
 import GeocodedAddress from '@/shared/components/ui/GeocodedAddress.vue'
 import NdDateRangePicker, { type DateRange } from '@/shared/components/ui/NdDateRangePicker.vue'
+import NdDatePicker from '@/shared/components/ui/NdDatePicker.vue'
 
 const activeTab = ref<'agenda' | 'manutencoes'>('agenda')
 
@@ -145,6 +146,7 @@ async function carregarDados() {
 
 async function submitForm() {
   if (!form.value.contractId) { toast.error('Selecione um contrato.'); return }
+  if (!form.value.date) { toast.error('Selecione uma data.'); return }
   submitError.value = null
   const payload = {
     contractId: form.value.contractId,
@@ -248,7 +250,7 @@ onMounted(carregarDados)
             </div>
             <div class="nd-field">
               <label class="nd-field-label">Data *</label>
-              <input v-model="form.date" type="date" class="nd-field-input" required />
+              <NdDatePicker v-model="form.date" required />
             </div>
             <div class="nd-field">
               <label class="nd-field-label">Tipo *</label>

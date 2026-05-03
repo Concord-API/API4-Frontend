@@ -12,6 +12,7 @@ import {
 } from '@/shared/components/ui/dialog'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
+import NdDatePicker from '@/shared/components/ui/NdDatePicker.vue'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
 import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
@@ -44,10 +45,14 @@ const emit = defineEmits<{
 }>()
 
 const { currentUser } = useAuth()
-const isTechnician = computed(() => currentUser.value?.role === 'technician')
+const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowerCase() === 'technician')
 
-const internalMode = ref<ModalMode>(props.mode)
-watch(() => props.mode, (v) => { internalMode.value = v })
+function normalizeMode(mode: ModalMode): ModalMode {
+  return isTechnician.value && mode !== 'detalhe' ? 'detalhe' : mode
+}
+
+const internalMode = ref<ModalMode>(normalizeMode(props.mode))
+watch(() => props.mode, (v) => { internalMode.value = normalizeMode(v) })
 
 const contratos = ref<ContratoAPI[]>([])
 const tecnicos = ref<TecnicoAPI[]>([])
@@ -108,11 +113,12 @@ const submitting = ref(false)
 
 watch(() => props.open, (isOpen) => {
   submitError.value = null
-  if (!isOpen) { internalMode.value = props.mode; return }
+  if (!isOpen) { internalMode.value = normalizeMode(props.mode); return }
   void carregarDados()
-  if (props.mode === 'edicao' && props.manutencao) form.value = formFromManutencao(props.manutencao)
-  else if (props.mode === 'criacao' && props.criacaoContext) form.value = formFromContext(props.criacaoContext)
-  else if (props.mode === 'criacao') form.value = defaultForm()
+  internalMode.value = normalizeMode(props.mode)
+  if (!isTechnician.value && props.mode === 'edicao' && props.manutencao) form.value = formFromManutencao(props.manutencao)
+  else if (!isTechnician.value && props.mode === 'criacao' && props.criacaoContext) form.value = formFromContext(props.criacaoContext)
+  else if (!isTechnician.value && props.mode === 'criacao') form.value = defaultForm()
 })
 
 watch(internalMode, (mode) => {
@@ -150,7 +156,9 @@ function toIso(dateStr: string, timeLocal: string): string | undefined {
 }
 
 async function submitForm() {
+  if (isTechnician.value) { toast.error('Técnicos não podem editar manutenções.'); return }
   if (!form.value.contractId) { toast.error('Selecione um contrato.'); return }
+  if (!form.value.date) { toast.error('Selecione uma data.'); return }
   submitError.value = null; submitting.value = true
   const payload = {
     contractId: form.value.contractId, date: form.value.date,
@@ -217,7 +225,11 @@ function hashColor(id: number): string {
   return palette[id % palette.length]!
 }
 
-function switchToEdicao() { internalMode.value = 'edicao'; emit('update:mode', 'edicao') }
+function switchToEdicao() {
+  if (isTechnician.value) return
+  internalMode.value = 'edicao'
+  emit('update:mode', 'edicao')
+}
 function switchToDetalhe() { internalMode.value = 'detalhe'; emit('update:mode', 'detalhe') }
 function handleOpenChange(val: boolean) { emit('update:open', val) }
 
@@ -374,7 +386,7 @@ const statusModel = computed<string | number | null>({
               <div class="cm-form-row cm-form-row--half">
                 <div class="nd-field">
                   <label class="nd-field-label">Data *</label>
-                  <input v-model="form.date" type="date" class="nd-field-input" required />
+                  <NdDatePicker v-model="form.date" required />
                 </div>
                 <div class="nd-field">
                   <label class="nd-field-label">Tipo *</label>

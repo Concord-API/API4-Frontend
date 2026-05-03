@@ -17,8 +17,18 @@ const props = withDefaults(defineProps<MapMarkerProps>(), {
   scale: 1,
 })
 
+const emit = defineEmits<{
+  click: [event: MouseEvent]
+}>()
+
 const mapRef = inject(MAP_INJECTION_KEY)
 let marker: Marker | null = null
+let markerEl: HTMLElement | null = null
+
+function onMarkerClick(event: MouseEvent) {
+  event.stopPropagation()
+  emit('click', event)
+}
 
 function buildMarker() {
   if (!mapRef?.value || marker) return
@@ -31,6 +41,9 @@ function buildMarker() {
   })
     .setLngLat(props.coordinates)
     .addTo(mapRef.value)
+  markerEl = marker.getElement()
+  markerEl.style.cursor = 'pointer'
+  markerEl.addEventListener('click', onMarkerClick)
 }
 
 watch(
@@ -49,6 +62,8 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  markerEl?.removeEventListener('click', onMarkerClick)
+  markerEl = null
   marker?.remove()
   marker = null
 })

@@ -79,7 +79,7 @@ export function useCalendario() {
     try {
       const startDate = toDateStr(sunday.value)
       const endDate = toDateStr(diasDaSemana.value[6]!.date)
-      const isTechnician = currentUser.value?.role === 'technician'
+      const isTechnician = String(currentUser.value?.role ?? '').toLowerCase() === 'technician'
       const employeeId = isTechnician ? Number(currentUser.value?.id) : undefined
       const resultado = await manutencaoService.listarPorSemana(startDate, endDate, employeeId)
       manutencoesDaSemana.value = resultado
@@ -110,7 +110,7 @@ export function useCalendario() {
 
   function irParaSemanaDoDia(date: Date) {
     sunday.value = getSunday(date)
-    void carregarSemana()
+    return carregarSemana()
   }
 
   return {
