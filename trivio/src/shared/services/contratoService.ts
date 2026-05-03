@@ -12,6 +12,8 @@ export interface ContratoAPI {
   active: boolean
   equipments: EquipamentoAPI[]
   requirements: RequisitoAPI[]
+  latitude: number
+  longitude: number
 }
 
 export interface ContratoRequest {
@@ -22,6 +24,8 @@ export interface ContratoRequest {
   active: boolean
   equipmentIds: number[]
   requirementIds: number[]
+  latitude: number
+  longitude: number
 }
 
 export const contratoService = {

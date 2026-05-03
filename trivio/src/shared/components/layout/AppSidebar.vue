@@ -1,9 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import sidebarLogoLight from '@/assets/trivio branco.svg'
+import sidebarLogoDark from '@/assets/trivio branco.svg'
+import sidebarLogoLight from '@/assets/trivio preto.svg'
 import { useAuth } from '@/shared/composables/useAuth'
 import { useNavigation } from '@/shared/composables/useNavigation'
+import { useTheme } from '@/shared/composables/useTheme'
 import {
   Sidebar,
   SidebarHeader,
@@ -18,6 +20,7 @@ import { LogOut } from 'lucide-vue-next'
 
 const { currentUser, logout } = useAuth()
 const { menuGroups } = useNavigation()
+const { mode: themeMode } = useTheme()
 const router = useRouter()
 
 function handleLogout() {
@@ -25,7 +28,9 @@ function handleLogout() {
   router.push('/')
 }
 
-const sidebarLogoSrc = sidebarLogoLight
+const sidebarLogoSrc = computed(() =>
+  themeMode.value === 'dark' ? sidebarLogoDark : sidebarLogoLight
+)
 
 const userDisplay = computed(() => ({
   name: currentUser.value?.email?.split('@')[0] || 'Usuário',
@@ -42,7 +47,6 @@ const userDisplay = computed(() => ({
 
     <SidebarContent class="nd-sidebar-content">
       <SidebarGroup v-for="group in menuGroups" :key="group.title" class="nd-sidebar-group">
-        <p class="nd-group-label">{{ group.title }}</p>
         <SidebarMenu class="nd-menu">
           <SidebarMenuItem v-for="item in group.items" :key="item.id">
             <SidebarMenuButton as-child class="nd-menu-btn">
@@ -77,39 +81,36 @@ const userDisplay = computed(() => ({
 
 <style scoped>
 :deep([data-sidebar="sidebar"]) {
-  background: #0a0a0a;
-  border-right: 1px solid #1f1f1f;
+  background: var(--sidebar) !important;
+  border-right: 1px solid var(--nd-border) !important;
 }
 
 .nd-sidebar-header {
-  padding: 28px 24px 24px;
-  border-bottom: 1px solid #1f1f1f;
+  height: 48px;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--nd-border);
+  flex-shrink: 0;
+  gap: 0;
 }
 
 .nd-sidebar-logo {
   display: block;
-  width: 120px;
-  height: auto;
+  height: 18px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
 }
 
 .nd-sidebar-content {
-  padding: 8px 0 0;
+  padding: 4px 0 0;
 }
 
 .nd-sidebar-group {
-  padding: 20px 0 8px;
-}
-
-.nd-group-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #444444;
-  padding: 0 24px 12px;
-  margin: 0;
-  line-height: 1.2;
+  padding: 8px 0 4px;
 }
 
 .nd-menu {
@@ -134,25 +135,25 @@ const userDisplay = computed(() => ({
   padding: 13px 24px 13px 21px;
   min-height: 48px;
   text-decoration: none;
-  color: #555555;
+  color: var(--nd-text-secondary);
   border-left: 3px solid transparent;
   transition: color 150ms ease-out, border-color 150ms ease-out, background 150ms ease-out;
   width: 100%;
 }
 
 .nd-nav-link:hover {
-  color: #999999;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--nd-text-primary);
+  background: rgba(128, 128, 128, 0.06);
 }
 
 .nd-nav-link--active {
-  color: #ffffff !important;
-  border-left-color: #b9f11b !important;
-  background: linear-gradient(90deg, rgba(185, 241, 27, 0.12) 0%, rgba(185, 241, 27, 0.03) 50%, transparent 100%);
+  color: var(--nd-text-display) !important;
+  border-left-color: var(--nd-sidebar-active-color) !important;
+  background: linear-gradient(90deg, var(--nd-sidebar-active-bg-start) 0%, var(--nd-sidebar-active-bg-mid) 50%, transparent 100%);
 }
 
 .nd-nav-link--active .nd-nav-icon {
-  color: #b9f11b;
+  color: var(--nd-sidebar-active-color);
 }
 
 .nd-nav-icon {
@@ -163,16 +164,15 @@ const userDisplay = computed(() => ({
 }
 
 .nd-nav-label {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   line-height: 1.2;
 }
 
 .nd-sidebar-footer {
-  border-top: 1px solid #1f1f1f;
+  border-top: 1px solid var(--nd-border);
   padding: 20px 24px;
 }
 
@@ -185,14 +185,14 @@ const userDisplay = computed(() => ({
 .nd-user-avatar {
   width: 34px;
   height: 34px;
-  border: 1px solid #333333;
+  border: 1px solid var(--nd-border-visible);
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Space Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 13px;
-  color: #888888;
+  color: var(--nd-text-disabled);
   flex-shrink: 0;
 }
 
@@ -205,10 +205,10 @@ const userDisplay = computed(() => ({
 }
 
 .nd-user-name {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: #cccccc;
+  color: var(--nd-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -216,9 +216,9 @@ const userDisplay = computed(() => ({
 }
 
 .nd-user-email {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 11px;
-  color: #444444;
+  color: var(--nd-text-disabled);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -230,7 +230,7 @@ const userDisplay = computed(() => ({
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #444444;
+  color: var(--nd-text-disabled);
   padding: 4px;
   display: flex;
   align-items: center;

@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import { requisitoService, type RequisitoAPI } from '@/shared/services/requisitoService'
 import { getApiErrorMessage } from '@/shared/services/api'
 import { useRequisitosStore } from '@/shared/composables/useRequisitosStore'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 
 const searchQuery = ref('')
@@ -98,9 +98,9 @@ async function submitForm() {
 }
 
 const filters = [
-  { key: 'todos', label: 'TODOS' },
-  { key: 'ativo', label: 'ATIVOS' },
-  { key: 'inativo', label: 'INATIVOS' },
+  { key: 'todos', label: 'Todos' },
+  { key: 'ativo', label: 'Ativos' },
+  { key: 'inativo', label: 'Inativos' },
 ] as const
 
 onMounted(() => { void ensureRequisitosLoaded() })
@@ -109,95 +109,99 @@ onMounted(() => { void ensureRequisitosLoaded() })
 <template>
   <div class="nd-page">
 
-    <div class="nd-action-row">
-      <button class="nd-btn-primary" @click="openCreate">
-        <Plus :size="12" /> NOVO REQUISITO
-      </button>
-    </div>
 
-    <Sheet v-model:open="sheetOpen">
-      <SheetContent class="nd-sheet">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">{{ sheetMode === 'edit' ? 'EDITAR REQUISITO' : 'NOVO REQUISITO' }}</SheetTitle>
-          <SheetDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar requisito' : 'Novo requisito' }}</SheetDescription>
-        </SheetHeader>
+    <Dialog v-model:open="sheetOpen">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar requisito' : 'Novo requisito' }}</DialogTitle>
+          <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar requisito' : 'Novo requisito' }}</DialogDescription>
+        </DialogHeader>
         <form class="nd-form" @submit.prevent="submitForm">
-          <div class="nd-field">
-            <label class="nd-field-label">NOME *</label>
+          <div class="nd-field col-span-full">
+            <label class="nd-field-label">Nome *</label>
             <input v-model="form.name" class="nd-field-input" placeholder="Nome do requisito" required />
           </div>
-          <div class="nd-field">
+          <div class="nd-field col-span-full">
             <label class="nd-field-label">DESCRIÇÃO</label>
             <textarea v-model="form.description" class="nd-field-input nd-field-textarea" placeholder="Descrição opcional" rows="3" />
           </div>
-          <div class="nd-field">
-            <label class="nd-field-label">STATUS</label>
+          <div class="nd-field col-span-full">
+            <label class="nd-field-label">Status</label>
             <div class="nd-toggle-row">
               <button type="button" class="nd-toggle" :class="{ 'nd-toggle--on': form.active }" @click="form.active = !form.active">
                 <span class="nd-toggle-thumb" />
               </button>
-              <span class="nd-toggle-label">{{ form.active ? 'ATIVO' : 'INATIVO' }}</span>
+              <span class="nd-toggle-label">{{ form.active ? 'Ativo' : 'Inativo' }}</span>
             </div>
           </div>
-          <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
-          <div class="nd-form-footer">
-            <button type="submit" class="nd-btn-primary nd-btn-full">
+          <div v-if="submitError" class="nd-field-error col-span-full">{{ submitError }}</div>
+          <DialogFooter class="col-span-full">
+            <DialogClose as-child>
+              <button type="button" class="nd-btn-secondary">CANCELAR</button>
+            </DialogClose>
+            <button type="submit" class="nd-btn-primary">
               {{ sheetMode === 'edit' ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR REQUISITO' }}
             </button>
-          </div>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
 
-    <!-- DETAIL SHEET -->
-    <Sheet v-model:open="detailOpen">
-      <SheetContent class="nd-sheet nd-sheet--detail">
-        <SheetHeader class="nd-sheet-header">
-          <SheetTitle class="nd-sheet-title">DETALHES DO REQUISITO</SheetTitle>
-          <SheetDescription class="sr-only">Detalhes do requisito</SheetDescription>
-        </SheetHeader>
+    <Dialog v-model:open="detailOpen">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle class="nd-dialog-title">Detalhes do requisito</DialogTitle>
+          <DialogDescription class="sr-only">Detalhes do requisito</DialogDescription>
+        </DialogHeader>
         <div v-if="detailItem" class="nd-detail">
           <div class="nd-detail-status-row">
-            <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'ATIVO' : 'INATIVO' }}</span>
+            <span class="nd-tag nd-tag--lg" :style="detailItem.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ detailItem.active ? 'Ativo' : 'Inativo' }}</span>
           </div>
           <div class="nd-detail-section">
-            <span class="nd-field-label">NOME</span>
+            <span class="nd-field-label">Nome</span>
             <span class="nd-detail-value">{{ detailItem.name }}</span>
           </div>
           <div v-if="detailItem.description" class="nd-detail-section">
             <span class="nd-field-label">DESCRIÇÃO</span>
             <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.description }}</span>
           </div>
-          <div class="nd-detail-footer">
-            <button class="nd-btn-primary nd-btn-full" type="button" @click="openEditFromDetail">
-              <Pencil :size="12" /> EDITAR REQUISITO
-            </button>
-          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        <DialogFooter>
+          <DialogClose as-child>
+            <button type="button" class="nd-btn-secondary">FECHAR</button>
+          </DialogClose>
+          <button class="nd-btn-primary" type="button" @click="openEditFromDetail">
+            <Pencil :size="12" /> Editar requisito
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <div v-if="erro" class="nd-error">{{ erro }}</div>
 
-    <div class="nd-hero">
-      <div class="nd-hero-number">
-        <span v-if="loading">—</span>
-        <span v-else>{{ String(requisitos.length).padStart(2, '0') }}</span>
-      </div>
-      <span class="nd-label">REQUISITOS CADASTRADOS</span>
-    </div>
-
     <div class="nd-stats-row">
       <div class="nd-stat">
+        <span class="nd-stat-val">{{ String(requisitos.length).padStart(2, '0') }}</span>
+        <span class="nd-label">Total</span>
+      </div>
+      <div class="nd-stat-sep" />
+      <div class="nd-stat">
         <span class="nd-stat-val" style="color: var(--nd-success)">{{ String(counts.ativos).padStart(2, '0') }}</span>
-        <span class="nd-label">ATIVOS</span>
+        <span class="nd-label">Ativos</span>
       </div>
       <div class="nd-stat-sep" />
       <div class="nd-stat">
         <span class="nd-stat-val" style="color: var(--nd-accent)">{{ String(counts.inativos).padStart(2, '0') }}</span>
-        <span class="nd-label">INATIVOS</span>
+        <span class="nd-label">Inativos</span>
       </div>
+      <button class="nd-btn-primary nd-btn-desktop" style="margin-left: auto" @click="openCreate">
+        <Plus :size="12" /> Novo requisito
+      </button>
     </div>
+
+    <button class="nd-fab" @click="openCreate" aria-label="Novo requisito">
+      <Plus :size="20" />
+    </button>
 
     <div class="nd-controls-row">
       <div class="nd-segmented">
@@ -206,13 +210,12 @@ onMounted(() => { void ensureRequisitosLoaded() })
       <div class="nd-controls-right">
         <div class="nd-search">
           <Search :size="13" class="nd-search-icon" />
-          <input v-model="searchQuery" type="text" placeholder="BUSCAR..." class="nd-search-input" />
+          <input v-model="searchQuery" type="text" placeholder="Buscar..." class="nd-search-input" />
         </div>
         <ViewToggle v-model="viewMode" />
       </div>
     </div>
 
-    <!-- TABLE VIEW -->
     <div v-if="viewMode === 'table'" class="nd-table-wrap">
       <table class="nd-table">
         <colgroup>
@@ -227,37 +230,36 @@ onMounted(() => { void ensureRequisitosLoaded() })
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="4" class="nd-empty">CARREGANDO...</td></tr>
+          <tr v-if="loading"><td colspan="4" class="nd-empty">Carregando...</td></tr>
           <tr v-for="r in filtered" :key="r.id" class="nd-tr nd-tr--clickable" @click="openDetail(r)">
             <td class="nd-td nd-td--primary">{{ r.name }}</td>
             <td class="nd-td nd-td--secondary">{{ r.description ?? '—' }}</td>
             <td class="nd-td nd-td--status">
-              <span class="nd-tag" :style="r.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ r.active ? 'ATIVO' : 'INATIVO' }}</span>
+              <span class="nd-tag" :style="r.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ r.active ? 'Ativo' : 'Inativo' }}</span>
             </td>
             <td class="nd-td nd-td--action">
               <button class="nd-edit-btn" type="button" @click.stop="openEdit(r)"><Pencil :size="12" /></button>
             </td>
           </tr>
-          <tr v-if="!loading && filtered.length === 0"><td colspan="4" class="nd-empty">NENHUM REQUISITO CADASTRADO</td></tr>
+          <tr v-if="!loading && filtered.length === 0"><td colspan="4" class="nd-empty">Nenhum requisito cadastrado</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- GRID VIEW -->
     <div v-else class="nd-grid">
-      <div v-if="loading" class="nd-empty nd-empty--grid">CARREGANDO...</div>
+      <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
       <div v-for="r in filtered" :key="r.id" class="nd-card" @click="openDetail(r)">
         <div class="nd-card-top-row">
-          <span class="nd-card-cat">REQUISITO</span>
+          <span class="nd-card-cat">Requisito</span>
           <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(r)"><Pencil :size="11" /></button>
         </div>
         <p class="nd-card-name">{{ r.name }}</p>
         <p v-if="r.description" class="nd-card-desc">{{ r.description }}</p>
         <div class="nd-card-footer">
-          <span class="nd-tag" :style="r.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ r.active ? 'ATIVO' : 'INATIVO' }}</span>
+          <span class="nd-tag" :style="r.active ? { color: 'var(--nd-success)', borderColor: 'var(--nd-success)' } : { color: 'var(--nd-accent)', borderColor: 'var(--nd-accent)' }">{{ r.active ? 'Ativo' : 'Inativo' }}</span>
         </div>
       </div>
-      <div v-if="!loading && filtered.length === 0" class="nd-empty nd-empty--grid">NENHUM REQUISITO CADASTRADO</div>
+      <div v-if="!loading && filtered.length === 0" class="nd-empty nd-empty--grid">Nenhum requisito cadastrado</div>
     </div>
 
   </div>
@@ -265,81 +267,52 @@ onMounted(() => { void ensureRequisitosLoaded() })
 
 <style scoped>
 .nd-page { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
-.nd-action-row { display: flex; justify-content: flex-end; margin-bottom: 40px; }
-.nd-error { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--nd-accent); margin-bottom: 16px; }
-.nd-label { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nd-text-secondary); line-height: 1.2; }
-.nd-hero { display: flex; flex-direction: column; gap: 6px; margin-bottom: 32px; }
-.nd-hero-number { font-family: 'Space Mono', monospace; font-size: 80px; font-weight: 400; letter-spacing: -0.02em; line-height: 1.0; color: var(--nd-text-display); }
+.nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
+.nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
 .nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 32px; }
 .nd-stat { display: flex; flex-direction: column; gap: 4px; }
-.nd-stat-val { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
+.nd-stat-val { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--nd-text-display); line-height: 1.1; }
 .nd-stat-sep { width: 1px; height: 28px; background: var(--nd-border-visible); }
 .nd-controls-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .nd-controls-right { display: flex; align-items: center; gap: 16px; }
 .nd-segmented { display: flex; border: 1px solid var(--nd-border-visible); border-radius: 999px; overflow: hidden; }
-.nd-seg-btn { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; background: transparent; color: var(--nd-text-disabled); border: none; padding: 7px 14px; cursor: pointer; transition: color 150ms ease-out, background 150ms ease-out; }
+.nd-seg-btn { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.02em; font-weight: 500; background: transparent; color: var(--nd-text-disabled); border: none; padding: 7px 14px; cursor: pointer; transition: color 150ms ease-out, background 150ms ease-out; }
 .nd-seg-btn:hover { color: var(--nd-text-secondary); }
 .nd-seg-btn--active { background: var(--nd-text-display); color: var(--nd-bg); }
 .nd-search { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--nd-border-visible); padding-bottom: 6px; }
 .nd-search-icon { color: var(--nd-text-disabled); }
-.nd-search-input { background: transparent; border: none; outline: none; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: var(--nd-text-primary); width: 180px; }
+.nd-search-input { background: transparent; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; color: var(--nd-text-primary); width: 180px; }
 .nd-search-input::placeholder { color: var(--nd-text-disabled); }
 .nd-table-wrap { overflow-x: auto; }
 .nd-table { width: 100%; border-collapse: collapse; }
-.nd-th { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-secondary); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--nd-border-visible); white-space: nowrap; }
+.nd-th { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--nd-text-secondary); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--nd-border-visible); white-space: nowrap; }
 .nd-th--status { padding-left: 20px; padding-right: 0; }
 .nd-tr { border-bottom: 1px solid var(--nd-border); transition: background 150ms ease-out; }
 .nd-tr:hover { background: var(--nd-surface); }
 .nd-tr:hover .nd-edit-btn { opacity: 1; }
 .nd-tr--clickable { cursor: pointer; }
-.nd-td { padding: 13px 16px 13px 0; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-secondary); vertical-align: middle; }
+.nd-td { padding: 13px 16px 13px 0; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-secondary); vertical-align: middle; }
 .nd-td--primary { color: var(--nd-text-primary); }
 .nd-td--secondary { color: var(--nd-text-secondary); }
 .nd-td--status { padding-left: 20px; padding-right: 0; }
 .nd-td--action { padding-right: 0; width: 44px; }
 .nd-edit-btn { opacity: 0; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: opacity 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out; }
 .nd-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
-.nd-tag { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }
-.nd-empty { padding: 48px 0; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--nd-text-disabled); text-align: center; }
+.nd-empty { padding: 48px 0; font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-text-disabled); text-align: center; }
 .nd-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .nd-empty--grid { grid-column: 1 / -1; }
 .nd-card { background: var(--nd-surface); border: 1px solid var(--nd-border); border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 150ms ease-out; display: flex; flex-direction: column; }
 .nd-card:hover { border-color: var(--nd-border-visible); }
 .nd-card-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
-.nd-card-cat { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-disabled); }
+.nd-card-cat { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.03em; color: var(--nd-text-disabled); }
 .nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
 .nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
-.nd-card-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 6px 0 4px; line-height: 1.3; }
-:deep(.nd-sheet--detail) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
-.nd-detail { display: flex; flex-direction: column; gap: 28px; }
-.nd-detail-status-row { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--nd-border); }
-.nd-tag--lg { font-size: 11px; padding: 4px 12px; }
-.nd-detail-section { display: flex; flex-direction: column; gap: 8px; }
-.nd-detail-value { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: var(--nd-text-primary); }
-.nd-detail-value--secondary { font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-secondary); line-height: 1.5; }
-.nd-detail-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--nd-border); }
-.nd-card-desc { font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--nd-text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; flex: 1; }
+.nd-card-name { font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--nd-text-primary); margin: 6px 0 4px; line-height: 1.3; }
+.nd-card-desc { font-family: 'Montserrat', sans-serif; font-size: 13px; color: var(--nd-text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; flex: 1; }
 .nd-card-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--nd-border); }
-:deep(.nd-sheet) { background: var(--nd-surface) !important; border-left: 1px solid var(--nd-border-visible) !important; padding: 32px 28px; }
-.nd-sheet-header { margin-bottom: 32px; }
-.nd-sheet-title { font-family: 'Space Mono', monospace !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: 0.1em !important; text-transform: uppercase !important; color: var(--nd-text-display) !important; }
-.nd-form { display: flex; flex-direction: column; gap: 24px; }
-.nd-field { display: flex; flex-direction: column; gap: 8px; }
-.nd-field-label { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nd-text-disabled); }
-.nd-field-input { background: transparent; border: none; border-bottom: 1px solid var(--nd-border-visible); outline: none; padding: 8px 0; font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--nd-text-primary); transition: border-color 150ms ease-out; width: 100%; }
-.nd-field-input:focus { border-bottom-color: var(--nd-text-primary); }
-.nd-field-textarea { resize: none; line-height: 1.5; }
-.nd-field-error { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-accent); }
-.nd-toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
-.nd-toggle { position: relative; width: 40px; height: 22px; border: none; border-radius: 999px; background: var(--nd-border-visible); cursor: pointer; transition: background 200ms ease-out; }
-.nd-toggle--on { background: var(--nd-text-display); }
-.nd-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--nd-text-disabled); transition: transform 200ms ease-out, background 200ms ease-out; }
-.nd-toggle--on .nd-toggle-thumb { transform: translateX(18px); background: var(--nd-bg); }
-.nd-toggle-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nd-text-secondary); }
-.nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
-.nd-btn-primary:hover { background: var(--nd-action-hover); }
-.nd-btn-full { width: 100%; justify-content: center; }
-.nd-form-footer { margin-top: 16px; }
+
+
+.nd-fab { display: none; }
 
 @media (max-width: 640px) {
   .nd-controls-row { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -347,7 +320,9 @@ onMounted(() => { void ensureRequisitosLoaded() })
   .nd-search { flex: 1; }
   .nd-search-input { width: 100%; min-width: 0; }
   .nd-grid { grid-template-columns: 1fr; }
-  .nd-hero-number { font-size: 56px; }
+  .nd-btn-desktop { display: none; }
+  .nd-fab { display: flex; align-items: center; justify-content: center; position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--nd-action); color: var(--nd-action-foreground); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); transition: background-color 150ms ease-out; z-index: 50; }
+  .nd-fab:hover { background: var(--nd-action-hover); }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
   .nd-grid { grid-template-columns: repeat(2, 1fr); }
