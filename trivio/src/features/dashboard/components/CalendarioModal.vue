@@ -151,6 +151,11 @@ const contractIdModel = computed<string | number | null>({
   set: value => { form.value.contractId = value === null ? null : Number(value) },
 })
 
+const typeModel = computed<string | number | null>({
+  get: () => form.value.type,
+  set: value => { form.value.type = (value as ManutencaoTipo | null) ?? 'PREVENTIVA' },
+})
+
 function padHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`
 }
@@ -423,7 +428,13 @@ async function submitForm() {
 
                 <div class="cm-detail-row">
                   <dt><Tag :size="15" />Tipo</dt>
-                  <dd><span class="cm-pill">{{ tipoLabel }}</span></dd>
+                  <dd>
+                    <NdCombobox
+                      v-model="typeModel"
+                      :options="tipoOptions"
+                      placeholder="Selecione o tipo"
+                    />
+                  </dd>
                 </div>
               </dl>
             </section>

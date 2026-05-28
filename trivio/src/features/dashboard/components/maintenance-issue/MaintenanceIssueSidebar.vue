@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Building2, Calendar, Clock, MapPin, Tag, UserPlus, Users } from 'lucide-vue-next'
-import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
+import type { ManutencaoAPI, ManutencaoTipo } from '@/shared/services/manutencaoService'
+import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 
 interface SelectOption {
@@ -19,6 +20,7 @@ const props = defineProps<{
   addressLoading?: boolean
   editing?: boolean
   editDate: string
+  editType: ManutencaoTipo
   editStartTime: string
   editEndTime: string
   employeeIds: number[]
@@ -27,6 +29,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:editDate': [value: string]
+  'update:editType': [value: ManutencaoTipo]
   'update:editStartTime': [value: string]
   'update:editEndTime': [value: string]
   'update:employeeIds': [value: number[]]
@@ -36,6 +39,17 @@ const selectedEmployeeIds = computed<(string | number)[]>({
   get: () => props.employeeIds,
   set: value => emit('update:employeeIds', value.map(Number)),
 })
+
+const selectedType = computed<string | number | null>({
+  get: () => props.editType,
+  set: value => emit('update:editType', (value as ManutencaoTipo | null) ?? 'PREVENTIVA'),
+})
+
+const typeOptions = [
+  { value: 'PREVENTIVA', label: 'Preventiva' },
+  { value: 'CORRETIVA', label: 'Corretiva' },
+  { value: 'MELHORIA', label: 'Melhoria' },
+]
 
 const displayPeople = computed(() => {
   if (!props.editing) return props.manutencao.employees
@@ -115,7 +129,14 @@ function roleLabel(admin: boolean) {
 
         <div class="mi-detail-row">
           <dt><Tag :size="15" />Tipo</dt>
-          <dd><span class="mi-pill">{{ tipoLabel }}</span></dd>
+          <dd v-if="editing">
+            <NdCombobox
+              v-model="selectedType"
+              :options="typeOptions"
+              placeholder="Selecione o tipo"
+            />
+          </dd>
+          <dd v-else><span class="mi-pill">{{ tipoLabel }}</span></dd>
         </div>
 
         <div class="mi-detail-row">

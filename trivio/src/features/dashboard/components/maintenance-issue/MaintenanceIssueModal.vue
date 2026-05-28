@@ -437,6 +437,7 @@ watch(() => activeMaintenance.value?.id, () => {
 
           <MaintenanceIssueSidebar
             v-model:edit-date="editForm.date"
+            v-model:edit-type="editForm.type"
             v-model:edit-start-time="editForm.startTimeLocal"
             v-model:edit-end-time="editForm.endTimeLocal"
             v-model:employee-ids="editForm.employeeIds"
