@@ -621,6 +621,7 @@ async function submitForm() {
   min-height: 24px;
   padding: 0 10px;
   border-radius: 4px;
+  background: var(--nd-surface-raised);
   font-size: 0.68rem;
   font-weight: 800;
 }
@@ -633,7 +634,6 @@ async function submitForm() {
 .cm-type {
   border: 1px solid var(--nd-border-visible);
   color: var(--nd-interactive);
-  background: var(--nd-surface-raised);
 }
 
 .cm-badge-trigger {
