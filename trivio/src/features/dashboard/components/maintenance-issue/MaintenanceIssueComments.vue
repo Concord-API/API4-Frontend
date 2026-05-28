@@ -10,6 +10,7 @@ import MaintenanceIssueComposer from './MaintenanceIssueComposer.vue'
 const props = defineProps<{
   maintenanceId: number
   disabled?: boolean
+  currentEmployeeId?: number | null
 }>()
 
 const { currentUser } = useAuth()
@@ -25,7 +26,10 @@ const threadRef = ref<HTMLElement | null>(null)
 const maxMessageLength = 1000
 let loadRequestId = 0
 
-const currentUserId = computed(() => Number(currentUser.value?.id))
+const currentUserId = computed(() => {
+  const id = Number(props.currentEmployeeId ?? currentUser.value?.id)
+  return Number.isFinite(id) ? id : null
+})
 
 function isOwn(follow: FollowAPI) {
   return Number(follow.employeeId) === currentUserId.value

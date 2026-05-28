@@ -12,6 +12,7 @@ import NdDateRangePicker, { type DateRange } from '@/shared/components/ui/NdDate
 import GeocodedAddress from '@/shared/components/ui/GeocodedAddress.vue'
 import CalendarioModal from '@/features/dashboard/components/CalendarioModal.vue'
 import MaintenanceIssueModal from '@/features/dashboard/components/maintenance-issue/MaintenanceIssueModal.vue'
+import { useAuth } from '@/shared/composables/useAuth'
 
 const activeTab = ref<'agenda' | 'manutencoes'>('agenda')
 const manutencoes = ref<ManutencaoAPI[]>([])
@@ -28,6 +29,8 @@ const submitError = ref<string | null>(null)
 const createOpen = ref(false)
 const detailOpen = ref(false)
 const detailItem = ref<ManutencaoAPI | null>(null)
+const { currentUser } = useAuth()
+const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowerCase() === 'technician')
 
 function openCreate() {
   detailOpen.value = false
@@ -188,7 +191,7 @@ onMounted(carregarDados)
       <MaintenanceIssueModal
         v-model:open="detailOpen"
         :manutencao="detailItem"
-        :can-edit="true"
+        :can-edit="!isTechnician"
         @saved="handleSaved"
       />
 

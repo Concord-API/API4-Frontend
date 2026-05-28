@@ -18,6 +18,7 @@ import {
 import { getApiErrorMessage } from '@/shared/services/api'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
+import { useAuth } from '@/shared/composables/useAuth'
 import { useNominatim } from '@/shared/composables/useNominatim'
 import MaintenanceIssueComments from './MaintenanceIssueComments.vue'
 import MaintenanceIssueHeader from './MaintenanceIssueHeader.vue'
@@ -46,6 +47,7 @@ interface EditForm {
 }
 
 const { reverseGeocode } = useNominatim()
+const { currentUser } = useAuth()
 const address = ref<string | null>(null)
 const addressLoading = ref(false)
 const editing = ref(false)
@@ -55,6 +57,8 @@ const tecnicos = ref<TecnicoAPI[]>([])
 const editForm = ref<EditForm>(defaultEditForm())
 
 const activeMaintenance = computed(() => props.manutencao)
+const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowerCase() === 'technician')
+const canManageMaintenance = computed(() => Boolean(props.canEdit) && !isTechnician.value)
 const currentType = computed(() => editing.value ? editForm.value.type : activeMaintenance.value?.type)
 const currentStatus = computed(() => editing.value ? editForm.value.status : activeMaintenance.value?.status)
 
@@ -62,6 +66,16 @@ const tipoLabel = computed(() => typeLongLabel(currentType.value))
 const typeShortLabel = computed(() => typeShortLabelFor(currentType.value))
 
 const statusLabel = computed(() => statusLabelFor(currentStatus.value))
+
+const currentEmployeeId = computed(() => {
+  const email = currentUser.value?.email?.toLowerCase()
+  const employees = activeMaintenance.value?.employees ?? []
+  const employee = employees.find(item => item.email.toLowerCase() === email)
+  if (employee) return employee.employeeId
+  if (isTechnician.value) return null
+  const id = Number(currentUser.value?.id)
+  return Number.isFinite(id) ? id : null
+})
 
 const statusColor = computed(() => {
   if (!currentStatus.value) return 'var(--nd-action)'
@@ -218,7 +232,7 @@ async function loadTecnicos() {
 }
 
 function startEdit() {
-  if (!props.canEdit || !activeMaintenance.value) return
+  if (!canManageMaintenance.value || !activeMaintenance.value) return
   editForm.value = editFormFromMaintenance(activeMaintenance.value)
   editing.value = true
   void loadTecnicos()
@@ -269,7 +283,7 @@ async function saveEdit() {
 
 async function deleteMaintenance() {
   const manutencao = activeMaintenance.value
-  if (!props.canEdit || !manutencao || deleting.value) return
+  if (!canManageMaintenance.value || !manutencao || deleting.value) return
 
   if (!window.confirm('Apagar esta manutencao?')) {
     return
@@ -367,13 +381,13 @@ watch(() => activeMaintenance.value?.id, () => {
             </template>
 
             <template v-else>
-              <button type="button" class="mi-top-button" title="Copiar resumo" :disabled="deleting" @click="copySummary">
+              <button v-if="canManageMaintenance" type="button" class="mi-top-button" title="Copiar resumo" :disabled="deleting" @click="copySummary">
                 <Link2 :size="15" />
               </button>
-              <button v-if="canEdit" type="button" class="mi-top-button mi-top-button--edit" title="Editar" :disabled="deleting" @click="startEdit">
+              <button v-if="canManageMaintenance" type="button" class="mi-top-button mi-top-button--edit" title="Editar" :disabled="deleting" @click="startEdit">
                 <Edit2 :size="15" />
               </button>
-              <DropdownMenu v-if="canEdit">
+              <DropdownMenu v-if="canManageMaintenance">
                 <DropdownMenuTrigger as-child>
                   <button type="button" class="mi-top-button" title="Mais opcoes" :disabled="deleting">
                     <Loader2 v-if="deleting" :size="15" class="mi-spin" />
@@ -409,7 +423,7 @@ watch(() => activeMaintenance.value?.id, () => {
               @update:type-value="editForm.type = $event as ManutencaoTipo"
             />
 
-            <MaintenanceIssueComments :maintenance-id="manutencao.id" :disabled="editing" />
+            <MaintenanceIssueComments :maintenance-id="manutencao.id" :disabled="editing" :current-employee-id="currentEmployeeId" />
           </main>
 
           <MaintenanceIssueSidebar
