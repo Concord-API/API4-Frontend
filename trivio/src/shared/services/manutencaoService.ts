@@ -5,6 +5,7 @@ export type ManutencaoTipo = 'PREVENTIVA' | 'CORRETIVA' | 'MELHORIA'
 
 export interface ManutencaoAPI {
   id: number
+  active: boolean
   contract: {
     id: number
     client: { id_client: number; name: string }
@@ -31,6 +32,7 @@ export interface ManutencaoRequest {
   type: ManutencaoTipo
   status: ManutencaoStatus
   employeeIds: number[]
+  active?: boolean
   startTime?: string
   endTime?: string
   latitude?: number

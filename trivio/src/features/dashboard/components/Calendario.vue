@@ -7,7 +7,8 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescri
 import { useCalendario } from '@/features/dashboard/composables/useCalendario'
 import CalendarioGrid from './CalendarioGrid.vue'
 import CalendarioPainel from './CalendarioPainel.vue'
-import CalendarioModal, { type ModalMode, type CriacaoContext } from './CalendarioModal.vue'
+import CalendarioModal, { type CriacaoContext } from './CalendarioModal.vue'
+import MaintenanceIssueModal from './maintenance-issue/MaintenanceIssueModal.vue'
 import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 import type { TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useAuth } from '@/shared/composables/useAuth'
@@ -38,25 +39,36 @@ const {
 } = useCalendario()
 
 const modalOpen = ref(false)
-const modalMode = ref<ModalMode>('detalhe')
+const issueOpen = ref(false)
 const modalManutencao = ref<ManutencaoAPI | null>(null)
 const criacaoContext = ref<CriacaoContext | null>(null)
 
 function abrirDetalhe(m: ManutencaoAPI) {
   modalManutencao.value = m
   criacaoContext.value = null
-  modalMode.value = 'detalhe'
-  modalOpen.value = true
+  issueOpen.value = true
 }
 
 function abrirCriacao(dateStr: string, hour: number) {
   modalManutencao.value = null
   criacaoContext.value = { dateStr, hour, tecnico: tecnicoFiltro.value }
-  modalMode.value = 'criacao'
   modalOpen.value = true
 }
 
-function onSaved() { void carregarSemana() }
+async function onSaved() {
+  const selectedId = modalManutencao.value?.id
+  await carregarSemana()
+
+  if (!selectedId) return
+  const updated = manutencoesFiltradas.value.find(m => m.id === selectedId)
+  if (updated) {
+    modalManutencao.value = updated
+    return
+  }
+
+  modalManutencao.value = null
+  issueOpen.value = false
+}
 
 function onTecnicoFiltro(t: TecnicoAPI | null) {
   tecnicoFiltro.value = t
@@ -162,9 +174,13 @@ onMounted(async () => {
 
     <CalendarioModal
       v-model:open="modalOpen"
-      v-model:mode="modalMode"
-      :manutencao="modalManutencao"
       :criacao-context="criacaoContext"
+      @saved="onSaved"
+    />
+    <MaintenanceIssueModal
+      v-model:open="issueOpen"
+      :manutencao="modalManutencao"
+      :can-edit="!isTechnician"
       @saved="onSaved"
     />
   </div>

@@ -1,38 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AgendaPage from './AgendaPage.vue'
-import { Search, Plus, Pencil } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
-import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
+import { Pencil, Plus, Search } from 'lucide-vue-next'
+import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus } from '@/shared/services/manutencaoService'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { getApiErrorMessage } from '@/shared/services/api'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
-import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
-import { MapLatLngField } from '@/shared/components/ui/map-field'
-import GeocodedAddress from '@/shared/components/ui/GeocodedAddress.vue'
 import NdDateRangePicker, { type DateRange } from '@/shared/components/ui/NdDateRangePicker.vue'
-import NdDatePicker from '@/shared/components/ui/NdDatePicker.vue'
+import GeocodedAddress from '@/shared/components/ui/GeocodedAddress.vue'
+import CalendarioModal from '@/features/dashboard/components/CalendarioModal.vue'
+import MaintenanceIssueModal from '@/features/dashboard/components/maintenance-issue/MaintenanceIssueModal.vue'
+import { useAuth } from '@/shared/composables/useAuth'
 
 const activeTab = ref<'agenda' | 'manutencoes'>('agenda')
-
-const detailOpen = ref(false)
-const detailItem = ref<ManutencaoAPI | null>(null)
-
-function openDetail(m: ManutencaoAPI) {
-  detailItem.value = m
-  detailOpen.value = true
-}
-
-function openEditFromDetail() {
-  if (!detailItem.value) return
-  const m = detailItem.value
-  detailOpen.value = false
-  openEdit(m)
-}
-
 const manutencoes = ref<ManutencaoAPI[]>([])
 const contratos = ref<ContratoAPI[]>([])
 const tecnicos = ref<TecnicoAPI[]>([])
@@ -42,46 +24,28 @@ const filterTecnico = ref<number | null>(null)
 const filterContrato = ref<number | null>(null)
 const filterDate = ref<DateRange | null>(null)
 const viewMode = ref<'table' | 'grid'>('table')
-const sheetOpen = ref(false)
-const sheetMode = ref<'create' | 'edit'>('create')
-const editingId = ref<number | null>(null)
 const loading = ref(false)
 const submitError = ref<string | null>(null)
-
-const defaultForm = () => ({
-  contractId: 0,
-  date: '',
-  type: 'PREVENTIVA' as ManutencaoTipo,
-  status: 'SCHEDULED' as ManutencaoStatus,
-  employeeIds: [] as number[],
-  latitude: null as number | null,
-  longitude: null as number | null,
-})
-
-const form = ref(defaultForm())
-
-const preventiveFromType = computed(() => form.value.type === 'PREVENTIVA')
+const createOpen = ref(false)
+const detailOpen = ref(false)
+const detailItem = ref<ManutencaoAPI | null>(null)
+const { currentUser } = useAuth()
+const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowerCase() === 'technician')
 
 function openCreate() {
-  form.value = defaultForm(); editingId.value = null; sheetMode.value = 'create'; sheetOpen.value = true
+  detailOpen.value = false
+  detailItem.value = null
+  createOpen.value = true
 }
 
-function openEdit(m: ManutencaoAPI) {
-  form.value = {
-    contractId: m.contract.id,
-    date: m.date,
-    type: m.type,
-    status: m.status,
-    employeeIds: m.employees.map(e => e.employeeId),
-    latitude: m.latitude ?? null,
-    longitude: m.longitude ?? null,
-  }
-  editingId.value = m.id; sheetMode.value = 'edit'; sheetOpen.value = true
+function openDetail(manutencao: ManutencaoAPI) {
+  detailItem.value = manutencao
+  detailOpen.value = true
 }
 
-watch(sheetOpen, open => {
-  if (!open) { form.value = defaultForm(); editingId.value = null; submitError.value = null }
-})
+function openEdit(manutencao: ManutencaoAPI) {
+  openDetail(manutencao)
+}
 
 const counts = computed(() => ({
   scheduled: manutencoes.value.filter(m => m.status === 'SCHEDULED').length,
@@ -90,7 +54,10 @@ const counts = computed(() => ({
 }))
 
 const totalSegments = computed(() => Math.max(manutencoes.value.length, 1))
-function segmentsFor(count: number) { return Math.min(count, totalSegments.value) }
+
+function segmentsFor(count: number) {
+  return Math.min(count, totalSegments.value)
+}
 
 const filteredManutencoes = computed(() => {
   let result = manutencoes.value
@@ -118,109 +85,88 @@ function statusColor(status: ManutencaoStatus) {
 }
 
 function statusLabel(status: ManutencaoStatus) {
-  if (status === 'COMPLETED') return 'Concluída'
+  if (status === 'COMPLETED') return 'Concluida'
   if (status === 'STARTED') return 'Em andamento'
   return 'Programada'
 }
 
 function formatDate(dateStr: string) {
-  const [y = '', m = '', d = ''] = dateStr.split('-')
-  return `${d}/${m}/${y.slice(2)}`
+  const [year = '', month = '', day = ''] = dateStr.split('-')
+  return `${day}/${month}/${year.slice(2)}`
 }
 
 const tecnicoOptions = computed(() =>
   tecnicos.value.filter(t => t.active).map(t => ({ value: t.employeeId, label: t.name })),
 )
 
-async function carregarDados() {
-  loading.value = true; submitError.value = null
-  try {
-    const [m, c, t] = await Promise.all([
-      manutencaoService.listar(), contratoService.listar(), tecnicoService.listar(),
-    ])
-    manutencoes.value = m; contratos.value = c; tecnicos.value = t
-  } catch (error) {
-    submitError.value = getApiErrorMessage(error, 'Não foi possível carregar os dados.')
-  } finally { loading.value = false }
-}
-
-async function submitForm() {
-  if (!form.value.contractId) { toast.error('Selecione um contrato.'); return }
-  if (!form.value.date) { toast.error('Selecione uma data.'); return }
-  submitError.value = null
-  const payload = {
-    contractId: form.value.contractId,
-    date: form.value.date,
-    preventive: preventiveFromType.value,
-    type: form.value.type,
-    status: form.value.status,
-    employeeIds: form.value.employeeIds,
-    ...(form.value.latitude != null && form.value.longitude != null
-      ? { latitude: form.value.latitude, longitude: form.value.longitude }
-      : {}),
-  }
-  try {
-    if (sheetMode.value === 'edit' && editingId.value) {
-      await manutencaoService.atualizar(editingId.value, payload)
-      toast.success('Manutenção atualizada.')
-    } else {
-      await manutencaoService.criar(payload)
-      toast.success('Manutenção cadastrada com sucesso.')
-    }
-    sheetOpen.value = false
-    await carregarDados()
-  } catch (error) {
-    const msg = getApiErrorMessage(error, 'Não foi possível salvar a manutenção.')
-    submitError.value = msg; toast.error(msg)
-  }
-}
-
 const filters = [
   { key: 'todas', label: 'Todas' },
   { key: 'SCHEDULED', label: 'Programadas' },
   { key: 'STARTED', label: 'Em andamento' },
-  { key: 'COMPLETED', label: 'Concluídas' },
+  { key: 'COMPLETED', label: 'Concluidas' },
 ] as const
 
 const filterOptions = filters.map(f => ({ value: f.key, label: f.label }))
 const filterValue = computed({
   get: () => activeFilter.value as string | number,
-  set: (v) => { activeFilter.value = (v ?? 'todos os status') as typeof activeFilter.value },
+  set: value => { activeFilter.value = (value ?? 'todas') as typeof activeFilter.value },
 })
 
 const filterTecnicoOptions = computed(() => [
-  { value: -1, label: 'Todos os técnicos' },
+  { value: -1, label: 'Todos os tecnicos' },
   ...tecnicoOptions.value,
 ])
+
 const filterTecnicoValue = computed({
   get: () => filterTecnico.value ?? -1,
-  set: (v) => { filterTecnico.value = v === -1 ? null : (v as number) },
+  set: value => { filterTecnico.value = value === -1 ? null : (value as number) },
 })
 
 const filterContratoOptions = computed(() => [
   { value: -1, label: 'Todos os contratos' },
-  ...contratos.value.map(c => ({ value: c.id, label: `#${String(c.id).padStart(3, '0')} — ${c.client.name}` })),
+  ...contratos.value.map(c => ({ value: c.id, label: `#${String(c.id).padStart(3, '0')} - ${c.client.name}` })),
 ])
+
 const filterContratoValue = computed({
   get: () => filterContrato.value ?? -1,
-  set: (v) => { filterContrato.value = v === -1 ? null : (v as number) },
+  set: value => { filterContrato.value = value === -1 ? null : (value as number) },
 })
 
-const contratoOptions = computed(() =>
-  contratos.value.map(c => ({ value: c.id, label: `#${String(c.id).padStart(3, '0')} — ${c.client.name}` })),
-)
+async function carregarDados() {
+  loading.value = true
+  submitError.value = null
 
-const tipoOptions = [
-  { value: 'PREVENTIVA', label: 'Preventiva' },
-  { value: 'CORRETIVA', label: 'Corretiva' },
-  { value: 'MELHORIA', label: 'Melhoria' },
-]
+  try {
+    const [manutencoesResponse, contratosResponse, tecnicosResponse] = await Promise.all([
+      manutencaoService.listar(),
+      contratoService.listar(),
+      tecnicoService.listar(),
+    ])
 
-const statusOptions = [
-  { value: 'SCHEDULED', label: 'Programada' },
-  { value: 'STARTED', label: 'Em andamento' },
-  { value: 'COMPLETED', label: 'Concluída' },
-]
+    manutencoes.value = manutencoesResponse
+    contratos.value = contratosResponse
+    tecnicos.value = tecnicosResponse
+  } catch (error) {
+    submitError.value = getApiErrorMessage(error, 'Nao foi possivel carregar os dados.')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleSaved() {
+  const selectedId = detailItem.value?.id
+  await carregarDados()
+
+  if (!selectedId) return
+  const updated = manutencoes.value.find(m => m.id === selectedId)
+  if (updated) {
+    detailItem.value = updated
+    return
+  }
+
+  detailItem.value = null
+  detailOpen.value = false
+}
 
 onMounted(carregarDados)
 </script>
@@ -232,232 +178,146 @@ onMounted(carregarDados)
         Agenda
       </button>
       <button class="manutencoes-tab" :class="{ 'manutencoes-tab--active': activeTab === 'manutencoes' }" @click="activeTab = 'manutencoes'">
-        Manutenções
+        Manutencoes
       </button>
     </nav>
 
     <template v-if="activeTab === 'manutencoes'">
-      <Dialog v-model:open="sheetOpen">
-        <DialogContent class="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'EDITAR MANUTENÇÃO' : 'NOVA MANUTENÇÃO' }}</DialogTitle>
-            <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar manutenção' : 'Nova manutenção' }}</DialogDescription>
-          </DialogHeader>
-          <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
-            <div class="nd-field col-span-full">
-              <label class="nd-field-label">Contrato *</label>
-              <NdCombobox v-model="form.contractId" :options="contratoOptions" placeholder="Selecione o contrato" search-placeholder="Buscar contrato..." />
-            </div>
-            <div class="nd-field">
-              <label class="nd-field-label">Data *</label>
-              <NdDatePicker v-model="form.date" required />
-            </div>
-            <div class="nd-field">
-              <label class="nd-field-label">Tipo *</label>
-              <NdCombobox v-model="form.type" :options="tipoOptions" placeholder="Selecione o tipo" />
-            </div>
-            <div class="nd-field col-span-full">
-              <label class="nd-field-label">Status *</label>
-              <NdCombobox v-model="form.status" :options="statusOptions" placeholder="Selecione o status" />
-            </div>
-            <div class="nd-field col-span-full">
-              <label class="nd-field-label">Localização</label>
-              <MapLatLngField
-                v-model:modelLat="form.latitude"
-                v-model:modelLng="form.longitude"
-              />
-            </div>
-            <div class="nd-field col-span-full">
-              <label class="nd-field-label">TÉCNICOS</label>
-              <NdMultiCombobox v-model="form.employeeIds" :options="tecnicoOptions" placeholder="Selecione os técnicos" search-placeholder="Buscar técnico..." singular-label="técnico" plural-label="técnicos" />
-            </div>
-            <div v-if="submitError" class="nd-field-error col-span-full">{{ submitError }}</div>
-            <DialogFooter class="col-span-full">
-              <DialogClose as-child>
-                <button type="button" class="nd-btn-secondary">CANCELAR</button>
-              </DialogClose>
-              <button type="submit" class="nd-btn-primary">
-                {{ sheetMode === 'edit' ? 'SALVAR ALTERAÇÕES' : 'CADASTRAR MANUTENÇÃO' }}
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CalendarioModal
+        v-model:open="createOpen"
+        @saved="handleSaved"
+      />
 
-    <Dialog v-model:open="detailOpen">
-      <DialogContent class="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle class="nd-dialog-title">DETALHES DA MANUTENÇÃO</DialogTitle>
-          <DialogDescription class="sr-only">Detalhes da manutenção</DialogDescription>
-        </DialogHeader>
-        <div v-if="detailItem" class="nd-detail">
-          <div class="nd-detail-status-row">
-            <span class="nd-tag nd-tag--lg" :style="{ color: statusColor(detailItem.status), borderColor: statusColor(detailItem.status) }">
-              {{ statusLabel(detailItem.status) }}
-            </span>
-            <span class="nd-detail-tipo">{{ detailItem.type }}</span>
-          </div>
+      <MaintenanceIssueModal
+        v-model:open="detailOpen"
+        :manutencao="detailItem"
+        :can-edit="!isTechnician"
+        @saved="handleSaved"
+      />
 
-          <div class="nd-detail-section">
-            <span class="nd-field-label">Data</span>
-            <span class="nd-detail-value nd-detail-value--mono">{{ formatDate(detailItem.date) }}</span>
-          </div>
+      <div v-if="submitError" class="nd-error">{{ submitError }}</div>
 
-          <div class="nd-detail-section">
-            <span class="nd-field-label">Contrato</span>
-            <span class="nd-detail-value">#{{ String(detailItem.contract.id).padStart(3, '0') }}</span>
-          </div>
-
-          <div class="nd-detail-section">
-            <span class="nd-field-label">Cliente</span>
-            <span class="nd-detail-value">{{ detailItem.contract.client.name }}</span>
-          </div>
-
-          <div class="nd-detail-section">
-            <span class="nd-field-label">TÉCNICOS ({{ detailItem.employees.length }})</span>
-            <div v-if="detailItem.employees.length" class="nd-detail-list">
-              <div v-for="emp in detailItem.employees" :key="emp.employeeId" class="nd-detail-list-item">
-                <span class="nd-detail-list-dot" />
-                {{ emp.name }}
-              </div>
-            </div>
-            <span v-else class="nd-detail-value nd-detail-value--dim">Nenhum técnico alocado</span>
-          </div>
+      <div class="nd-stats-row">
+        <div class="nd-stat">
+          <span class="nd-stat-val">{{ counts.scheduled }}</span>
+          <span class="nd-label">Programadas</span>
         </div>
-        <DialogFooter>
-          <DialogClose as-child>
-            <button type="button" class="nd-btn-secondary">FECHAR</button>
-          </DialogClose>
-          <button class="nd-btn-primary" type="button" @click="openEditFromDetail">
-            <Pencil :size="12" /> Editar manutenção
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div class="nd-stat-sep" />
+        <div class="nd-stat">
+          <span class="nd-stat-val" style="color: var(--nd-warning)">{{ counts.started }}</span>
+          <span class="nd-label">Em andamento</span>
+        </div>
+        <div class="nd-stat-sep" />
+        <div class="nd-stat">
+          <span class="nd-stat-val" style="color: var(--nd-success)">{{ counts.completed }}</span>
+          <span class="nd-label">Concluidas</span>
+        </div>
+        <button class="nd-btn-primary nd-btn-desktop" style="margin-left: auto" @click="openCreate">
+          <Plus :size="12" /> Nova manutencao
+        </button>
+      </div>
 
-    <div v-if="submitError && !sheetOpen" class="nd-error">{{ submitError }}</div>
-
-    <div class="nd-stats-row">
-      <div class="nd-stat">
-        <span class="nd-stat-val">{{ counts.scheduled }}</span>
-        <span class="nd-label">Programadas</span>
-      </div>
-      <div class="nd-stat-sep" />
-      <div class="nd-stat">
-        <span class="nd-stat-val" style="color: var(--nd-warning)">{{ counts.started }}</span>
-        <span class="nd-label">Em andamento</span>
-      </div>
-      <div class="nd-stat-sep" />
-      <div class="nd-stat">
-        <span class="nd-stat-val" style="color: var(--nd-success)">{{ counts.completed }}</span>
-        <span class="nd-label">Concluídas</span>
-      </div>
-      <button class="nd-btn-primary nd-btn-desktop" style="margin-left: auto" @click="openCreate">
-        <Plus :size="12" /> NOVA MANUTENÇÃO
+      <button class="nd-fab" @click="openCreate" aria-label="Nova manutencao">
+        <Plus :size="20" />
       </button>
-    </div>
 
-    <button class="nd-fab" @click="openCreate" aria-label="Nova manutenção">
-      <Plus :size="20" />
-    </button>
+      <div class="nd-progress-section">
+        <div class="nd-progress-row">
+          <div class="nd-progress-label-col"><span class="nd-label">Programadas</span><span class="nd-label nd-label--dim">{{ counts.scheduled }}</span></div>
+          <div class="nd-progress-bar">
+            <div v-for="i in totalSegments" :key="i" class="nd-segment" :style="{ background: i <= segmentsFor(counts.scheduled) ? 'var(--nd-text-secondary)' : 'var(--nd-border)' }" />
+          </div>
+        </div>
+        <div class="nd-progress-row">
+          <div class="nd-progress-label-col"><span class="nd-label">Em andamento</span><span class="nd-label nd-label--dim">{{ counts.started }}</span></div>
+          <div class="nd-progress-bar">
+            <div v-for="i in totalSegments" :key="i" class="nd-segment" :style="{ background: i <= segmentsFor(counts.started) ? 'var(--nd-warning)' : 'var(--nd-border)' }" />
+          </div>
+        </div>
+        <div class="nd-progress-row">
+          <div class="nd-progress-label-col"><span class="nd-label">Concluidas</span><span class="nd-label nd-label--dim">{{ counts.completed }}</span></div>
+          <div class="nd-progress-bar">
+            <div v-for="i in totalSegments" :key="i" class="nd-segment" :style="{ background: i <= segmentsFor(counts.completed) ? 'var(--nd-success)' : 'var(--nd-border)' }" />
+          </div>
+        </div>
+      </div>
 
-    <div class="nd-progress-section">
-      <div class="nd-progress-row">
-        <div class="nd-progress-label-col"><span class="nd-label">Programadas</span><span class="nd-label nd-label--dim">{{ counts.scheduled }}</span></div>
-        <div class="nd-progress-bar">
-          <div v-for="i in totalSegments" :key="i" class="nd-segment" :style="{ background: i <= segmentsFor(counts.scheduled) ? 'var(--nd-text-secondary)' : 'var(--nd-border)' }" />
+      <div class="nd-controls-row">
+        <div class="nd-controls-left">
+          <div class="nd-filter-select">
+            <NdCombobox v-model="filterValue" :options="filterOptions" placeholder="Status" :search-placeholder="''" />
+          </div>
+          <div class="nd-filter-select">
+            <NdCombobox v-model="filterTecnicoValue" :options="filterTecnicoOptions" placeholder="Tecnico" search-placeholder="Buscar tecnico..." />
+          </div>
+          <div class="nd-filter-select">
+            <NdCombobox v-model="filterContratoValue" :options="filterContratoOptions" placeholder="Contrato" search-placeholder="Buscar contrato..." />
+          </div>
+          <NdDateRangePicker v-model="filterDate" />
+        </div>
+        <div class="nd-controls-right">
+          <div class="nd-search">
+            <Search :size="13" class="nd-search-icon" />
+            <input v-model="searchQuery" type="text" placeholder="Buscar..." class="nd-search-input" />
+          </div>
+          <ViewToggle v-model="viewMode" />
         </div>
       </div>
-      <div class="nd-progress-row">
-        <div class="nd-progress-label-col"><span class="nd-label">Em andamento</span><span class="nd-label nd-label--dim">{{ counts.started }}</span></div>
-        <div class="nd-progress-bar">
-          <div v-for="i in totalSegments" :key="i" class="nd-segment" :style="{ background: i <= segmentsFor(counts.started) ? 'var(--nd-warning)' : 'var(--nd-border)' }" />
-        </div>
-      </div>
-      <div class="nd-progress-row">
-        <div class="nd-progress-label-col"><span class="nd-label">Concluídas</span><span class="nd-label nd-label--dim">{{ counts.completed }}</span></div>
-        <div class="nd-progress-bar">
-          <div v-for="i in totalSegments" :key="i" class="nd-segment" :style="{ background: i <= segmentsFor(counts.completed) ? 'var(--nd-success)' : 'var(--nd-border)' }" />
-        </div>
-      </div>
-    </div>
 
-    <div class="nd-controls-row">
-      <div class="nd-controls-left">
-        <div class="nd-filter-select">
-          <NdCombobox v-model="filterValue" :options="filterOptions" placeholder="Status" :search-placeholder="''" />
-        </div>
-        <div class="nd-filter-select">
-          <NdCombobox v-model="filterTecnicoValue" :options="filterTecnicoOptions" placeholder="Técnico" search-placeholder="Buscar técnico..." />
-        </div>
-        <div class="nd-filter-select">
-          <NdCombobox v-model="filterContratoValue" :options="filterContratoOptions" placeholder="Contrato" search-placeholder="Buscar contrato..." />
-        </div>
-        <NdDateRangePicker v-model="filterDate" />
+      <div v-if="viewMode === 'table'" class="nd-table-wrap">
+        <table class="nd-table">
+          <colgroup>
+            <col class="nd-col--data"><col><col class="nd-col--tipo"><col class="nd-col--count"><col class="nd-col--status"><col style="width:44px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="nd-th">Data</th>
+              <th class="nd-th">Cliente</th>
+              <th class="nd-th">Tipo</th>
+              <th class="nd-th nd-th--center">Tecnicos</th>
+              <th class="nd-th nd-th--status">Status</th>
+              <th class="nd-th" />
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading"><td colspan="6" class="nd-empty">Carregando...</td></tr>
+            <tr v-for="m in filteredManutencoes" :key="m.id" class="nd-tr nd-tr--clickable" @click="openDetail(m)">
+              <td class="nd-td nd-td--mono">{{ formatDate(m.date) }}</td>
+              <td class="nd-td nd-td--primary">{{ m.contract.client.name }}</td>
+              <td class="nd-td nd-td--secondary">{{ m.type }}</td>
+              <td class="nd-td nd-td--mono nd-td--center">{{ String(m.employees.length).padStart(2, '0') }}</td>
+              <td class="nd-td nd-td--status">
+                <span class="nd-tag" :style="{ color: statusColor(m.status), borderColor: statusColor(m.status) }">{{ statusLabel(m.status) }}</span>
+              </td>
+              <td class="nd-td nd-td--action">
+                <button class="nd-edit-btn" type="button" @click.stop="openEdit(m)"><Pencil :size="12" /></button>
+              </td>
+            </tr>
+            <tr v-if="!loading && filteredManutencoes.length === 0"><td colspan="6" class="nd-empty">Nenhuma manutencao cadastrada</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="nd-controls-right">
-        <div class="nd-search">
-          <Search :size="13" class="nd-search-icon" />
-          <input v-model="searchQuery" type="text" placeholder="Buscar..." class="nd-search-input" />
-        </div>
-        <ViewToggle v-model="viewMode" />
-      </div>
-    </div>
 
-    <div v-if="viewMode === 'table'" class="nd-table-wrap">
-      <table class="nd-table">
-        <colgroup>
-          <col class="nd-col--data"><col><col class="nd-col--tipo"><col class="nd-col--count"><col class="nd-col--status"><col style="width:44px">
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="nd-th">DATA</th>
-            <th class="nd-th">CLIENTE</th>
-            <th class="nd-th">TIPO</th>
-            <th class="nd-th nd-th--center">TÉCNICOS</th>
-            <th class="nd-th nd-th--status">STATUS</th>
-            <th class="nd-th" />
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading"><td colspan="6" class="nd-empty">Carregando...</td></tr>
-          <tr v-for="m in filteredManutencoes" :key="m.id" class="nd-tr nd-tr--clickable" @click="openDetail(m)">
-            <td class="nd-td nd-td--mono">{{ formatDate(m.date) }}</td>
-            <td class="nd-td nd-td--primary">{{ m.contract.client.name }}</td>
-            <td class="nd-td nd-td--secondary">{{ m.type }}</td>
-            <td class="nd-td nd-td--mono nd-td--center">{{ String(m.employees.length).padStart(2, '0') }}</td>
-            <td class="nd-td nd-td--status">
-              <span class="nd-tag" :style="{ color: statusColor(m.status), borderColor: statusColor(m.status) }">{{ statusLabel(m.status) }}</span>
-            </td>
-            <td class="nd-td nd-td--action">
-              <button class="nd-edit-btn" type="button" @click.stop="openEdit(m)"><Pencil :size="12" /></button>
-            </td>
-          </tr>
-          <tr v-if="!loading && filteredManutencoes.length === 0"><td colspan="6" class="nd-empty">NENHUMA MANUTENÇÃO CADASTRADA</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-else class="nd-grid">
-      <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
-      <div v-for="m in filteredManutencoes" :key="m.id" class="nd-card" @click="openDetail(m)">
-        <div class="nd-card-top">
-          <span class="nd-card-date">{{ formatDate(m.date) }}</span>
-          <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(m)"><Pencil :size="11" /></button>
+      <div v-else class="nd-grid">
+        <div v-if="loading" class="nd-empty nd-empty--grid">Carregando...</div>
+        <div v-for="m in filteredManutencoes" :key="m.id" class="nd-card" @click="openDetail(m)">
+          <div class="nd-card-top">
+            <span class="nd-card-date">{{ formatDate(m.date) }}</span>
+            <button class="nd-card-edit-btn" type="button" @click.stop="openEdit(m)"><Pencil :size="11" /></button>
+          </div>
+          <p class="nd-card-name">{{ m.contract.client.name }}</p>
+          <GeocodedAddress :lat="m.latitude" :lng="m.longitude" />
+          <span class="nd-card-tipo">{{ m.type }}</span>
+          <span class="nd-card-tecnicos">{{ m.employees.length }} tecnico{{ m.employees.length !== 1 ? 's' : '' }}</span>
+          <div class="nd-card-footer">
+            <span class="nd-tag" :style="{ color: statusColor(m.status), borderColor: statusColor(m.status) }">{{ statusLabel(m.status) }}</span>
+          </div>
         </div>
-        <p class="nd-card-name">{{ m.contract.client.name }}</p>
-        <GeocodedAddress :lat="m.latitude" :lng="m.longitude" />
-        <span class="nd-card-tipo">{{ m.type }}</span>
-        <span class="nd-card-tecnicos">{{ m.employees.length }} TÉCNICO{{ m.employees.length !== 1 ? 's' : '' }}</span>
-        <div class="nd-card-footer">
-          <span class="nd-tag" :style="{ color: statusColor(m.status), borderColor: statusColor(m.status) }">{{ statusLabel(m.status) }}</span>
-        </div>
+        <div v-if="!loading && filteredManutencoes.length === 0" class="nd-empty nd-empty--grid">Nenhuma manutencao cadastrada</div>
       </div>
-      <div v-if="!loading && filteredManutencoes.length === 0" class="nd-empty nd-empty--grid">NENHUMA MANUTENÇÃO CADASTRADA</div>
-    </div>
     </template>
-    <AgendaPage v-else />
 
+    <AgendaPage v-else />
   </div>
 </template>
 
@@ -469,10 +329,9 @@ onMounted(carregarDados)
 .manutencoes-tab { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--nd-text-disabled); background: transparent; border: none; border-bottom: 2px solid var(--nd-border); padding: 10px 20px; margin-bottom: -1px; cursor: pointer; transition: color 150ms ease-out, border-color 150ms ease-out; }
 .manutencoes-tab:hover { color: var(--nd-text-primary); }
 .manutencoes-tab--active { color: var(--nd-text-display); border-bottom-color: var(--nd-sidebar-active-color); }
-
 .nd-page { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
 .nd-error { font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--nd-accent); margin-bottom: 16px; }
-.nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 0.01em; font-weight: 500; color: var(--nd-text-secondary); line-height: 1.2; }
+.nd-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.01em; color: var(--nd-text-secondary); line-height: 1.2; }
 .nd-label--dim { color: var(--nd-text-disabled); }
 .nd-stats-row { display: flex; align-items: center; gap: 24px; padding: 20px 0; border-top: 1px solid var(--nd-border); border-bottom: 1px solid var(--nd-border); margin-bottom: 28px; }
 .nd-stat { display: flex; flex-direction: column; gap: 4px; }
@@ -491,10 +350,13 @@ onMounted(carregarDados)
 .nd-search-icon { color: var(--nd-text-disabled); }
 .nd-search-input { background: transparent; border: none; outline: none; font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; color: var(--nd-text-primary); width: 180px; }
 .nd-search-input::placeholder { color: var(--nd-text-disabled); }
-.nd-col--data { width: 88px; } .nd-col--tipo { width: 110px; } .nd-col--count { width: 72px; } .nd-col--status { width: 160px; }
+.nd-col--data { width: 88px; }
+.nd-col--tipo { width: 110px; }
+.nd-col--count { width: 72px; }
+.nd-col--status { width: 160px; }
 .nd-table-wrap { overflow-x: auto; }
 .nd-table { width: 100%; border-collapse: collapse; }
-.nd-th { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--nd-text-secondary); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--nd-border-visible); white-space: nowrap; }
+.nd-th { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--nd-text-secondary); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--nd-border-visible); white-space: nowrap; }
 .nd-th--center { text-align: center; padding-right: 16px; }
 .nd-th--status { padding-left: 20px; padding-right: 0; }
 .nd-tr { border-bottom: 1px solid var(--nd-border); transition: background 150ms ease-out; }
@@ -523,23 +385,9 @@ onMounted(carregarDados)
 .nd-card-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--nd-border); }
 .nd-card-edit-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: transparent; border: 1px solid var(--nd-border-visible); border-radius: 6px; cursor: pointer; color: var(--nd-text-secondary); transition: color 150ms ease-out, border-color 150ms ease-out; }
 .nd-card-edit-btn:hover { color: var(--nd-text-display); border-color: var(--nd-text-secondary); }
-.nd-detail-tipo { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.02em; color: var(--nd-text-secondary); }
-.nd-detail-value--mono { font-family: 'Montserrat', sans-serif; font-size: 14px; letter-spacing: 0.04em; }
-.nd-detail-value--dim { font-family: 'Montserrat', sans-serif; font-size: 11px; color: var(--nd-text-disabled); }
-.nd-detail-list { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
-.nd-detail-list-item { display: flex; align-items: center; gap: 10px; font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--nd-text-primary); }
-.nd-detail-list-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--nd-action); flex-shrink: 0; }
-.nd-field-hint { font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 0.06em; color: var(--nd-text-disabled); }
-.nd-field-select { font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 0.01em; cursor: pointer; }
-.nd-check-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding: 8px 0; }
-.nd-check-item { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0; }
-.nd-check { accent-color: var(--nd-action); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
-.nd-check-name { font-family: 'Montserrat', sans-serif; font-size: 13px; color: var(--nd-text-primary); }
+.nd-tag { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; padding: 0 10px; border: 1px solid; border-radius: 999px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .nd-btn-primary { display: flex; align-items: center; gap: 6px; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; background: var(--nd-action); color: var(--nd-action-foreground); border: none; border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color 150ms ease-out; }
 .nd-btn-primary:hover { background: var(--nd-action-hover); }
-.nd-btn-full { width: 100%; justify-content: center; }
-
-
 .nd-fab { display: none; }
 
 @media (max-width: 640px) {
@@ -572,6 +420,7 @@ onMounted(carregarDados)
   }
   .nd-fab:hover { background: var(--nd-action-hover); }
 }
+
 @media (min-width: 641px) and (max-width: 1024px) {
   .nd-grid { grid-template-columns: repeat(2, 1fr); }
 }
