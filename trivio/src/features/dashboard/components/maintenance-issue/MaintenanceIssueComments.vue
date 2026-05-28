@@ -161,10 +161,11 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 <template>
   <section class="mi-comments">
     <header class="mi-comments-header">
-      <div>
+      <div class="mi-comments-title">
         <h3>Acompanhamento</h3>
+        <span class="mi-comments-count">{{ follows.length }}</span>
       </div>
-      <span class="mi-comments-count">{{ follows.length }}</span>
+      <button type="button" class="mi-comments-sort">Mais recentes</button>
     </header>
 
     <div ref="threadRef" class="mi-thread">
@@ -256,15 +257,21 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 56px;
+  min-height: 46px;
   padding: 0 24px;
   border-bottom: 1px solid var(--nd-border);
+}
+
+.mi-comments-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .mi-comments-header h3 {
   margin: 0;
   color: var(--nd-text-primary);
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 800;
 }
 
@@ -272,20 +279,28 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 24px;
+  min-width: 20px;
+  height: 20px;
   border-radius: 999px;
   color: var(--nd-text-secondary);
   background: var(--nd-border-visible);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
+}
+
+.mi-comments-sort {
+  border: 0;
+  color: var(--nd-interactive);
+  background: transparent;
+  font-size: 0.72rem;
+  cursor: pointer;
 }
 
 .mi-thread {
   display: flex;
   min-height: 0;
-  padding: 24px;
-  gap: 18px;
+  padding: 16px 20px 20px;
+  gap: 16px;
   overflow-y: auto;
   flex-direction: column;
 }
@@ -307,16 +322,7 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 }
 
 .mi-comment-row--own {
-  justify-content: flex-end;
-  flex-direction: row-reverse;
-}
-
-.mi-comment-row--own .mi-comment-body {
-  justify-items: end;
-}
-
-.mi-comment-row--own .mi-comment-meta {
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .mi-comment-avatar {
@@ -326,8 +332,8 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  color: #fff;
-  background: #6366f1;
+  color: white;
+  background: var(--nd-interactive);
   font-size: 0.78rem;
   font-weight: 800;
   flex: 0 0 auto;
@@ -336,7 +342,7 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 .mi-comment-body {
   display: grid;
   min-width: 0;
-  width: min(100%, 680px);
+  width: min(100%, 516px);
   gap: 6px;
 }
 
@@ -346,7 +352,7 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
   flex-wrap: wrap;
   gap: 7px;
   color: var(--nd-text-secondary);
-  font-size: 0.76rem;
+  font-size: 0.7rem;
 }
 
 .mi-comment-meta strong {
@@ -366,16 +372,16 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
   position: relative;
   width: fit-content;
   max-width: min(100%, 620px);
-  padding: 12px 14px;
+  padding: 11px 14px;
   border: 1px solid var(--nd-border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--nd-text-primary);
   background: var(--nd-surface-raised);
 }
 
 .mi-comment-bubble--own {
-  border-color: color-mix(in srgb, var(--nd-action) 42%, var(--nd-border));
-  background: color-mix(in srgb, var(--nd-action) 12%, var(--nd-surface));
+  border-color: var(--nd-success);
+  background: color-mix(in srgb, var(--nd-success) 16%, var(--nd-surface));
 }
 
 .mi-comment-bubble p {

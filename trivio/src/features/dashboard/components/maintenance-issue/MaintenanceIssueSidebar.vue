@@ -5,6 +5,7 @@ import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 defineProps<{
   manutencao: ManutencaoAPI
   tipoLabel: string
+  statusLabel: string
   dateLabel: string
   timeLabel: string
   addressLabel: string
@@ -21,7 +22,7 @@ function initials(name: string) {
 }
 
 function hashColor(id: number): string {
-  const palette = ['#7C3AED', '#0EA5E9', '#F97316', '#EC4899', '#14B8A6', '#8B5CF6', '#EF4444', '#84CC16']
+  const palette = ['var(--nd-interactive)', 'var(--nd-action)', 'var(--nd-warning)', 'var(--nd-success)', 'var(--nd-accent)']
   return palette[id % palette.length]!
 }
 </script>
@@ -38,7 +39,7 @@ function hashColor(id: number): string {
         </div>
 
         <div class="mi-detail-row">
-          <dt><Clock :size="15" />Horario</dt>
+          <dt><Clock :size="15" />Horário</dt>
           <dd>{{ timeLabel }}</dd>
         </div>
 
@@ -53,7 +54,7 @@ function hashColor(id: number): string {
         </div>
 
         <div class="mi-detail-row">
-          <dt><MapPin :size="15" />Endereco</dt>
+          <dt><MapPin :size="15" />Endereço</dt>
           <dd :class="{ 'mi-muted': addressLoading }">{{ addressLoading ? 'Carregando...' : addressLabel }}</dd>
         </div>
       </dl>
@@ -69,15 +70,25 @@ function hashColor(id: number): string {
           </div>
           <div class="mi-person-text">
             <strong>{{ employee.name }}</strong>
-            <span>{{ employee.admin ? 'Gestor' : 'Tecnico' }}</span>
+            <span>{{ employee.admin ? 'Gestor' : 'Técnico' }}</span>
           </div>
         </div>
       </div>
 
       <p v-else class="mi-empty">
         <Users :size="15" />
-        Nenhum tecnico alocado
+        Nenhum técnico alocado
       </p>
+    </section>
+
+    <section class="mi-sidebar-section mi-activity-section">
+      <h3>Atividade</h3>
+
+      <div class="mi-activity-row">
+        <span class="mi-activity-dot"></span>
+        <span>Status atual</span>
+        <strong>{{ statusLabel }}</strong>
+      </div>
     </section>
   </aside>
 </template>
@@ -87,7 +98,7 @@ function hashColor(id: number): string {
   display: flex;
   min-height: 0;
   border-left: 1px solid var(--nd-border);
-  background: var(--nd-surface-raised);
+  background: var(--nd-surface);
   overflow-y: auto;
   flex-direction: column;
 }
@@ -172,8 +183,8 @@ function hashColor(id: number): string {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 4px;
-  color: #fff;
+  border-radius: 50%;
+  color: white;
   font-size: 0.72rem;
   font-weight: 800;
   flex: 0 0 auto;
@@ -206,6 +217,31 @@ function hashColor(id: number): string {
   margin: 0;
   color: var(--nd-text-secondary);
   font-size: 0.8rem;
+}
+
+.mi-activity-section {
+  border-bottom: 0;
+}
+
+.mi-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--nd-text-secondary);
+  font-size: 0.72rem;
+}
+
+.mi-activity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nd-success);
+  flex: 0 0 auto;
+}
+
+.mi-activity-row strong {
+  color: var(--nd-text-primary);
+  font-weight: 800;
 }
 
 @media (max-width: 900px) {
