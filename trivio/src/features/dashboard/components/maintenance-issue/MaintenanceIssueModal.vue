@@ -280,8 +280,8 @@ watch(() => props.manutencao?.id, () => {
 }
 
 .mi-top-button--edit {
-  color: var(--nd-action);
-  background: color-mix(in srgb, var(--nd-action) 14%, transparent);
+  color: var(--nd-text-secondary);
+  background: transparent;
 }
 
 .mi-top-button--edit:hover {
