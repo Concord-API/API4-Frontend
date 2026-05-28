@@ -19,35 +19,42 @@ const title = computed(() => `${props.tipoLabel} - ${props.manutencao.contract.c
 </script>
 
 <template>
-  <header class="mi-header">
-    <div class="mi-breadcrumb">
-      <span>Contratos</span>
-      <span>/</span>
-      <span>{{ manutencao.contract.client.name }}</span>
-      <span>/</span>
-      <strong># MNT-{{ String(manutencao.id).padStart(3, '0') }}</strong>
-    </div>
+  <div class="mi-header-block">
+    <header class="mi-header">
+      <div class="mi-breadcrumb">
+        <span>Contratos</span>
+        <span>/</span>
+        <span>{{ manutencao.contract.client.name }}</span>
+        <span>/</span>
+        <strong># MNT-{{ String(manutencao.id).padStart(3, '0') }}</strong>
+      </div>
 
-    <div class="mi-actions">
-      <button v-if="canEdit" type="button" class="mi-icon-button" title="Editar" @click="emit('edit')">
-        <Edit2 :size="16" />
-      </button>
-    </div>
-  </header>
+      <div class="mi-actions">
+        <button v-if="canEdit" type="button" class="mi-icon-button" title="Editar" @click="emit('edit')">
+          <Edit2 :size="16" />
+        </button>
+      </div>
+    </header>
 
-  <section class="mi-title-section">
-    <div class="mi-badges">
-      <span class="mi-status" :style="{ color: statusColor, borderColor: statusColor }">
-        {{ statusLabel }}
-      </span>
-      <span class="mi-type">{{ tipoLabel }}</span>
-    </div>
+    <section class="mi-title-section">
+      <div class="mi-badges">
+        <span class="mi-status" :style="{ color: statusColor, borderColor: statusColor }">
+          {{ statusLabel }}
+        </span>
+        <span class="mi-type">{{ tipoLabel }}</span>
+      </div>
 
-    <h2>{{ title }}</h2>
-  </section>
+      <h2>{{ title }}</h2>
+    </section>
+  </div>
 </template>
 
 <style scoped>
+.mi-header-block {
+  display: grid;
+  min-width: 0;
+}
+
 .mi-header {
   display: flex;
   align-items: center;

@@ -119,7 +119,7 @@ watch(() => props.manutencao?.id, () => {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent
       :show-close-button="true"
-      class="mi-dialog"
+      class="mi-dialog w-[96vw] max-w-[1120px] sm:max-w-[1120px] h-[82vh] min-h-[600px] p-0 gap-0 overflow-hidden rounded-md border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:h-[90vh] max-[900px]:min-h-0"
     >
       <DialogHeader class="sr-only">
         <DialogTitle>Detalhes da manutencao</DialogTitle>
@@ -155,16 +155,7 @@ watch(() => props.manutencao?.id, () => {
 
 <style scoped>
 .mi-dialog {
-  width: min(96vw, 1120px) !important;
-  max-width: min(96vw, 1120px) !important;
-  height: min(82vh, 760px);
-  min-height: 600px;
-  padding: 0;
-  gap: 0;
-  overflow: hidden;
-  border-color: var(--nd-border);
-  border-radius: 6px;
-  background: var(--nd-surface);
+  display: block;
 }
 
 .mi-shell {
@@ -183,11 +174,6 @@ watch(() => props.manutencao?.id, () => {
 }
 
 @media (max-width: 900px) {
-  .mi-dialog {
-    height: 90vh;
-    min-height: 0;
-  }
-
   .mi-shell {
     grid-template-columns: 1fr;
     overflow-y: auto;
