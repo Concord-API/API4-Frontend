@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Users } from 'lucide-vue-next'
+import { Building2, Calendar, Check, Clock, Loader2, MapPin, Tag, UserPlus, Users, X } from 'lucide-vue-next'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -79,17 +78,78 @@ const tecnicoOptions = computed(() =>
   tecnicos.value.filter(t => t.active).map(t => ({ value: t.employeeId, label: t.name })),
 )
 
-const tipoOptions = [
+const selectedContract = computed(() =>
+  contratos.value.find(c => c.id === form.value.contractId) ?? null,
+)
+
+const selectedEmployees = computed(() =>
+  form.value.employeeIds.map(id => {
+    const tecnico = tecnicos.value.find(t => t.employeeId === id)
+    return {
+      id,
+      name: tecnico?.name ?? `#${id}`,
+      admin: Boolean(tecnico?.admin),
+    }
+  }),
+)
+
+const tipoOptions: Array<{ value: ManutencaoTipo; label: string }> = [
   { value: 'PREVENTIVA', label: 'Preventiva' },
   { value: 'CORRETIVA', label: 'Corretiva' },
   { value: 'MELHORIA', label: 'Melhoria' },
 ]
 
-const statusOptions = [
-  { value: 'SCHEDULED', label: 'Programada' },
+const statusOptions: Array<{ value: ManutencaoStatus; label: string }> = [
+  { value: 'SCHEDULED', label: 'Agendada' },
   { value: 'STARTED', label: 'Em andamento' },
   { value: 'COMPLETED', label: 'Concluida' },
 ]
+
+const statusLabel = computed(() => statusLabelFor(form.value.status))
+const tipoLabel = computed(() => typeShortLabelFor(form.value.type))
+
+const statusColor = computed(() => {
+  if (form.value.status === 'COMPLETED') return 'var(--nd-success)'
+  if (form.value.status === 'STARTED') return 'var(--nd-warning)'
+  return 'var(--nd-action)'
+})
+
+const titleLabel = computed(() => {
+  if (!selectedContract.value) return 'Nova manutencao'
+  return `${typeLongLabel(form.value.type)} - ${selectedContract.value.client.name}`
+})
+
+const dateLabel = computed(() => {
+  if (!form.value.date) return 'Sem data'
+  const [year = '', month = '', day = ''] = form.value.date.split('-')
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+  const weekDay = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(date)
+  return `${weekDay}, ${day}/${month}/${year}`
+})
+
+const timeLabel = computed(() => {
+  if (!form.value.startTimeLocal || !form.value.endTimeLocal) return 'Sem horario definido'
+  return `${form.value.startTimeLocal} - ${form.value.endTimeLocal}`
+})
+
+const summaryLabel = computed(() => {
+  if (!selectedContract.value) return 'Selecione um contrato para montar o chamado.'
+
+  const teamLabel = form.value.employeeIds.length
+    ? 'equipe responsavel ja alocada.'
+    : 'equipe responsavel ainda nao alocada.'
+
+  if (!form.value.startTimeLocal || !form.value.endTimeLocal) {
+    return teamLabel.charAt(0).toUpperCase() + teamLabel.slice(1)
+  }
+
+  return `Janela programada de ${durationLabel(form.value.startTimeLocal, form.value.endTimeLocal)}, ${teamLabel}`
+})
+
+const contractIdModel = computed<string | number | null>({
+  get: () => form.value.contractId,
+  set: value => { form.value.contractId = value === null ? null : Number(value) },
+})
 
 function padHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`
@@ -107,6 +167,62 @@ function formFromContext(context: CriacaoContext): FormState {
     latitude: null,
     longitude: null,
   }
+}
+
+function typeLongLabel(type: ManutencaoTipo) {
+  const map: Record<ManutencaoTipo, string> = {
+    PREVENTIVA: 'Manutencao preventiva',
+    CORRETIVA: 'Manutencao corretiva',
+    MELHORIA: 'Manutencao de melhoria',
+  }
+
+  return map[type]
+}
+
+function typeShortLabelFor(type: ManutencaoTipo) {
+  const map: Record<ManutencaoTipo, string> = {
+    PREVENTIVA: 'Preventiva',
+    CORRETIVA: 'Corretiva',
+    MELHORIA: 'Melhoria',
+  }
+
+  return map[type]
+}
+
+function statusLabelFor(status: ManutencaoStatus) {
+  const labels: Record<ManutencaoStatus, string> = {
+    SCHEDULED: 'Agendada',
+    STARTED: 'Em andamento',
+    COMPLETED: 'Concluida',
+  }
+
+  return labels[status]
+}
+
+function durationLabel(start: string, end: string) {
+  const [startHour = 0, startMinute = 0] = start.split(':').map(Number)
+  const [endHour = 0, endMinute = 0] = end.split(':').map(Number)
+  const minutes = Math.max(0, endHour * 60 + endMinute - startHour * 60 - startMinute)
+  if (!minutes) return '0min'
+  return minutes >= 60 && minutes % 60 === 0 ? `${minutes / 60}h` : `${minutes}min`
+}
+
+function initials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase())
+    .join('')
+}
+
+function hashColor(id: number): string {
+  const palette = ['var(--nd-interactive)', 'var(--nd-action)', 'var(--nd-warning)', 'var(--nd-success)', 'var(--nd-accent)']
+  return palette[id % palette.length]!
+}
+
+function roleLabel(admin: boolean) {
+  return admin ? 'Relator' : 'Responsavel'
 }
 
 async function carregarDados() {
@@ -135,28 +251,13 @@ watch(() => props.open, isOpen => {
   form.value = defaultForm()
 })
 
-const contractIdModel = computed<string | number | null>({
-  get: () => form.value.contractId,
-  set: value => { form.value.contractId = value === null ? null : Number(value) },
-})
-
-const typeModel = computed<string | number | null>({
-  get: () => form.value.type,
-  set: value => { form.value.type = (value as ManutencaoTipo | null) ?? 'PREVENTIVA' },
-})
-
-const statusModel = computed<string | number | null>({
-  get: () => form.value.status,
-  set: value => { form.value.status = (value as ManutencaoStatus | null) ?? 'SCHEDULED' },
-})
-
-function hashColor(id: number): string {
-  const palette = ['#7C3AED', '#0EA5E9', '#F97316', '#EC4899', '#14B8A6', '#8B5CF6', '#EF4444', '#84CC16']
-  return palette[id % palette.length]!
+function handleOpenChange(value: boolean) {
+  if (!value && submitting.value) return
+  emit('update:open', value)
 }
 
-function handleOpenChange(value: boolean) {
-  emit('update:open', value)
+function closeModal() {
+  handleOpenChange(false)
 }
 
 async function submitForm() {
@@ -185,6 +286,7 @@ async function submitForm() {
     type: form.value.type,
     status: form.value.status,
     employeeIds: form.value.employeeIds,
+    active: true,
     startTime: form.value.startTimeLocal || undefined,
     endTime: form.value.endTimeLocal || undefined,
     ...(form.value.latitude != null && form.value.longitude != null
@@ -210,257 +312,556 @@ async function submitForm() {
 
 <template>
   <Dialog :open="open" @update:open="handleOpenChange">
-    <DialogContent :show-close-button="false" class="w-[95vw] sm:w-[680px] max-w-[680px] p-0 gap-0 overflow-hidden flex flex-col !rounded-lg border-0 shadow-xl">
+    <DialogContent
+      :show-close-button="false"
+      class="cm-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(580px,calc(100vh-48px))] min-h-0 p-0 gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
+    >
       <DialogHeader class="sr-only">
         <DialogTitle>Nova manutencao</DialogTitle>
-        <DialogDescription>Nova manutencao</DialogDescription>
+        <DialogDescription>Cadastro de uma nova manutencao</DialogDescription>
       </DialogHeader>
 
-      <div class="cm-layout">
-        <div class="cm-main">
-          <div class="cm-top-bar">
-            <h2 class="cm-form-title">Nova manutencao</h2>
-            <div class="cm-top-actions">
-              <button type="submit" form="cm-form" class="nd-btn-primary cm-btn-sm" :disabled="submitting">
-                Cadastrar
-              </button>
-              <DialogClose as-child>
-                <button type="button" class="nd-btn-secondary cm-btn-sm">Cancelar</button>
-              </DialogClose>
-            </div>
+      <div class="cm-shell">
+        <header class="cm-topbar">
+          <div class="cm-breadcrumb">
+            <Building2 :size="14" />
+            <span>Contratos</span>
+            <span>/</span>
+            <strong>Nova manutencao</strong>
           </div>
 
-          <form id="cm-form" class="cm-form" @submit.prevent="submitForm">
-            <div class="cm-form-row">
-              <div class="nd-field cm-field-full">
-                <label class="nd-field-label">Contrato *</label>
-                <NdCombobox v-model="contractIdModel" :options="contratoOptions" placeholder="Selecione o contrato" search-placeholder="Buscar contrato..." />
-              </div>
-            </div>
-
-            <div class="cm-form-row cm-form-row--half">
-              <div class="nd-field">
-                <label class="nd-field-label">Data *</label>
-                <NdDatePicker v-model="form.date" required />
-              </div>
-              <div class="nd-field">
-                <label class="nd-field-label">Tipo *</label>
-                <NdCombobox v-model="typeModel" :options="tipoOptions" placeholder="Selecione o tipo" />
-              </div>
-            </div>
-
-            <div class="cm-form-row cm-form-row--half">
-              <div class="nd-field">
-                <label class="nd-field-label">Horario inicio</label>
-                <input v-model="form.startTimeLocal" type="time" class="nd-field-input" />
-              </div>
-              <div class="nd-field">
-                <label class="nd-field-label">Horario fim</label>
-                <input v-model="form.endTimeLocal" type="time" class="nd-field-input" />
-              </div>
-            </div>
-
-            <div class="cm-form-row">
-              <div class="nd-field cm-field-full">
-                <label class="nd-field-label">Status *</label>
-                <NdCombobox v-model="statusModel" :options="statusOptions" placeholder="Selecione o status" />
-              </div>
-            </div>
-
-            <div class="cm-form-row">
-              <div class="nd-field cm-field-full">
-                <label class="nd-field-label">Localizacao</label>
-                <MapLatLngField
-                  v-model:modelLat="form.latitude"
-                  v-model:modelLng="form.longitude"
-                />
-              </div>
-            </div>
-
-            <div v-if="submitError" class="nd-field-error">{{ submitError }}</div>
-          </form>
-        </div>
-
-        <div class="cm-aside">
-          <div class="cm-aside-header">
-            <Users :size="14" class="cm-info-icon" />
-            <span class="cm-aside-title">Tecnicos</span>
+          <div class="cm-top-actions">
+            <button type="button" class="cm-cancel-button" :disabled="submitting" @click="closeModal">
+              <X :size="14" />
+              Cancelar
+            </button>
+            <button type="submit" form="cm-form" class="cm-save-button" :disabled="submitting">
+              <Loader2 v-if="submitting" :size="15" class="cm-spin" />
+              <Check v-else :size="15" />
+              Cadastrar
+            </button>
+            <button type="button" class="cm-top-button" title="Fechar" :disabled="submitting" @click="closeModal">
+              <X :size="17" />
+            </button>
           </div>
-          <NdMultiCombobox
-            v-model="form.employeeIds"
-            :options="tecnicoOptions"
-            placeholder="Adicionar tecnicos"
-            search-placeholder="Buscar tecnico..."
-            singular-label="tecnico"
-            plural-label="tecnicos"
-          />
-          <div v-if="form.employeeIds.length" class="cm-tecnico-list cm-tecnico-list--form">
-            <div v-for="employeeId in form.employeeIds" :key="employeeId" class="cm-tecnico-item">
-              <div class="cm-tecnico-avatar" :style="{ background: hashColor(employeeId) }">
-                {{ (tecnicos.find(t => t.employeeId === employeeId)?.name ?? '?').charAt(0).toUpperCase() }}
+        </header>
+
+        <form id="cm-form" class="cm-body" @submit.prevent="submitForm">
+          <main class="cm-main">
+            <section class="cm-title-section">
+              <div class="cm-badges">
+                <select
+                  v-model="form.status"
+                  class="cm-badge-select cm-status"
+                  :style="{ color: statusColor, borderColor: statusColor }"
+                >
+                  <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+
+                <select v-model="form.type" class="cm-badge-select cm-type">
+                  <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
               </div>
-              <span class="cm-tecnico-name">{{ tecnicos.find(t => t.employeeId === employeeId)?.name ?? `#${employeeId}` }}</span>
-            </div>
-          </div>
-        </div>
+
+              <h2>{{ titleLabel }}</h2>
+              <p>{{ summaryLabel }}</p>
+            </section>
+
+            <section class="cm-form-section">
+              <div class="cm-section-heading">
+                <MapPin :size="15" />
+                <h3>Localizacao</h3>
+              </div>
+
+              <MapLatLngField
+                v-model:modelLat="form.latitude"
+                v-model:modelLng="form.longitude"
+              />
+
+              <div v-if="submitError" class="cm-error">{{ submitError }}</div>
+            </section>
+          </main>
+
+          <aside class="cm-sidebar">
+            <section class="cm-sidebar-section">
+              <h3>Detalhes</h3>
+
+              <dl class="cm-detail-list">
+                <div class="cm-detail-row">
+                  <dt><Building2 :size="15" />Contrato</dt>
+                  <dd>
+                    <NdCombobox
+                      v-model="contractIdModel"
+                      :options="contratoOptions"
+                      placeholder="Selecione o contrato"
+                      search-placeholder="Buscar contrato..."
+                    />
+                  </dd>
+                </div>
+
+                <div class="cm-detail-row">
+                  <dt><Calendar :size="15" />Data</dt>
+                  <dd>
+                    <NdDatePicker v-model="form.date" required />
+                    <span class="cm-detail-hint">{{ dateLabel }}</span>
+                  </dd>
+                </div>
+
+                <div class="cm-detail-row">
+                  <dt><Clock :size="15" />Horario</dt>
+                  <dd class="cm-time-fields">
+                    <input v-model="form.startTimeLocal" type="time" class="cm-edit-field" />
+                    <span>-</span>
+                    <input v-model="form.endTimeLocal" type="time" class="cm-edit-field" />
+                    <span class="cm-detail-hint cm-detail-hint--wide">{{ timeLabel }}</span>
+                  </dd>
+                </div>
+
+                <div class="cm-detail-row">
+                  <dt><Tag :size="15" />Tipo</dt>
+                  <dd><span class="cm-pill">{{ tipoLabel }}</span></dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="cm-sidebar-section">
+              <div class="cm-sidebar-title-row">
+                <h3>Pessoas</h3>
+                <UserPlus :size="14" />
+              </div>
+
+              <NdMultiCombobox
+                v-model="form.employeeIds"
+                :options="tecnicoOptions"
+                placeholder="Adicionar tecnicos"
+                search-placeholder="Buscar tecnico..."
+                singular-label="tecnico"
+                plural-label="tecnicos"
+              />
+
+              <div v-if="selectedEmployees.length" class="cm-people-list">
+                <div v-for="employee in selectedEmployees" :key="employee.id" class="cm-person">
+                  <div class="cm-avatar" :style="{ background: hashColor(employee.id) }">
+                    {{ initials(employee.name) }}
+                  </div>
+                  <div class="cm-person-text">
+                    <strong>{{ employee.name }}</strong>
+                    <span>{{ roleLabel(employee.admin) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <p v-else class="cm-empty">
+                <Users :size="15" />
+                Nenhum tecnico alocado
+              </p>
+            </section>
+          </aside>
+        </form>
       </div>
     </DialogContent>
   </Dialog>
 </template>
 
 <style scoped>
-.cm-layout {
-  display: flex;
-  min-height: 320px;
+.cm-dialog {
+  display: block;
 }
 
-.cm-main {
-  flex: 1;
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
+.cm-shell {
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  color: var(--nd-text-primary);
 }
 
-.cm-aside {
-  width: 200px;
-  flex-shrink: 0;
-  background: var(--nd-surface-raised);
-  border-left: 1px solid var(--nd-border);
-  padding: 20px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.cm-top-bar {
+.cm-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  min-width: 0;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--nd-border);
+  background: var(--nd-surface);
+}
+
+.cm-breadcrumb {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  color: var(--nd-text-secondary);
+  font-size: 0.72rem;
+}
+
+.cm-breadcrumb span,
+.cm-breadcrumb strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cm-breadcrumb strong {
+  color: var(--nd-text-primary);
+  font-weight: 800;
 }
 
 .cm-top-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.cm-top-button,
+.cm-cancel-button,
+.cm-save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+}
+
+.cm-top-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--nd-text-secondary);
+  background: transparent;
+}
+
+.cm-top-button:hover {
+  color: var(--nd-text-primary);
+  background: var(--nd-surface-raised);
+}
+
+.cm-cancel-button {
   gap: 6px;
-  flex-shrink: 0;
+  min-height: 32px;
+  border-radius: 4px;
+  color: var(--nd-text-secondary);
+  background: transparent;
+  font-size: 0.78rem;
 }
 
-.cm-btn-sm {
-  padding: 5px 12px !important;
-  font-size: 11px !important;
+.cm-cancel-button:hover {
+  color: var(--nd-text-primary);
 }
 
-.cm-info-icon {
-  color: var(--nd-text-disabled);
-  flex-shrink: 0;
-  margin-top: 2px;
+.cm-save-button {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--nd-action-foreground);
+  background: var(--nd-action);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
-.cm-aside-header {
+.cm-save-button:hover {
+  background: var(--nd-action-hover);
+}
+
+.cm-top-button:disabled,
+.cm-cancel-button:disabled,
+.cm-save-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.cm-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  min-height: 0;
+}
+
+.cm-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  background: var(--nd-surface);
+}
+
+.cm-title-section {
+  display: grid;
+  align-content: start;
+  min-height: 190px;
+  gap: 14px;
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid var(--nd-border);
+  background: var(--nd-surface);
+}
+
+.cm-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cm-status,
+.cm-type,
+.cm-badge-select {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.cm-status {
+  border: 1px solid;
+  text-transform: uppercase;
+}
+
+.cm-type {
+  border: 1px solid var(--nd-border-visible);
+  color: var(--nd-interactive);
+  background: var(--nd-surface-raised);
+}
+
+.cm-badge-select {
+  appearance: none;
+  border-style: solid;
+  outline: none;
+  cursor: pointer;
+}
+
+.cm-title-section h2 {
+  margin: 0;
+  color: var(--nd-text-primary);
+  font-size: 1.24rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.cm-title-section p {
+  margin: 0;
+  color: var(--nd-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.cm-form-section {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-height: 0;
+  padding: 22px 24px;
+  overflow-y: auto;
+}
+
+.cm-section-heading {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--nd-border);
-}
-
-.cm-aside-title {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
   color: var(--nd-text-secondary);
 }
 
-.cm-tecnico-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.cm-tecnico-list--form {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--nd-border);
-}
-
-.cm-tecnico-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cm-tecnico-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.cm-tecnico-name {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 12px;
+.cm-section-heading h3 {
+  margin: 0;
   color: var(--nd-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.86rem;
+  font-weight: 800;
 }
 
-.cm-form-title {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--nd-text-display);
+.cm-error {
+  color: var(--nd-accent);
+  font-size: 0.78rem;
+}
+
+.cm-sidebar {
+  display: flex;
+  min-height: 0;
+  border-left: 1px solid var(--nd-border);
+  background: var(--nd-surface);
+  overflow-y: auto;
+  flex-direction: column;
+}
+
+.cm-sidebar-section {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-bottom: 1px solid var(--nd-border);
+}
+
+.cm-sidebar-section h3 {
+  margin: 0;
+  color: var(--nd-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cm-sidebar-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--nd-interactive);
+}
+
+.cm-detail-list {
+  display: grid;
+  gap: 14px;
   margin: 0;
 }
 
-.cm-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.cm-form-row {
-  display: flex;
+.cm-detail-row {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
   gap: 12px;
+  align-items: start;
 }
 
-.cm-form-row--half > * {
-  flex: 1;
+.cm-detail-row dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--nd-text-secondary);
+  font-size: 0.78rem;
+}
+
+.cm-detail-row dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--nd-text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cm-time-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.cm-detail-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--nd-text-disabled);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.cm-detail-hint--wide {
+  grid-column: 1 / -1;
+}
+
+.cm-edit-field {
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid var(--nd-border);
+  border-radius: 10px;
+  padding: 0 10px;
+  color: var(--nd-text-primary);
+  background: var(--nd-bg);
+  outline: none;
+}
+
+.cm-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: var(--nd-border-visible);
+}
+
+.cm-people-list {
+  display: grid;
+  gap: 14px;
+}
+
+.cm-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
-.cm-field-full {
-  flex: 1;
+.cm-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  flex: 0 0 auto;
 }
 
-@media (max-width: 640px) {
-  .cm-layout {
-    flex-direction: column;
-    min-height: auto;
-  }
+.cm-person-text {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 4px;
+}
 
-  .cm-aside {
-    width: 100%;
-    border-left: none;
-    border-top: 1px solid var(--nd-border);
-  }
+.cm-person-text strong {
+  min-width: 0;
+  color: var(--nd-text-primary);
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-  .cm-form-row--half {
-    flex-direction: column;
+.cm-person-text span {
+  color: var(--nd-text-secondary);
+  font-size: 0.72rem;
+}
+
+.cm-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--nd-text-secondary);
+  font-size: 0.8rem;
+}
+
+.cm-spin {
+  animation: cm-spin 0.8s linear infinite;
+}
+
+@keyframes cm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .cm-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
   }
 
   .cm-main {
-    padding: 16px;
+    min-height: 420px;
+  }
+
+  .cm-sidebar {
+    border-top: 1px solid var(--nd-border);
+    border-left: 0;
   }
 }
 </style>
