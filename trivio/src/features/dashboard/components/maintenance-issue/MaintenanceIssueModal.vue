@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Building2, Check, Edit2, Link2, MoreHorizontal, X } from 'lucide-vue-next'
+import { Building2, Check, Edit2, Link2, Loader2, MoreHorizontal, Trash2, X } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import {
   Dialog,
@@ -9,6 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu'
 import { getApiErrorMessage } from '@/shared/services/api'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
@@ -44,6 +50,7 @@ const address = ref<string | null>(null)
 const addressLoading = ref(false)
 const editing = ref(false)
 const saving = ref(false)
+const deleting = ref(false)
 const tecnicos = ref<TecnicoAPI[]>([])
 const editForm = ref<EditForm>(defaultEditForm())
 
@@ -180,6 +187,35 @@ function statusLabelFor(status?: ManutencaoStatus) {
   return status ? labels[status] : ''
 }
 
+async function copySummary() {
+  const manutencao = activeMaintenance.value
+  if (!manutencao) return
+
+  const parts = [
+    `MNT-${String(manutencao.id).padStart(3, '0')}`,
+    `${typeShortLabel.value} - ${manutencao.contract.client.name}`,
+    `Status: ${statusLabel.value}`,
+    `Contrato: #${String(manutencao.contract.id).padStart(3, '0')}`,
+    `Data: ${dateLabel.value}`,
+    `Horario: ${timeLabel.value}`,
+  ]
+
+  if (address.value || (manutencao.latitude != null && manutencao.longitude != null)) {
+    parts.push(`Endereco: ${addressLabel.value}`)
+  }
+
+  if (manutencao.employees.length) {
+    parts.push(`Tecnicos: ${manutencao.employees.map(employee => employee.name).join(', ')}`)
+  }
+
+  try {
+    await navigator.clipboard.writeText(parts.join('\n'))
+    toast.success('Resumo copiado!')
+  } catch {
+    toast.error('Nao foi possivel copiar o resumo.')
+  }
+}
+
 async function loadAddress() {
   const manutencao = activeMaintenance.value
   address.value = null
@@ -235,6 +271,7 @@ async function saveEdit() {
       type: editForm.value.type,
       status: editForm.value.status,
       employeeIds: editForm.value.employeeIds,
+      active: manutencao.active ?? true,
       startTime: editForm.value.startTimeLocal || undefined,
       endTime: editForm.value.endTimeLocal || undefined,
       ...(editForm.value.latitude != null && editForm.value.longitude != null
@@ -252,7 +289,44 @@ async function saveEdit() {
   }
 }
 
+async function deleteMaintenance() {
+  const manutencao = activeMaintenance.value
+  if (!props.canEdit || !manutencao || deleting.value) return
+
+  if (!window.confirm('Apagar esta manutencao?')) {
+    return
+  }
+
+  deleting.value = true
+
+  try {
+    await manutencaoService.atualizar(manutencao.id, {
+      contractId: manutencao.contract.id,
+      date: manutencao.date,
+      preventive: manutencao.type === 'PREVENTIVA',
+      type: manutencao.type,
+      status: manutencao.status,
+      employeeIds: manutencao.employees.map(employee => employee.employeeId),
+      active: false,
+      startTime: manutencao.startTime || undefined,
+      endTime: manutencao.endTime || undefined,
+      ...(manutencao.latitude != null && manutencao.longitude != null
+        ? { latitude: manutencao.latitude, longitude: manutencao.longitude }
+        : {}),
+    })
+
+    toast.success('Manutencao apagada.')
+    emit('update:open', false)
+    emit('saved')
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Nao foi possivel apagar a manutencao.'))
+  } finally {
+    deleting.value = false
+  }
+}
+
 function handleClose() {
+  if (saving.value || deleting.value) return
   editing.value = false
   emit('update:open', false)
 }
@@ -315,16 +389,27 @@ watch(() => activeMaintenance.value?.id, () => {
             </template>
 
             <template v-else>
-              <button type="button" class="mi-top-button" title="Copiar link">
+              <button type="button" class="mi-top-button" title="Copiar resumo" :disabled="deleting" @click="copySummary">
                 <Link2 :size="15" />
               </button>
-              <button v-if="canEdit" type="button" class="mi-top-button mi-top-button--edit" title="Editar" @click="startEdit">
+              <button v-if="canEdit" type="button" class="mi-top-button mi-top-button--edit" title="Editar" :disabled="deleting" @click="startEdit">
                 <Edit2 :size="15" />
               </button>
-              <button type="button" class="mi-top-button" title="Mais opções">
-                <MoreHorizontal :size="16" />
-              </button>
-              <button type="button" class="mi-top-button" title="Fechar" @click="handleClose">
+              <DropdownMenu v-if="canEdit">
+                <DropdownMenuTrigger as-child>
+                  <button type="button" class="mi-top-button" title="Mais opcoes" :disabled="deleting">
+                    <Loader2 v-if="deleting" :size="15" class="mi-spin" />
+                    <MoreHorizontal v-else :size="16" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" class="mi-action-menu">
+                  <DropdownMenuItem variant="destructive" class="mi-action-menu-item" :disabled="deleting" @select="deleteMaintenance()">
+                    <Trash2 :size="14" />
+                    Apagar manutencao
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <button type="button" class="mi-top-button" title="Fechar" :disabled="deleting" @click="handleClose">
                 <X :size="17" />
               </button>
             </template>
@@ -499,11 +584,32 @@ watch(() => activeMaintenance.value?.id, () => {
   background: var(--nd-action-hover);
 }
 
+.mi-action-menu {
+  border-color: var(--nd-border);
+  background: var(--nd-surface-raised);
+  color: var(--nd-text-primary);
+}
+
+.mi-action-menu-item {
+  cursor: pointer;
+  color: var(--nd-accent);
+}
+
 .mi-top-button:disabled,
 .mi-cancel-button:disabled,
 .mi-save-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+.mi-spin {
+  animation: mi-spin 0.8s linear infinite;
+}
+
+@keyframes mi-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .mi-body {

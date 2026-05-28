@@ -61,7 +61,13 @@ async function onSaved() {
 
   if (!selectedId) return
   const updated = manutencoesFiltradas.value.find(m => m.id === selectedId)
-  if (updated) modalManutencao.value = updated
+  if (updated) {
+    modalManutencao.value = updated
+    return
+  }
+
+  modalManutencao.value = null
+  issueOpen.value = false
 }
 
 function onTecnicoFiltro(t: TecnicoAPI | null) {
