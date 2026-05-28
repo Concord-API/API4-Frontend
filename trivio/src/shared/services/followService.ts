@@ -27,6 +27,6 @@ export const followService = {
     const params = new URLSearchParams({ maintenanceId: maintenanceId.toString() })
     return api.get<FollowAPI[]>(`/follows?${params}`)
   },
-  criar: (data: FollowCreateRequest) => api.post<FollowAPI>('/follows', data),
+  criar: (data: FollowCreateRequest) => api.postResponse<void>('/follows', data),
   atualizar: (data: FollowUpdateRequest) => api.patch<void>('/follows', data),
 }
