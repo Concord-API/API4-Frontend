@@ -190,8 +190,11 @@ const typeOptions = [
   font-size: 0.78rem;
 }
 
-:global(.mi-select-item[data-highlighted]),
 :global(.mi-select-item[data-state="checked"]) {
+  color: var(--nd-text-primary);
+}
+
+:global(.mi-select-item[data-highlighted]) {
   color: #0b0f14;
 }
 

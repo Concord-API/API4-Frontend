@@ -673,8 +673,11 @@ async function submitForm() {
   font-size: 0.78rem;
 }
 
-:global(.cm-select-item[data-highlighted]),
 :global(.cm-select-item[data-state="checked"]) {
+  color: var(--nd-text-primary);
+}
+
+:global(.cm-select-item[data-highlighted]) {
   color: #0b0f14;
 }
 
