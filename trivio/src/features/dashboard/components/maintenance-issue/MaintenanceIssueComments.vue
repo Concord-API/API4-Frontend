@@ -357,7 +357,7 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 .mi-comment-body {
   display: grid;
   min-width: 0;
-  width: min(100%, 516px);
+  width: min(516px, calc(100% - 48px));
   gap: 6px;
 }
 
@@ -386,7 +386,8 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 .mi-comment-bubble {
   position: relative;
   width: fit-content;
-  max-width: min(100%, 620px);
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 11px 14px;
   border: 1px solid var(--nd-border);
   border-radius: 10px;
@@ -440,7 +441,10 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 }
 
 .mi-edit-input {
-  width: min(560px, 70vw);
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   min-height: 74px;
   resize: vertical;
   border: 1px solid var(--nd-border);
