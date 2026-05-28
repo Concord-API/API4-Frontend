@@ -61,28 +61,6 @@ const currentStatus = computed(() => editing.value ? editForm.value.status : act
 const tipoLabel = computed(() => typeLongLabel(currentType.value))
 const typeShortLabel = computed(() => typeShortLabelFor(currentType.value))
 
-const summaryLabel = computed(() => {
-  const manutencao = activeMaintenance.value
-  if (!manutencao) return ''
-
-  const hasTeam = editing.value ? editForm.value.employeeIds.length > 0 : manutencao.employees.length > 0
-  const start = editing.value ? editForm.value.startTimeLocal : manutencao.startTime?.slice(0, 5)
-  const end = editing.value ? editForm.value.endTimeLocal : manutencao.endTime?.slice(0, 5)
-
-  if (!start || !end) {
-    return hasTeam ? 'Equipe responsável já alocada.' : 'Equipe responsável ainda não alocada.'
-  }
-
-  const [startHour = 0, startMinute = 0] = start.split(':').map(Number)
-  const [endHour = 0, endMinute = 0] = end.split(':').map(Number)
-  const minutes = Math.max(0, endHour * 60 + endMinute - startHour * 60 - startMinute)
-  const duration = minutes >= 60 && minutes % 60 === 0 ? `${minutes / 60}h` : `${minutes}min`
-
-  return hasTeam
-    ? `Janela programada de ${duration}, equipe responsável já alocada.`
-    : `Janela programada de ${duration}, equipe responsável ainda não alocada.`
-})
-
 const statusLabel = computed(() => statusLabelFor(currentStatus.value))
 
 const statusColor = computed(() => {
@@ -424,7 +402,6 @@ watch(() => activeMaintenance.value?.id, () => {
               :type-label="typeShortLabel"
               :title-label="tipoLabel"
               :client-name="manutencao.contract.client.name"
-              :summary-label="summaryLabel"
               :editing="editing"
               :status-value="editForm.status"
               :type-value="editForm.type"

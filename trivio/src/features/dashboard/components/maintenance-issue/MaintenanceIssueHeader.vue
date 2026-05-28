@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select'
 
 const props = defineProps<{
   statusLabel: string
@@ -7,7 +14,6 @@ const props = defineProps<{
   typeLabel: string
   titleLabel: string
   clientName: string
-  summaryLabel: string
   editing?: boolean
   statusValue: string
   typeValue: string
@@ -19,6 +25,16 @@ const emit = defineEmits<{
 }>()
 
 const title = computed(() => `${props.titleLabel} - ${props.clientName}`)
+
+const statusModel = computed({
+  get: () => props.statusValue,
+  set: value => emit('update:statusValue', value),
+})
+
+const typeModel = computed({
+  get: () => props.typeValue,
+  set: value => emit('update:typeValue', value),
+})
 
 const statusOptions = [
   { value: 'SCHEDULED', label: 'Agendada' },
@@ -37,39 +53,41 @@ const typeOptions = [
   <div class="mi-header-block">
     <section class="mi-title-section">
       <div class="mi-badges">
-        <select
+        <Select
           v-if="editing"
-          :value="statusValue"
-          class="mi-badge-select mi-status"
-          :style="{ color: statusColor, borderColor: statusColor }"
-          @change="emit('update:statusValue', ($event.target as HTMLSelectElement).value)"
+          v-model="statusModel"
         >
-          <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+          <SelectTrigger class="mi-badge-trigger mi-status" :style="{ color: statusColor, borderColor: statusColor }">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent class="mi-select-content">
+            <SelectItem v-for="option in statusOptions" :key="option.value" :value="option.value" class="mi-select-item">
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
         <span v-else class="mi-status" :style="{ color: statusColor, borderColor: statusColor }">
           {{ statusLabel }}
         </span>
 
-        <select
+        <Select
           v-if="editing"
-          :value="typeValue"
-          class="mi-badge-select mi-type"
-          @change="emit('update:typeValue', ($event.target as HTMLSelectElement).value)"
+          v-model="typeModel"
         >
-          <option v-for="option in typeOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+          <SelectTrigger class="mi-badge-trigger mi-type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent class="mi-select-content">
+            <SelectItem v-for="option in typeOptions" :key="option.value" :value="option.value" class="mi-select-item">
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
         <span v-else class="mi-type">{{ typeLabel }}</span>
       </div>
 
       <div v-if="editing" class="mi-title-input">{{ title }}</div>
       <h2 v-else>{{ title }}</h2>
-
-      <div v-if="editing" class="mi-summary-input">{{ summaryLabel }}</div>
-      <p v-else>{{ summaryLabel }}</p>
     </section>
   </div>
 </template>
@@ -83,7 +101,7 @@ const typeOptions = [
 .mi-title-section {
   display: grid;
   gap: 10px;
-  min-height: 124px;
+  min-height: 104px;
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--nd-border);
   background: var(--nd-surface);
@@ -97,8 +115,7 @@ const typeOptions = [
 }
 
 .mi-status,
-.mi-type,
-.mi-badge-select {
+.mi-type {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
@@ -106,6 +123,24 @@ const typeOptions = [
   border-radius: 4px;
   font-size: 0.68rem;
   font-weight: 800;
+}
+
+.mi-badge-trigger {
+  width: auto;
+  height: 24px;
+  min-height: 24px;
+  gap: 6px;
+  border-radius: 4px;
+  padding: 0 8px 0 10px;
+  box-shadow: none;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.mi-badge-trigger :deep(svg) {
+  width: 12px;
+  height: 12px;
+  opacity: 0.8;
 }
 
 .mi-status {
@@ -127,15 +162,7 @@ const typeOptions = [
   line-height: 1.2;
 }
 
-.mi-badge-select {
-  appearance: none;
-  border-style: solid;
-  outline: none;
-  cursor: pointer;
-}
-
-.mi-title-input,
-.mi-summary-input {
+.mi-title-input {
   display: flex;
   align-items: center;
   min-width: 0;
@@ -152,19 +179,20 @@ const typeOptions = [
   font-weight: 800;
 }
 
-.mi-summary-input {
-  min-height: 56px;
-  align-items: flex-start;
-  padding: 12px;
-  color: var(--nd-text-secondary);
+:global(.mi-select-content) {
+  border-color: var(--nd-border-visible);
+  border-radius: 4px;
+  background: var(--nd-surface-raised);
+}
+
+:global(.mi-select-item) {
+  color: var(--nd-text-primary);
   font-size: 0.78rem;
 }
 
-.mi-title-section p {
-  margin: 0;
-  color: var(--nd-text-secondary);
-  font-size: 0.78rem;
-  line-height: 1.35;
+:global(.mi-select-item[data-highlighted]),
+:global(.mi-select-item[data-state="checked"]) {
+  color: #0b0f14;
 }
 
 @media (max-width: 720px) {

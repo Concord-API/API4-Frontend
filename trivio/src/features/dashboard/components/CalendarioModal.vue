@@ -9,6 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 import NdDatePicker from '@/shared/components/ui/NdDatePicker.vue'
@@ -132,20 +139,6 @@ const timeLabel = computed(() => {
   return `${form.value.startTimeLocal} - ${form.value.endTimeLocal}`
 })
 
-const summaryLabel = computed(() => {
-  if (!selectedContract.value) return 'Selecione um contrato para montar o chamado.'
-
-  const teamLabel = form.value.employeeIds.length
-    ? 'equipe responsavel ja alocada.'
-    : 'equipe responsavel ainda nao alocada.'
-
-  if (!form.value.startTimeLocal || !form.value.endTimeLocal) {
-    return teamLabel.charAt(0).toUpperCase() + teamLabel.slice(1)
-  }
-
-  return `Janela programada de ${durationLabel(form.value.startTimeLocal, form.value.endTimeLocal)}, ${teamLabel}`
-})
-
 const contractIdModel = computed<string | number | null>({
   get: () => form.value.contractId,
   set: value => { form.value.contractId = value === null ? null : Number(value) },
@@ -154,6 +147,11 @@ const contractIdModel = computed<string | number | null>({
 const typeModel = computed<string | number | null>({
   get: () => form.value.type,
   set: value => { form.value.type = (value as ManutencaoTipo | null) ?? 'PREVENTIVA' },
+})
+
+const statusModel = computed<string | number | null>({
+  get: () => form.value.status,
+  set: value => { form.value.status = (value as ManutencaoStatus | null) ?? 'SCHEDULED' },
 })
 
 function padHour(hour: number): string {
@@ -202,14 +200,6 @@ function statusLabelFor(status: ManutencaoStatus) {
   }
 
   return labels[status]
-}
-
-function durationLabel(start: string, end: string) {
-  const [startHour = 0, startMinute = 0] = start.split(':').map(Number)
-  const [endHour = 0, endMinute = 0] = end.split(':').map(Number)
-  const minutes = Math.max(0, endHour * 60 + endMinute - startHour * 60 - startMinute)
-  if (!minutes) return '0min'
-  return minutes >= 60 && minutes % 60 === 0 ? `${minutes / 60}h` : `${minutes}min`
 }
 
 function initials(name: string) {
@@ -355,25 +345,30 @@ async function submitForm() {
           <main class="cm-main">
             <section class="cm-title-section">
               <div class="cm-badges">
-                <select
-                  v-model="form.status"
-                  class="cm-badge-select cm-status"
-                  :style="{ color: statusColor, borderColor: statusColor }"
-                >
-                  <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
+                <Select v-model="statusModel">
+                  <SelectTrigger class="cm-badge-trigger cm-status" :style="{ color: statusColor, borderColor: statusColor }">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent class="cm-select-content">
+                    <SelectItem v-for="option in statusOptions" :key="option.value" :value="option.value" class="cm-select-item">
+                      {{ option.label }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <select v-model="form.type" class="cm-badge-select cm-type">
-                  <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
+                <Select v-model="typeModel">
+                  <SelectTrigger class="cm-badge-trigger cm-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent class="cm-select-content">
+                    <SelectItem v-for="option in tipoOptions" :key="option.value" :value="option.value" class="cm-select-item">
+                      {{ option.label }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <h2>{{ titleLabel }}</h2>
-              <p>{{ summaryLabel }}</p>
             </section>
 
             <section class="cm-form-section">
@@ -605,7 +600,7 @@ async function submitForm() {
 .cm-title-section {
   display: grid;
   align-content: start;
-  min-height: 190px;
+  min-height: 132px;
   gap: 14px;
   padding: 20px 24px 18px;
   border-bottom: 1px solid var(--nd-border);
@@ -620,8 +615,7 @@ async function submitForm() {
 }
 
 .cm-status,
-.cm-type,
-.cm-badge-select {
+.cm-type {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
@@ -642,11 +636,22 @@ async function submitForm() {
   background: var(--nd-surface-raised);
 }
 
-.cm-badge-select {
-  appearance: none;
-  border-style: solid;
-  outline: none;
-  cursor: pointer;
+.cm-badge-trigger {
+  width: auto;
+  height: 24px;
+  min-height: 24px;
+  gap: 6px;
+  border-radius: 4px;
+  padding: 0 8px 0 10px;
+  box-shadow: none;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.cm-badge-trigger :deep(svg) {
+  width: 12px;
+  height: 12px;
+  opacity: 0.8;
 }
 
 .cm-title-section h2 {
@@ -657,11 +662,20 @@ async function submitForm() {
   line-height: 1.2;
 }
 
-.cm-title-section p {
-  margin: 0;
-  color: var(--nd-text-secondary);
+:global(.cm-select-content) {
+  border-color: var(--nd-border-visible);
+  border-radius: 4px;
+  background: var(--nd-surface-raised);
+}
+
+:global(.cm-select-item) {
+  color: var(--nd-text-primary);
   font-size: 0.78rem;
-  line-height: 1.35;
+}
+
+:global(.cm-select-item[data-highlighted]),
+:global(.cm-select-item[data-state="checked"]) {
+  color: #0b0f14;
 }
 
 .cm-form-section {
