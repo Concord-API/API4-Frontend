@@ -323,6 +323,15 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 
 .mi-comment-row--own {
   justify-content: flex-start;
+  flex-direction: row-reverse;
+}
+
+.mi-comment-row--own .mi-comment-body {
+  justify-items: end;
+}
+
+.mi-comment-row--own .mi-comment-meta {
+  justify-content: flex-end;
 }
 
 .mi-comment-avatar {
