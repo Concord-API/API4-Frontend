@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Edit2 } from 'lucide-vue-next'
 import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 
@@ -14,7 +15,7 @@ const emit = defineEmits<{
   edit: []
 }>()
 
-const title = `${props.tipoLabel} - ${props.manutencao.contract.client.name}`
+const title = computed(() => `${props.tipoLabel} - ${props.manutencao.contract.client.name}`)
 </script>
 
 <template>
