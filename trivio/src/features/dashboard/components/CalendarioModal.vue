@@ -16,11 +16,9 @@ import NdDatePicker from '@/shared/components/ui/NdDatePicker.vue'
 import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { getApiErrorMessage } from '@/shared/services/api'
-import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
+import { manutencaoService, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useAuth } from '@/shared/composables/useAuth'
-
-export type ModalMode = 'edicao' | 'criacao'
 
 export interface CriacaoContext {
   dateStr: string
@@ -30,20 +28,16 @@ export interface CriacaoContext {
 
 const props = defineProps<{
   open: boolean
-  mode: ModalMode
-  manutencao?: ManutencaoAPI | null
   criacaoContext?: CriacaoContext | null
 }>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  'update:mode': [value: ModalMode]
   saved: []
 }>()
 
 const { currentUser } = useAuth()
 const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowerCase() === 'technician')
-const internalMode = ref<ModalMode>(props.mode)
 const contratos = ref<ContratoAPI[]>([])
 const tecnicos = ref<TecnicoAPI[]>([])
 const submitError = ref<string | null>(null)
@@ -101,20 +95,6 @@ function padHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`
 }
 
-function formFromManutencao(manutencao: ManutencaoAPI): FormState {
-  return {
-    contractId: manutencao.contract.id,
-    date: manutencao.date,
-    type: manutencao.type,
-    startTimeLocal: manutencao.startTime ? manutencao.startTime.slice(0, 5) : '',
-    endTimeLocal: manutencao.endTime ? manutencao.endTime.slice(0, 5) : '',
-    status: manutencao.status,
-    employeeIds: manutencao.employees.map(employee => employee.employeeId),
-    latitude: manutencao.latitude ?? null,
-    longitude: manutencao.longitude ?? null,
-  }
-}
-
 function formFromContext(context: CriacaoContext): FormState {
   return {
     contractId: null,
@@ -140,39 +120,19 @@ async function carregarDados() {
   } catch {}
 }
 
-watch(() => props.mode, mode => {
-  internalMode.value = mode
-})
-
 watch(() => props.open, isOpen => {
   submitError.value = null
 
-  if (!isOpen) {
-    internalMode.value = props.mode
-    return
-  }
+  if (!isOpen) return
 
   void carregarDados()
-  internalMode.value = props.mode
 
-  if (props.mode === 'edicao' && props.manutencao) {
-    form.value = formFromManutencao(props.manutencao)
-    return
-  }
-
-  if (props.mode === 'criacao' && props.criacaoContext) {
+  if (props.criacaoContext) {
     form.value = formFromContext(props.criacaoContext)
     return
   }
 
   form.value = defaultForm()
-})
-
-watch(internalMode, mode => {
-  if (mode === 'edicao' && props.manutencao) {
-    form.value = formFromManutencao(props.manutencao)
-    submitError.value = null
-  }
 })
 
 const contractIdModel = computed<string | number | null>({
@@ -233,13 +193,8 @@ async function submitForm() {
   }
 
   try {
-    if (internalMode.value === 'edicao' && props.manutencao) {
-      await manutencaoService.atualizar(props.manutencao.id, payload)
-      toast.success('Manutencao atualizada.')
-    } else {
-      await manutencaoService.criar(payload)
-      toast.success('Manutencao cadastrada com sucesso.')
-    }
+    await manutencaoService.criar(payload)
+    toast.success('Manutencao cadastrada com sucesso.')
 
     emit('update:open', false)
     emit('saved')
@@ -257,17 +212,17 @@ async function submitForm() {
   <Dialog :open="open" @update:open="handleOpenChange">
     <DialogContent :show-close-button="false" class="w-[95vw] sm:w-[680px] max-w-[680px] p-0 gap-0 overflow-hidden flex flex-col !rounded-lg border-0 shadow-xl">
       <DialogHeader class="sr-only">
-        <DialogTitle>{{ internalMode === 'edicao' ? 'Editar manutencao' : 'Nova manutencao' }}</DialogTitle>
-        <DialogDescription>{{ internalMode === 'edicao' ? 'Editar manutencao' : 'Nova manutencao' }}</DialogDescription>
+        <DialogTitle>Nova manutencao</DialogTitle>
+        <DialogDescription>Nova manutencao</DialogDescription>
       </DialogHeader>
 
       <div class="cm-layout">
         <div class="cm-main">
           <div class="cm-top-bar">
-            <h2 class="cm-form-title">{{ internalMode === 'edicao' ? 'Editar manutencao' : 'Nova manutencao' }}</h2>
+            <h2 class="cm-form-title">Nova manutencao</h2>
             <div class="cm-top-actions">
               <button type="submit" form="cm-form" class="nd-btn-primary cm-btn-sm" :disabled="submitting">
-                {{ internalMode === 'edicao' ? 'Salvar' : 'Cadastrar' }}
+                Cadastrar
               </button>
               <DialogClose as-child>
                 <button type="button" class="nd-btn-secondary cm-btn-sm">Cancelar</button>

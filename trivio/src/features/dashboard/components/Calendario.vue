@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescri
 import { useCalendario } from '@/features/dashboard/composables/useCalendario'
 import CalendarioGrid from './CalendarioGrid.vue'
 import CalendarioPainel from './CalendarioPainel.vue'
-import CalendarioModal, { type ModalMode, type CriacaoContext } from './CalendarioModal.vue'
+import CalendarioModal, { type CriacaoContext } from './CalendarioModal.vue'
 import MaintenanceIssueModal from './maintenance-issue/MaintenanceIssueModal.vue'
 import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 import type { TecnicoAPI } from '@/shared/services/tecnicoService'
@@ -40,7 +40,6 @@ const {
 
 const modalOpen = ref(false)
 const issueOpen = ref(false)
-const modalMode = ref<ModalMode>('criacao')
 const modalManutencao = ref<ManutencaoAPI | null>(null)
 const criacaoContext = ref<CriacaoContext | null>(null)
 
@@ -53,7 +52,6 @@ function abrirDetalhe(m: ManutencaoAPI) {
 function abrirCriacao(dateStr: string, hour: number) {
   modalManutencao.value = null
   criacaoContext.value = { dateStr, hour, tecnico: tecnicoFiltro.value }
-  modalMode.value = 'criacao'
   modalOpen.value = true
 }
 
@@ -170,8 +168,6 @@ onMounted(async () => {
 
     <CalendarioModal
       v-model:open="modalOpen"
-      v-model:mode="modalMode"
-      :manutencao="modalManutencao"
       :criacao-context="criacaoContext"
       @saved="onSaved"
     />
