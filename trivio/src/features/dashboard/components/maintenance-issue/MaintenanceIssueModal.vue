@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Building2, Edit2, Link2, MoreHorizontal, X } from 'lucide-vue-next'
+import { Building2, Check, Edit2, Link2, MoreHorizontal, X } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog'
-import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
+import { getApiErrorMessage } from '@/shared/services/api'
+import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
+import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useNominatim } from '@/shared/composables/useNominatim'
 import MaintenanceIssueComments from './MaintenanceIssueComments.vue'
 import MaintenanceIssueHeader from './MaintenanceIssueHeader.vue'
@@ -22,40 +25,42 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  edit: [manutencao: ManutencaoAPI]
+  saved: []
 }>()
+
+interface EditForm {
+  date: string
+  type: ManutencaoTipo
+  status: ManutencaoStatus
+  startTimeLocal: string
+  endTimeLocal: string
+  employeeIds: number[]
+  latitude: number | null
+  longitude: number | null
+}
 
 const { reverseGeocode } = useNominatim()
 const address = ref<string | null>(null)
 const addressLoading = ref(false)
+const editing = ref(false)
+const saving = ref(false)
+const tecnicos = ref<TecnicoAPI[]>([])
+const editForm = ref<EditForm>(defaultEditForm())
 
-const tipoLabel = computed(() => {
-  const map: Record<string, string> = {
-    PREVENTIVA: 'Manutenção preventiva',
-    CORRETIVA: 'Manutenção corretiva',
-    MELHORIA: 'Manutenção de melhoria',
-  }
+const activeMaintenance = computed(() => props.manutencao)
+const currentType = computed(() => editing.value ? editForm.value.type : activeMaintenance.value?.type)
+const currentStatus = computed(() => editing.value ? editForm.value.status : activeMaintenance.value?.status)
 
-  return props.manutencao ? (map[props.manutencao.type] ?? props.manutencao.type) : ''
-})
-
-const typeShortLabel = computed(() => {
-  const map: Record<string, string> = {
-    PREVENTIVA: 'Preventiva',
-    CORRETIVA: 'Corretiva',
-    MELHORIA: 'Melhoria',
-  }
-
-  return props.manutencao ? (map[props.manutencao.type] ?? props.manutencao.type) : ''
-})
+const tipoLabel = computed(() => typeLongLabel(currentType.value))
+const typeShortLabel = computed(() => typeShortLabelFor(currentType.value))
 
 const summaryLabel = computed(() => {
-  const manutencao = props.manutencao
+  const manutencao = activeMaintenance.value
   if (!manutencao) return ''
 
-  const hasTeam = manutencao.employees.length > 0
-  const start = manutencao.startTime?.slice(0, 5)
-  const end = manutencao.endTime?.slice(0, 5)
+  const hasTeam = editing.value ? editForm.value.employeeIds.length > 0 : manutencao.employees.length > 0
+  const start = editing.value ? editForm.value.startTimeLocal : manutencao.startTime?.slice(0, 5)
+  const end = editing.value ? editForm.value.endTimeLocal : manutencao.endTime?.slice(0, 5)
 
   if (!start || !end) {
     return hasTeam ? 'Equipe responsável já alocada.' : 'Equipe responsável ainda não alocada.'
@@ -71,52 +76,112 @@ const summaryLabel = computed(() => {
     : `Janela programada de ${duration}, equipe responsável ainda não alocada.`
 })
 
-const statusLabel = computed(() => {
-  if (!props.manutencao) return ''
-
-  const labels: Record<ManutencaoStatus, string> = {
-    SCHEDULED: 'Agendada',
-    STARTED: 'Em andamento',
-    COMPLETED: 'Concluída',
-  }
-
-  return labels[props.manutencao.status] ?? props.manutencao.status
-})
+const statusLabel = computed(() => statusLabelFor(currentStatus.value))
 
 const statusColor = computed(() => {
-  if (!props.manutencao) return 'var(--nd-action)'
-  if (props.manutencao.status === 'COMPLETED') return 'var(--nd-success)'
-  if (props.manutencao.status === 'STARTED') return 'var(--nd-warning)'
+  if (!currentStatus.value) return 'var(--nd-action)'
+  if (currentStatus.value === 'COMPLETED') return 'var(--nd-success)'
+  if (currentStatus.value === 'STARTED') return 'var(--nd-warning)'
   return 'var(--nd-action)'
 })
 
 const dateLabel = computed(() => {
-  if (!props.manutencao?.date) return 'Sem data'
-  const [year = '', month = '', day = ''] = props.manutencao.date.split('-')
+  if (!activeMaintenance.value?.date) return 'Sem data'
+  const [year = '', month = '', day = ''] = activeMaintenance.value.date.split('-')
   const date = new Date(Number(year), Number(month) - 1, Number(day))
   const weekDay = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(date)
   return `${weekDay}, ${day}/${month}/${year}`
 })
 
 const timeLabel = computed(() => {
-  if (!props.manutencao?.startTime || !props.manutencao?.endTime) {
+  if (!activeMaintenance.value?.startTime || !activeMaintenance.value?.endTime) {
     return 'Sem horário definido'
   }
 
-  return `${props.manutencao.startTime.slice(0, 5)} - ${props.manutencao.endTime.slice(0, 5)}`
+  return `${activeMaintenance.value.startTime.slice(0, 5)} - ${activeMaintenance.value.endTime.slice(0, 5)}`
 })
 
 const addressLabel = computed(() => {
   if (address.value) return address.value
-  if (props.manutencao?.latitude != null && props.manutencao.longitude != null) {
-    return `${props.manutencao.latitude.toFixed(6)}, ${props.manutencao.longitude.toFixed(6)}`
+  if (activeMaintenance.value?.latitude != null && activeMaintenance.value.longitude != null) {
+    return `${activeMaintenance.value.latitude.toFixed(6)}, ${activeMaintenance.value.longitude.toFixed(6)}`
   }
 
   return 'Sem endereço'
 })
 
+const tecnicoOptions = computed(() => {
+  const options = new Map<number, string>()
+
+  activeMaintenance.value?.employees.forEach(employee => {
+    options.set(employee.employeeId, employee.name)
+  })
+
+  tecnicos.value.filter(tecnico => tecnico.active).forEach(tecnico => {
+    options.set(tecnico.employeeId, tecnico.name)
+  })
+
+  return Array.from(options, ([value, label]) => ({ value, label }))
+})
+
+function defaultEditForm(): EditForm {
+  return {
+    date: '',
+    type: 'PREVENTIVA',
+    status: 'SCHEDULED',
+    startTimeLocal: '',
+    endTimeLocal: '',
+    employeeIds: [],
+    latitude: null,
+    longitude: null,
+  }
+}
+
+function editFormFromMaintenance(manutencao: ManutencaoAPI): EditForm {
+  return {
+    date: manutencao.date,
+    type: manutencao.type,
+    status: manutencao.status,
+    startTimeLocal: manutencao.startTime?.slice(0, 5) ?? '',
+    endTimeLocal: manutencao.endTime?.slice(0, 5) ?? '',
+    employeeIds: manutencao.employees.map(employee => employee.employeeId),
+    latitude: manutencao.latitude ?? null,
+    longitude: manutencao.longitude ?? null,
+  }
+}
+
+function typeLongLabel(type?: ManutencaoTipo) {
+  const map: Record<ManutencaoTipo, string> = {
+    PREVENTIVA: 'Manutenção preventiva',
+    CORRETIVA: 'Manutenção corretiva',
+    MELHORIA: 'Manutenção de melhoria',
+  }
+
+  return type ? map[type] : ''
+}
+
+function typeShortLabelFor(type?: ManutencaoTipo) {
+  const map: Record<ManutencaoTipo, string> = {
+    PREVENTIVA: 'Preventiva',
+    CORRETIVA: 'Corretiva',
+    MELHORIA: 'Melhoria',
+  }
+
+  return type ? map[type] : ''
+}
+
+function statusLabelFor(status?: ManutencaoStatus) {
+  const labels: Record<ManutencaoStatus, string> = {
+    SCHEDULED: 'Agendada',
+    STARTED: 'Em andamento',
+    COMPLETED: 'Concluída',
+  }
+
+  return status ? labels[status] : ''
+}
+
 async function loadAddress() {
-  const manutencao = props.manutencao
+  const manutencao = activeMaintenance.value
   address.value = null
 
   if (!manutencao || manutencao.latitude == null || manutencao.longitude == null) {
@@ -128,22 +193,88 @@ async function loadAddress() {
   addressLoading.value = false
 }
 
-function handleEdit() {
-  if (!props.manutencao) return
-  emit('edit', props.manutencao)
+async function loadTecnicos() {
+  if (tecnicos.value.length) return
+
+  try {
+    tecnicos.value = await tecnicoService.listar()
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Não foi possível carregar os técnicos.'))
+  }
+}
+
+function startEdit() {
+  if (!props.canEdit || !activeMaintenance.value) return
+  editForm.value = editFormFromMaintenance(activeMaintenance.value)
+  editing.value = true
+  void loadTecnicos()
+}
+
+function cancelEdit() {
+  if (saving.value) return
+  editing.value = false
+  editForm.value = activeMaintenance.value ? editFormFromMaintenance(activeMaintenance.value) : defaultEditForm()
+}
+
+async function saveEdit() {
+  const manutencao = activeMaintenance.value
+  if (!manutencao || saving.value) return
+
+  if (!editForm.value.date) {
+    toast.error('Selecione uma data.')
+    return
+  }
+
+  saving.value = true
+
+  try {
+    await manutencaoService.atualizar(manutencao.id, {
+      contractId: manutencao.contract.id,
+      date: editForm.value.date,
+      preventive: editForm.value.type === 'PREVENTIVA',
+      type: editForm.value.type,
+      status: editForm.value.status,
+      employeeIds: editForm.value.employeeIds,
+      startTime: editForm.value.startTimeLocal || undefined,
+      endTime: editForm.value.endTimeLocal || undefined,
+      ...(editForm.value.latitude != null && editForm.value.longitude != null
+        ? { latitude: editForm.value.latitude, longitude: editForm.value.longitude }
+        : {}),
+    })
+
+    editing.value = false
+    toast.success('Manutenção atualizada.')
+    emit('saved')
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Não foi possível salvar a manutenção.'))
+  } finally {
+    saving.value = false
+  }
 }
 
 function handleClose() {
+  editing.value = false
   emit('update:open', false)
 }
 
-watch(() => props.manutencao?.id, () => {
+function handleDialogOpenChange(value: boolean) {
+  if (!value) {
+    handleClose()
+    return
+  }
+
+  emit('update:open', value)
+}
+
+watch(() => activeMaintenance.value?.id, () => {
+  editing.value = false
+  editForm.value = activeMaintenance.value ? editFormFromMaintenance(activeMaintenance.value) : defaultEditForm()
   void loadAddress()
 }, { immediate: true })
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" @update:open="handleDialogOpenChange">
     <DialogContent
       :show-close-button="false"
       class="mi-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(580px,calc(100vh-48px))] min-h-0 p-0 gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
@@ -162,21 +293,41 @@ watch(() => props.manutencao?.id, () => {
             <span>{{ manutencao.contract.client.name }}</span>
             <span>/</span>
             <strong># MNT-{{ String(manutencao.id).padStart(3, '0') }}</strong>
+            <span v-if="editing" class="mi-editing-pill">
+              <Edit2 :size="12" />
+              Editando
+            </span>
           </div>
 
           <div class="mi-top-actions">
-            <button type="button" class="mi-top-button" title="Copiar link">
-              <Link2 :size="15" />
-            </button>
-            <button v-if="canEdit" type="button" class="mi-top-button mi-top-button--edit" title="Editar" @click="handleEdit">
-              <Edit2 :size="15" />
-            </button>
-            <button type="button" class="mi-top-button" title="Mais opções">
-              <MoreHorizontal :size="16" />
-            </button>
-            <button type="button" class="mi-top-button" title="Fechar" @click="handleClose">
-              <X :size="17" />
-            </button>
+            <template v-if="editing">
+              <button type="button" class="mi-cancel-button" :disabled="saving" @click="cancelEdit">
+                <X :size="14" />
+                Cancelar
+              </button>
+              <button type="button" class="mi-save-button" :disabled="saving" @click="saveEdit">
+                <Check :size="15" />
+                Salvar
+              </button>
+              <button type="button" class="mi-top-button" title="Fechar" :disabled="saving" @click="handleClose">
+                <X :size="17" />
+              </button>
+            </template>
+
+            <template v-else>
+              <button type="button" class="mi-top-button" title="Copiar link">
+                <Link2 :size="15" />
+              </button>
+              <button v-if="canEdit" type="button" class="mi-top-button mi-top-button--edit" title="Editar" @click="startEdit">
+                <Edit2 :size="15" />
+              </button>
+              <button type="button" class="mi-top-button" title="Mais opções">
+                <MoreHorizontal :size="16" />
+              </button>
+              <button type="button" class="mi-top-button" title="Fechar" @click="handleClose">
+                <X :size="17" />
+              </button>
+            </template>
           </div>
         </header>
 
@@ -189,12 +340,21 @@ watch(() => props.manutencao?.id, () => {
               :title-label="tipoLabel"
               :client-name="manutencao.contract.client.name"
               :summary-label="summaryLabel"
+              :editing="editing"
+              :status-value="editForm.status"
+              :type-value="editForm.type"
+              @update:status-value="editForm.status = $event as ManutencaoStatus"
+              @update:type-value="editForm.type = $event as ManutencaoTipo"
             />
 
-            <MaintenanceIssueComments :maintenance-id="manutencao.id" />
+            <MaintenanceIssueComments :maintenance-id="manutencao.id" :disabled="editing" />
           </main>
 
           <MaintenanceIssueSidebar
+            v-model:edit-date="editForm.date"
+            v-model:edit-start-time="editForm.startTimeLocal"
+            v-model:edit-end-time="editForm.endTimeLocal"
+            v-model:employee-ids="editForm.employeeIds"
             :manutencao="manutencao"
             :tipo-label="typeShortLabel"
             :status-label="statusLabel"
@@ -202,6 +362,8 @@ watch(() => props.manutencao?.id, () => {
             :time-label="timeLabel"
             :address-label="addressLabel"
             :address-loading="addressLoading"
+            :editing="editing"
+            :tecnico-options="tecnicoOptions"
           />
         </div>
       </div>
@@ -254,6 +416,21 @@ watch(() => props.manutencao?.id, () => {
   font-weight: 800;
 }
 
+.mi-editing-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid var(--nd-action);
+  border-radius: 4px;
+  color: var(--nd-action);
+  background: color-mix(in srgb, var(--nd-action) 12%, transparent);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .mi-top-actions {
   display: flex;
   align-items: center;
@@ -261,17 +438,22 @@ watch(() => props.manutencao?.id, () => {
   flex: 0 0 auto;
 }
 
-.mi-top-button {
+.mi-top-button,
+.mi-cancel-button,
+.mi-save-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 0;
+  cursor: pointer;
+}
+
+.mi-top-button {
   width: 28px;
   height: 28px;
-  border: 0;
   border-radius: 8px;
   color: var(--nd-text-secondary);
   background: transparent;
-  cursor: pointer;
 }
 
 .mi-top-button:hover {
@@ -287,6 +469,41 @@ watch(() => props.manutencao?.id, () => {
 .mi-top-button--edit:hover {
   color: var(--nd-action);
   background: color-mix(in srgb, var(--nd-action) 22%, transparent);
+}
+
+.mi-cancel-button {
+  gap: 6px;
+  min-height: 32px;
+  border-radius: 4px;
+  color: var(--nd-text-secondary);
+  background: transparent;
+  font-size: 0.78rem;
+}
+
+.mi-cancel-button:hover {
+  color: var(--nd-text-primary);
+}
+
+.mi-save-button {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--nd-action-foreground);
+  background: var(--nd-action);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.mi-save-button:hover {
+  background: var(--nd-action-hover);
+}
+
+.mi-top-button:disabled,
+.mi-cancel-button:disabled,
+.mi-save-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .mi-body {

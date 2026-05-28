@@ -57,15 +57,14 @@ function abrirCriacao(dateStr: string, hour: number) {
   modalOpen.value = true
 }
 
-function abrirEdicao(m: ManutencaoAPI) {
-  issueOpen.value = false
-  modalManutencao.value = m
-  criacaoContext.value = null
-  modalMode.value = 'edicao'
-  modalOpen.value = true
-}
+async function onSaved() {
+  const selectedId = modalManutencao.value?.id
+  await carregarSemana()
 
-function onSaved() { void carregarSemana() }
+  if (!selectedId) return
+  const updated = manutencoesFiltradas.value.find(m => m.id === selectedId)
+  if (updated) modalManutencao.value = updated
+}
 
 function onTecnicoFiltro(t: TecnicoAPI | null) {
   tecnicoFiltro.value = t
@@ -180,7 +179,7 @@ onMounted(async () => {
       v-model:open="issueOpen"
       :manutencao="modalManutencao"
       :can-edit="!isTechnician"
-      @edit="abrirEdicao"
+      @saved="onSaved"
     />
   </div>
 </template>

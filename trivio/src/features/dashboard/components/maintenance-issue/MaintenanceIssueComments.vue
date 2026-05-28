@@ -9,6 +9,7 @@ import MaintenanceIssueComposer from './MaintenanceIssueComposer.vue'
 
 const props = defineProps<{
   maintenanceId: number
+  disabled?: boolean
 }>()
 
 const { currentUser } = useAuth()
@@ -95,7 +96,7 @@ async function loadFollows() {
 
 async function sendMessage() {
   const trimmed = message.value.trim()
-  if (!trimmed || sending.value) return
+  if (!trimmed || sending.value || props.disabled) return
 
   sending.value = true
 
@@ -239,6 +240,7 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
     <MaintenanceIssueComposer
       v-model="message"
       :sending="sending"
+      :disabled="disabled"
       :max-length="maxMessageLength"
       @send="sendMessage"
     />

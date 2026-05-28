@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Loader2, Paperclip, Send, Smile } from 'lucide-vue-next'
+import { Loader2, Send } from 'lucide-vue-next'
 import { Button } from '@/shared/components/ui/button'
 
 defineProps<{
   modelValue: string
   sending?: boolean
+  disabled?: boolean
   maxLength: number
 }>()
 
@@ -21,21 +22,15 @@ const emit = defineEmits<{
         :value="modelValue"
         class="mi-composer-input"
         rows="1"
-        placeholder="Adicionar um comentário..."
-        :disabled="sending"
+        :placeholder="disabled ? 'Salve para comentar...' : 'Adicionar um comentário...'"
+        :disabled="sending || disabled"
         :maxlength="maxLength"
         @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
         @keydown.enter.exact.prevent="emit('send')"
       />
 
       <div class="mi-composer-actions">
-        <button type="button" class="mi-composer-icon" title="Anexar">
-          <Paperclip :size="16" />
-        </button>
-        <button type="button" class="mi-composer-icon" title="Emoji">
-          <Smile :size="16" />
-        </button>
-        <Button type="submit" size="icon" class="mi-send-button" :disabled="sending || !modelValue.trim()">
+        <Button type="submit" size="icon" class="mi-send-button" :disabled="sending || disabled || !modelValue.trim()">
           <Loader2 v-if="sending" :size="16" class="mi-spin" />
           <Send v-else :size="17" />
         </Button>
@@ -96,24 +91,6 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.mi-composer-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: 8px;
-  color: var(--nd-text-secondary);
-  background: transparent;
-  cursor: pointer;
-}
-
-.mi-composer-icon:hover {
-  color: var(--nd-text-primary);
-  background: var(--nd-surface-raised);
 }
 
 .mi-send-button {

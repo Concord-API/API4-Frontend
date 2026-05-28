@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { Building2, Calendar, Clock, MapPin, Tag, Users } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { Building2, Calendar, Clock, MapPin, Tag, UserPlus, Users } from 'lucide-vue-next'
 import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
+import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 
-defineProps<{
+interface SelectOption {
+  value: string | number
+  label: string
+}
+
+const props = defineProps<{
   manutencao: ManutencaoAPI
   tipoLabel: string
   statusLabel: string
@@ -10,7 +17,43 @@ defineProps<{
   timeLabel: string
   addressLabel: string
   addressLoading?: boolean
+  editing?: boolean
+  editDate: string
+  editStartTime: string
+  editEndTime: string
+  employeeIds: number[]
+  tecnicoOptions: SelectOption[]
 }>()
+
+const emit = defineEmits<{
+  'update:editDate': [value: string]
+  'update:editStartTime': [value: string]
+  'update:editEndTime': [value: string]
+  'update:employeeIds': [value: number[]]
+}>()
+
+const selectedEmployeeIds = computed<(string | number)[]>({
+  get: () => props.employeeIds,
+  set: value => emit('update:employeeIds', value.map(Number)),
+})
+
+const displayPeople = computed(() => {
+  if (!props.editing) return props.manutencao.employees
+
+  return props.employeeIds.map(id => {
+    const existing = props.manutencao.employees.find(employee => employee.employeeId === id)
+    if (existing) return existing
+
+    const option = props.tecnicoOptions.find(item => Number(item.value) === id)
+    return {
+      employeeId: id,
+      name: option?.label ?? `#${id}`,
+      email: '',
+      admin: false,
+      active: true,
+    }
+  })
+})
 
 function initials(name: string) {
   return name
@@ -25,6 +68,10 @@ function hashColor(id: number): string {
   const palette = ['var(--nd-interactive)', 'var(--nd-action)', 'var(--nd-warning)', 'var(--nd-success)', 'var(--nd-accent)']
   return palette[id % palette.length]!
 }
+
+function roleLabel(admin: boolean) {
+  return admin ? 'Relator' : 'Responsável'
+}
 </script>
 
 <template>
@@ -35,12 +82,35 @@ function hashColor(id: number): string {
       <dl class="mi-detail-list">
         <div class="mi-detail-row">
           <dt><Calendar :size="15" />Data</dt>
-          <dd>{{ dateLabel }}</dd>
+          <dd v-if="editing">
+            <input
+              :value="editDate"
+              type="date"
+              class="mi-edit-field"
+              @input="emit('update:editDate', ($event.target as HTMLInputElement).value)"
+            />
+          </dd>
+          <dd v-else>{{ dateLabel }}</dd>
         </div>
 
         <div class="mi-detail-row">
           <dt><Clock :size="15" />Horário</dt>
-          <dd>{{ timeLabel }}</dd>
+          <dd v-if="editing" class="mi-time-fields">
+            <input
+              :value="editStartTime"
+              type="time"
+              class="mi-edit-field"
+              @input="emit('update:editStartTime', ($event.target as HTMLInputElement).value)"
+            />
+            <span>-</span>
+            <input
+              :value="editEndTime"
+              type="time"
+              class="mi-edit-field"
+              @input="emit('update:editEndTime', ($event.target as HTMLInputElement).value)"
+            />
+          </dd>
+          <dd v-else>{{ timeLabel }}</dd>
         </div>
 
         <div class="mi-detail-row">
@@ -50,27 +120,49 @@ function hashColor(id: number): string {
 
         <div class="mi-detail-row">
           <dt><Building2 :size="15" />Contrato</dt>
-          <dd>#{{ String(manutencao.contract.id).padStart(3, '0') }}</dd>
+          <dd>
+            <span :class="{ 'mi-readonly-field': editing }">
+              #{{ String(manutencao.contract.id).padStart(3, '0') }}
+            </span>
+          </dd>
         </div>
 
         <div class="mi-detail-row">
           <dt><MapPin :size="15" />Endereço</dt>
-          <dd :class="{ 'mi-muted': addressLoading }">{{ addressLoading ? 'Carregando...' : addressLabel }}</dd>
+          <dd :class="{ 'mi-muted': addressLoading }">
+            <span :class="{ 'mi-readonly-field': editing }">
+              {{ addressLoading ? 'Carregando...' : addressLabel }}
+            </span>
+          </dd>
         </div>
       </dl>
     </section>
 
     <section class="mi-sidebar-section">
-      <h3>Pessoas</h3>
+      <div class="mi-sidebar-title-row">
+        <h3>Pessoas</h3>
+        <div v-if="editing" class="mi-add-person">
+          <UserPlus :size="13" />
+          <NdMultiCombobox
+            v-model="selectedEmployeeIds"
+            :options="tecnicoOptions"
+            placeholder="Adicionar"
+            search-placeholder="Buscar técnico..."
+            singular-label="técnico"
+            plural-label="técnicos"
+          />
+        </div>
+      </div>
 
-      <div v-if="manutencao.employees.length" class="mi-people-list">
-        <div v-for="employee in manutencao.employees" :key="employee.employeeId" class="mi-person">
+      <div v-if="displayPeople.length" class="mi-people-list">
+        <div v-for="employee in displayPeople" :key="employee.employeeId" class="mi-person">
           <div class="mi-avatar" :style="{ background: hashColor(employee.employeeId) }">
             {{ initials(employee.name) }}
           </div>
           <div class="mi-person-text">
             <strong>{{ employee.name }}</strong>
-            <span>{{ employee.admin ? 'Gestor' : 'Técnico' }}</span>
+            <input v-if="editing" :value="roleLabel(employee.admin)" class="mi-person-role" readonly />
+            <span v-else>{{ roleLabel(employee.admin) }}</span>
           </div>
         </div>
       </div>
@@ -119,6 +211,35 @@ function hashColor(id: number): string {
   text-transform: uppercase;
 }
 
+.mi-sidebar-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mi-add-person {
+  display: flex;
+  align-items: center;
+  width: 150px;
+  gap: 6px;
+  color: var(--nd-interactive);
+  font-size: 0.72rem;
+}
+
+.mi-add-person :deep(.nd-cb-trigger) {
+  border-bottom: 0;
+  padding: 0;
+  color: var(--nd-interactive);
+}
+
+.mi-add-person :deep(.nd-cb-placeholder),
+.mi-add-person :deep(.nd-cb-value),
+.mi-add-person :deep(.nd-cb-icon) {
+  color: var(--nd-interactive);
+  font-size: 0.72rem;
+}
+
 .mi-detail-list {
   display: grid;
   gap: 14px;
@@ -149,6 +270,26 @@ function hashColor(id: number): string {
   font-weight: 700;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.mi-edit-field,
+.mi-readonly-field,
+.mi-person-role {
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid var(--nd-border);
+  border-radius: 10px;
+  padding: 0 10px;
+  color: var(--nd-text-primary);
+  background: var(--nd-bg);
+  outline: none;
+}
+
+.mi-time-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
 }
 
 .mi-pill {
@@ -193,7 +334,8 @@ function hashColor(id: number): string {
 .mi-person-text {
   display: grid;
   min-width: 0;
-  gap: 2px;
+  flex: 1;
+  gap: 4px;
 }
 
 .mi-person-text strong {
@@ -208,6 +350,11 @@ function hashColor(id: number): string {
 .mi-person-text span {
   color: var(--nd-text-secondary);
   font-size: 0.72rem;
+}
+
+.mi-person-role {
+  min-height: 22px;
+  font-size: 0.68rem;
 }
 
 .mi-empty {
