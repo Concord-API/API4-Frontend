@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Building2, Calendar, Clock, MapPin, Tag, UserPlus, Users } from 'lucide-vue-next'
 import type { ManutencaoAPI, ManutencaoTipo } from '@/shared/services/manutencaoService'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
+import { MapPickerModal } from '@/shared/components/ui/map-picker'
 
 interface SelectOption {
   value: string | number
@@ -23,6 +24,8 @@ const props = defineProps<{
   editType: ManutencaoTipo
   editStartTime: string
   editEndTime: string
+  editLatitude: number | null
+  editLongitude: number | null
   employeeIds: number[]
   tecnicoOptions: SelectOption[]
 }>()
@@ -32,8 +35,12 @@ const emit = defineEmits<{
   'update:editType': [value: ManutencaoTipo]
   'update:editStartTime': [value: string]
   'update:editEndTime': [value: string]
+  'update:editLatitude': [value: number | null]
+  'update:editLongitude': [value: number | null]
   'update:employeeIds': [value: number[]]
 }>()
+
+const mapPickerOpen = ref(false)
 
 const selectedEmployeeIds = computed<(string | number)[]>({
   get: () => props.employeeIds,
@@ -85,6 +92,11 @@ function hashColor(id: number): string {
 
 function roleLabel(admin: boolean) {
   return admin ? 'Relator' : 'Responsável'
+}
+
+function confirmAddress(coords: { lat: number; lng: number }) {
+  emit('update:editLatitude', coords.lat)
+  emit('update:editLongitude', coords.lng)
 }
 </script>
 
@@ -150,10 +162,19 @@ function roleLabel(admin: boolean) {
 
         <div class="mi-detail-row">
           <dt><MapPin :size="15" />Endereço</dt>
-          <dd :class="{ 'mi-muted': addressLoading }">
+          <dd class="mi-address-cell" :class="{ 'mi-muted': addressLoading }">
             <span :class="{ 'mi-readonly-field': editing }">
               {{ addressLoading ? 'Carregando...' : addressLabel }}
             </span>
+            <button
+              v-if="editing"
+              type="button"
+              class="mi-map-button"
+              title="Selecionar no mapa"
+              @click="mapPickerOpen = true"
+            >
+              <MapPin :size="14" />
+            </button>
           </dd>
         </div>
       </dl>
@@ -204,6 +225,13 @@ function roleLabel(admin: boolean) {
       </div>
     </section>
   </aside>
+
+  <MapPickerModal
+    v-model:open="mapPickerOpen"
+    :initial-lat="editLatitude"
+    :initial-lng="editLongitude"
+    @confirm="confirmAddress"
+  />
 </template>
 
 <style scoped>
@@ -311,6 +339,32 @@ function roleLabel(admin: boolean) {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 6px;
+}
+
+.mi-address-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.mi-map-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--nd-border-visible);
+  border-radius: 6px;
+  color: var(--nd-text-secondary);
+  background: var(--nd-surface-raised);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.mi-map-button:hover {
+  color: var(--nd-action);
+  border-color: var(--nd-action);
 }
 
 .mi-pill {
