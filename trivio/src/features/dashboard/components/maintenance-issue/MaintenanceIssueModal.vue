@@ -53,12 +53,16 @@ const addressLoading = ref(false)
 const editing = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const completing = ref(false)
 const tecnicos = ref<TecnicoAPI[]>([])
 const editForm = ref<EditForm>(defaultEditForm())
 
 const activeMaintenance = computed(() => props.manutencao)
 const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowerCase() === 'technician')
 const canManageMaintenance = computed(() => Boolean(props.canEdit) && !isTechnician.value)
+const canCompleteMaintenance = computed(() =>
+  isTechnician.value && activeMaintenance.value?.status !== 'COMPLETED' && !editing.value,
+)
 const currentType = computed(() => editing.value ? editForm.value.type : activeMaintenance.value?.type)
 const currentStatus = computed(() => editing.value ? editForm.value.status : activeMaintenance.value?.status)
 
@@ -317,8 +321,39 @@ async function deleteMaintenance() {
   }
 }
 
+async function completeMaintenance() {
+  const manutencao = activeMaintenance.value
+  if (!canCompleteMaintenance.value || !manutencao || completing.value) return
+
+  completing.value = true
+
+  try {
+    await manutencaoService.atualizar(manutencao.id, {
+      contractId: manutencao.contract.id,
+      date: manutencao.date,
+      preventive: manutencao.type === 'PREVENTIVA',
+      type: manutencao.type,
+      status: 'COMPLETED',
+      employeeIds: manutencao.employees.map(employee => employee.employeeId),
+      active: manutencao.active ?? true,
+      startTime: manutencao.startTime || undefined,
+      endTime: manutencao.endTime || undefined,
+      ...(manutencao.latitude != null && manutencao.longitude != null
+        ? { latitude: manutencao.latitude, longitude: manutencao.longitude }
+        : {}),
+    })
+
+    toast.success('Manutencao concluida.')
+    emit('saved')
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Nao foi possivel concluir a manutencao.'))
+  } finally {
+    completing.value = false
+  }
+}
+
 function handleClose() {
-  if (saving.value || deleting.value) return
+  if (saving.value || deleting.value || completing.value) return
   editing.value = false
   emit('update:open', false)
 }
@@ -441,6 +476,9 @@ watch(() => activeMaintenance.value?.id, () => {
             :address-loading="addressLoading"
             :editing="editing"
             :tecnico-options="tecnicoOptions"
+            :can-complete="canCompleteMaintenance"
+            :completing="completing"
+            @complete="completeMaintenance"
           />
         </div>
       </div>
