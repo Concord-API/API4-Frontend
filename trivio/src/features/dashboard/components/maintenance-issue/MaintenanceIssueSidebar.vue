@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Building2, Calendar, Clock, MapPin, Tag, UserPlus, Users } from 'lucide-vue-next'
+import { Building2, Calendar, CheckCircle2, Clock, MapPin, Tag, UserPlus, Users } from 'lucide-vue-next'
 import type { ManutencaoAPI, ManutencaoTipo } from '@/shared/services/manutencaoService'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
@@ -28,6 +28,8 @@ const props = defineProps<{
   editLongitude: number | null
   employeeIds: number[]
   tecnicoOptions: SelectOption[]
+  canComplete?: boolean
+  completing?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -38,6 +40,7 @@ const emit = defineEmits<{
   'update:editLatitude': [value: number | null]
   'update:editLongitude': [value: number | null]
   'update:employeeIds': [value: number[]]
+  complete: []
 }>()
 
 const mapPickerOpen = ref(false)
@@ -222,6 +225,18 @@ function confirmAddress(coords: { lat: number; lng: number }) {
         <span class="mi-activity-dot"></span>
         <span>Status atual</span>
         <strong>{{ statusLabel }}</strong>
+      </div>
+
+      <div v-if="canComplete" class="mi-complete-action">
+        <button
+          type="button"
+          class="mi-complete-button"
+          :disabled="completing"
+          @click="emit('complete')"
+        >
+          <CheckCircle2 :size="16" />
+          {{ completing ? 'Concluindo...' : 'Concluir' }}
+        </button>
       </div>
     </section>
   </aside>
@@ -464,6 +479,38 @@ function confirmAddress(coords: { lat: number; lng: number }) {
 .mi-activity-row strong {
   color: var(--nd-text-primary);
   font-weight: 800;
+}
+
+.mi-complete-action {
+  display: grid;
+  margin-top: 32px;
+}
+
+.mi-complete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--nd-success);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 800;
+  transition: filter 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out;
+}
+
+.mi-complete-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.mi-complete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
 }
 
 @media (max-width: 900px) {
