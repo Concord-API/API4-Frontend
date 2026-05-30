@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
 import { getApiErrorMessage } from '@/shared/services/api'
-import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
+import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo, type NextMaintenanceSuggestion } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useAuth } from '@/shared/composables/useAuth'
 import { useNominatim } from '@/shared/composables/useNominatim'
@@ -111,6 +111,23 @@ const addressLabel = computed(() => {
   }
 
   return 'Sem endereço'
+})
+
+const editAddressLabel = computed(() => {
+  if (!editing.value) return addressLabel.value
+
+  if (editForm.value.latitude == null || editForm.value.longitude == null) {
+    return 'Sem endereço'
+  }
+
+  const manutencao = activeMaintenance.value
+  const sameLocation =
+    manutencao?.latitude === editForm.value.latitude &&
+    manutencao?.longitude === editForm.value.longitude
+
+  if (sameLocation && address.value) return address.value
+
+  return `${editForm.value.latitude.toFixed(6)}, ${editForm.value.longitude.toFixed(6)}`
 })
 
 const tecnicoOptions = computed(() => {
@@ -248,6 +265,21 @@ function cancelEdit() {
   editForm.value = activeMaintenance.value ? editFormFromMaintenance(activeMaintenance.value) : defaultEditForm()
 }
 
+function formatSuggestionDate(date: string): string {
+  const [year = '', month = '', day = ''] = date.split('-')
+  return `${day}/${month}/${year}`
+}
+
+async function createNextMaintenance(manutencaoId: number, suggestion: NextMaintenanceSuggestion) {
+  try {
+    await manutencaoService.gerarProxima(manutencaoId)
+    toast.success(`Próxima manutenção criada para ${formatSuggestionDate(suggestion.date)}.`)
+    emit('saved')
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Não foi possível criar a próxima manutenção.'))
+  }
+}
+
 async function saveEdit() {
   const manutencao = activeMaintenance.value
   if (!manutencao || saving.value) return
@@ -260,7 +292,7 @@ async function saveEdit() {
   saving.value = true
 
   try {
-    await manutencaoService.atualizar(manutencao.id, {
+    const response = await manutencaoService.atualizar(manutencao.id, {
       contractId: manutencao.contract.id,
       date: editForm.value.date,
       preventive: editForm.value.type === 'PREVENTIVA',
@@ -276,8 +308,21 @@ async function saveEdit() {
     })
 
     editing.value = false
-    toast.success('Manutenção atualizada.')
     emit('saved')
+
+    const suggestion = response.nextMaintenanceSuggestion
+    if (suggestion) {
+      toast.success('Manutenção concluída.', {
+        description: `Próxima manutenção preventiva sugerida para ${formatSuggestionDate(suggestion.date)}.`,
+        action: {
+          label: 'Criar',
+          onClick: () => createNextMaintenance(manutencao.id, suggestion),
+        },
+        duration: 10000,
+      })
+    } else {
+      toast.success('Manutenção atualizada.')
+    }
   } catch (error) {
     toast.error(getApiErrorMessage(error, 'Não foi possível salvar a manutenção.'))
   } finally {
@@ -466,13 +511,15 @@ watch(() => activeMaintenance.value?.id, () => {
             v-model:edit-type="editForm.type"
             v-model:edit-start-time="editForm.startTimeLocal"
             v-model:edit-end-time="editForm.endTimeLocal"
+            v-model:edit-latitude="editForm.latitude"
+            v-model:edit-longitude="editForm.longitude"
             v-model:employee-ids="editForm.employeeIds"
             :manutencao="manutencao"
             :tipo-label="typeShortLabel"
             :status-label="statusLabel"
             :date-label="dateLabel"
             :time-label="timeLabel"
-            :address-label="addressLabel"
+            :address-label="editAddressLabel"
             :address-loading="addressLoading"
             :editing="editing"
             :tecnico-options="tecnicoOptions"
