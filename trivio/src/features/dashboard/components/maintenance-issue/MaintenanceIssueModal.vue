@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
 import { getApiErrorMessage } from '@/shared/services/api'
-import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
+import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo, type NextMaintenanceSuggestion } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useAuth } from '@/shared/composables/useAuth'
 import { useNominatim } from '@/shared/composables/useNominatim'
@@ -261,6 +261,21 @@ function cancelEdit() {
   editForm.value = activeMaintenance.value ? editFormFromMaintenance(activeMaintenance.value) : defaultEditForm()
 }
 
+function formatSuggestionDate(date: string): string {
+  const [year = '', month = '', day = ''] = date.split('-')
+  return `${day}/${month}/${year}`
+}
+
+async function createNextMaintenance(manutencaoId: number, suggestion: NextMaintenanceSuggestion) {
+  try {
+    await manutencaoService.gerarProxima(manutencaoId)
+    toast.success(`Próxima manutenção criada para ${formatSuggestionDate(suggestion.date)}.`)
+    emit('saved')
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Não foi possível criar a próxima manutenção.'))
+  }
+}
+
 async function saveEdit() {
   const manutencao = activeMaintenance.value
   if (!manutencao || saving.value) return
@@ -273,7 +288,7 @@ async function saveEdit() {
   saving.value = true
 
   try {
-    await manutencaoService.atualizar(manutencao.id, {
+    const response = await manutencaoService.atualizar(manutencao.id, {
       contractId: manutencao.contract.id,
       date: editForm.value.date,
       preventive: editForm.value.type === 'PREVENTIVA',
@@ -289,8 +304,21 @@ async function saveEdit() {
     })
 
     editing.value = false
-    toast.success('Manutenção atualizada.')
     emit('saved')
+
+    const suggestion = response.nextMaintenanceSuggestion
+    if (suggestion) {
+      toast.success('Manutenção concluída.', {
+        description: `Próxima manutenção preventiva sugerida para ${formatSuggestionDate(suggestion.date)}.`,
+        action: {
+          label: 'Criar',
+          onClick: () => createNextMaintenance(manutencao.id, suggestion),
+        },
+        duration: 10000,
+      })
+    } else {
+      toast.success('Manutenção atualizada.')
+    }
   } catch (error) {
     toast.error(getApiErrorMessage(error, 'Não foi possível salvar a manutenção.'))
   } finally {
