@@ -258,7 +258,7 @@ onMounted(() => {
           </div>
           <div class="nd-detail-section">
             <span class="nd-field-label">Recorrência</span>
-            <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.recurrenceMaintenance }} meses</span>
+            <span class="nd-detail-value nd-detail-value--secondary">{{ detailItem.recurrenceMaintenance }} dias</span>
           </div>
         </div>
         <DialogFooter>
