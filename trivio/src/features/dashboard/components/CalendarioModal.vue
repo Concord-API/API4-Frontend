@@ -221,6 +221,8 @@ function roleLabel(admin: boolean) {
 }
 
 async function carregarDados() {
+  if (isTechnician.value) return
+
   try {
     const [contratosResponse, tecnicosResponse] = await Promise.all([
       contratoService.listar(),
