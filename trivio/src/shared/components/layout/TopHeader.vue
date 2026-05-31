@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import MaintenanceNotificationsBell from '@/shared/components/notifications/MaintenanceNotificationsBell.vue'
 import ThemeToggleButton from '@/shared/components/theme/ThemeToggleButton.vue'
 import { SidebarTrigger } from '@/shared/components/ui/sidebar'
 
@@ -23,6 +24,7 @@ const breadcrumb = computed(() =>
       <span class="nd-breadcrumb">{{ breadcrumb }}</span>
     </div>
     <div class="nd-header-right">
+      <MaintenanceNotificationsBell />
       <ThemeToggleButton />
     </div>
   </header>
@@ -63,6 +65,7 @@ const breadcrumb = computed(() =>
 .nd-header-right {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
 :deep(.nd-trigger) {

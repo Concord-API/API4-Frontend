@@ -91,6 +91,12 @@ export function useCalendario() {
   }
 
   async function carregarTecnicos() {
+    const isTechnician = String(currentUser.value?.role ?? '').toLowerCase() === 'technician'
+    if (isTechnician) {
+      tecnicos.value = []
+      return
+    }
+
     try {
       tecnicos.value = await tecnicoService.listar()
     } catch {

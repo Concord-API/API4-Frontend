@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-vue-next'
 import { useMediaQuery } from '@vueuse/core'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/shared/components/ui/sheet'
@@ -15,6 +15,7 @@ import { useAuth } from '@/shared/composables/useAuth'
 
 const isDesktop = useMediaQuery('(min-width: 1025px)')
 const route = useRoute()
+const router = useRouter()
 const { currentUser } = useAuth()
 const isTechnician = computed(() => {
   const session = localStorage.getItem('trivio_session')
@@ -50,6 +51,7 @@ function abrirDetalhe(m: ManutencaoAPI) {
 }
 
 function abrirCriacao(dateStr: string, hour: number) {
+  if (isTechnician.value) return
   modalManutencao.value = null
   criacaoContext.value = { dateStr, hour, tecnico: tecnicoFiltro.value }
   modalOpen.value = true
@@ -94,13 +96,29 @@ async function abrirManutencaoDaRota() {
 
   const manutencao = manutencoesFiltradas.value.find(m => m.id === id)
   if (manutencao) abrirDetalhe(manutencao)
+
+  await router.replace({
+    name: route.name ?? undefined,
+    params: route.params,
+    query: {},
+  })
 }
 
 onMounted(async () => {
   await carregarSemana()
-  void carregarTecnicos()
+  if (!isTechnician.value) {
+    void carregarTecnicos()
+  }
   await abrirManutencaoDaRota()
 })
+
+watch(
+  () => [route.query.manutencao, route.query.date],
+  async ([manutencao]) => {
+    if (!manutencao) return
+    await abrirManutencaoDaRota()
+  },
+)
 </script>
 
 <template>
