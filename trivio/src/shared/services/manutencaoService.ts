@@ -50,6 +50,16 @@ export interface ManutencaoRequest {
   longitude?: number
 }
 
+export interface ManutencaoNotificacao {
+  maintenanceId: number
+  contractId: number
+  clientName: string
+  maintenanceDate: string
+  daysUntilMaintenance: 1 | 3 | 7
+  type: ManutencaoTipo
+  status: ManutencaoStatus
+}
+
 export const manutencaoService = {
   listar: (employeeId?: number) => {
     const params = new URLSearchParams()
@@ -60,6 +70,11 @@ export const manutencaoService = {
     const params = new URLSearchParams({ startDate, endDate })
     if (employeeId) params.append('employeeId', employeeId.toString())
     return api.get<ManutencaoAPI[]>(`/maintenances?${params}`)
+  },
+  listarNotificacoes: (employeeId?: number) => {
+    const params = new URLSearchParams()
+    if (employeeId) params.append('employeeId', employeeId.toString())
+    return api.get<ManutencaoNotificacao[]>(`/maintenances/notifications${params.toString() ? '?' + params.toString() : ''}`)
   },
   buscar: (id: number) => api.get<ManutencaoAPI>(`/maintenances/${id}`),
   criar: (data: ManutencaoRequest) => api.postResponse<void>('/maintenances', data),
