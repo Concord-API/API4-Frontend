@@ -6,6 +6,7 @@ import { contratoService, type ContratoAPI, type ContratoRequest } from '@/share
 import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { getApiErrorMessage } from '@/shared/services/api'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
+import ConfirmActionDialog from '@/shared/components/ui/ConfirmActionDialog.vue'
 import { useClientesStore } from '@/shared/composables/useClientesStore'
 import { useContratosStore } from '@/shared/composables/useContratosStore'
 import { useEquipamentosStore } from '@/shared/composables/useEquipamentosStore'
@@ -22,6 +23,7 @@ const sheetOpen = ref(false)
 const sheetMode = ref<'create' | 'edit'>('create')
 const editingId = ref<number | null>(null)
 const submitError = ref<string | null>(null)
+const confirmInactiveOpen = ref(false)
 
 const { items: contratos, loading: loadingContratos, error: contratosError, ensureLoaded: ensureContratosLoaded, refresh: refreshContratos } = useContratosStore()
 const { items: clientes, loading: loadingClientes, error: clientesError, ensureLoaded: ensureClientesLoaded } = useClientesStore()
@@ -115,7 +117,12 @@ function contratoStatus(c: ContratoAPI): { label: string; color: string } {
   return { label: 'Ativo', color: 'var(--nd-success)' }
 }
 
-async function submitForm() {
+function isInactivatingContrato() {
+  const original = contratos.value.find(c => c.id === editingId.value)
+  return sheetMode.value === 'edit' && original?.active !== false && !form.value.active
+}
+
+async function submitForm(confirmedInactive = false) {
   if (!form.value.clientId) { submitError.value = 'Selecione um cliente.'; toast.error(submitError.value); return }
   if (!form.value.initialDate) { submitError.value = 'Selecione a data de inicio.'; toast.error(submitError.value); return }
   if (!form.value.finalDate) { submitError.value = 'Selecione a data de fim.'; toast.error(submitError.value); return }
@@ -125,6 +132,11 @@ async function submitForm() {
     return
   }
   submitError.value = null
+  if (isInactivatingContrato() && !confirmedInactive) {
+    confirmInactiveOpen.value = true
+    return
+  }
+  confirmInactiveOpen.value = false
   const payload: ContratoRequest = {
     clientId: form.value.clientId,
     initialDate: form.value.initialDate,
@@ -182,7 +194,7 @@ onMounted(() => {
           <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar contrato' : 'Novo contrato' }}</DialogTitle>
           <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar contrato' : 'Novo contrato' }}</DialogDescription>
         </DialogHeader>
-        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
+        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm()">
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Cliente *</label>
             <NdCombobox v-model="form.clientId" :options="clienteOptions" placeholder="Selecione o cliente" search-placeholder="Buscar cliente..." />
@@ -236,6 +248,15 @@ onMounted(() => {
         </form>
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      v-model:open="confirmInactiveOpen"
+      title="Inativar contrato?"
+      description="Este contrato ficara inativo e podera impactar novas manutencoes e consultas operacionais relacionadas."
+      confirm-label="Inativar"
+      destructive
+      @confirm="submitForm(true)"
+    />
 
     <!-- DETAIL SHEET -->
     <Dialog v-model:open="detailOpen">
