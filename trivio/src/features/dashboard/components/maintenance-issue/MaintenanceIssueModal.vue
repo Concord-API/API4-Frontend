@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
 import { getApiErrorMessage } from '@/shared/services/api'
+import ConfirmActionDialog from '@/shared/components/ui/ConfirmActionDialog.vue'
 import { manutencaoService, type ManutencaoAPI, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useAuth } from '@/shared/composables/useAuth'
@@ -54,6 +55,9 @@ const editing = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const completing = ref(false)
+const confirmDeleteOpen = ref(false)
+const confirmCompleteOpen = ref(false)
+const confirmCompleteEditOpen = ref(false)
 const tecnicos = ref<TecnicoAPI[]>([])
 const editForm = ref<EditForm>(defaultEditForm())
 
@@ -274,7 +278,7 @@ async function createNextMaintenance(manutencaoId: number) {
   }
 }
 
-async function saveEdit() {
+async function saveEdit(confirmedComplete = false) {
   const manutencao = activeMaintenance.value
   if (!manutencao || saving.value) return
 
@@ -283,6 +287,12 @@ async function saveEdit() {
     return
   }
 
+  if (manutencao.status !== 'COMPLETED' && editForm.value.status === 'COMPLETED' && !confirmedComplete) {
+    confirmCompleteEditOpen.value = true
+    return
+  }
+
+  confirmCompleteEditOpen.value = false
   saving.value = true
 
   try {
@@ -318,14 +328,16 @@ async function saveEdit() {
   }
 }
 
-async function deleteMaintenance() {
+async function deleteMaintenance(confirmed = false) {
   const manutencao = activeMaintenance.value
   if (!canManageMaintenance.value || !manutencao || deleting.value) return
 
-  if (!window.confirm('Apagar esta manutencao?')) {
+  if (!confirmed) {
+    confirmDeleteOpen.value = true
     return
   }
 
+  confirmDeleteOpen.value = false
   deleting.value = true
 
   try {
@@ -354,10 +366,16 @@ async function deleteMaintenance() {
   }
 }
 
-async function completeMaintenance() {
+async function completeMaintenance(confirmed = false) {
   const manutencao = activeMaintenance.value
   if (!canCompleteMaintenance.value || !manutencao || completing.value) return
 
+  if (!confirmed) {
+    confirmCompleteOpen.value = true
+    return
+  }
+
+  confirmCompleteOpen.value = false
   completing.value = true
 
   try {
@@ -439,7 +457,7 @@ watch(() => activeMaintenance.value?.id, () => {
                 <X :size="14" />
                 Cancelar
               </button>
-              <button type="button" class="mi-save-button" :disabled="saving" @click="saveEdit">
+              <button type="button" class="mi-save-button" :disabled="saving" @click="saveEdit()">
                 <Check :size="15" />
                 Salvar
               </button>
@@ -519,6 +537,34 @@ watch(() => activeMaintenance.value?.id, () => {
       </div>
     </DialogContent>
   </Dialog>
+
+  <ConfirmActionDialog
+    v-model:open="confirmDeleteOpen"
+    title="Apagar manutencao?"
+    description="Esta manutencao sera inativada e deixara de aparecer nas listas ativas. Voce pode perder o contexto operacional desta agenda."
+    confirm-label="Apagar"
+    destructive
+    :loading="deleting"
+    @confirm="deleteMaintenance(true)"
+  />
+
+  <ConfirmActionDialog
+    v-model:open="confirmCompleteOpen"
+    title="Concluir manutencao?"
+    description="Ao concluir, o status sera marcado como concluido e o fluxo pode gerar a proxima manutencao preventiva do contrato."
+    confirm-label="Concluir"
+    :loading="completing"
+    @confirm="completeMaintenance(true)"
+  />
+
+  <ConfirmActionDialog
+    v-model:open="confirmCompleteEditOpen"
+    title="Salvar como concluida?"
+    description="Voce alterou o status para concluida. Ao salvar, o fluxo pode gerar a proxima manutencao preventiva do contrato."
+    confirm-label="Salvar"
+    :loading="saving"
+    @confirm="saveEdit(true)"
+  />
 </template>
 
 <style scoped>

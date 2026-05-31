@@ -6,6 +6,7 @@ import { equipamentoService, type EquipamentoAPI } from '@/shared/services/equip
 import { getApiErrorMessage } from '@/shared/services/api'
 import { useEquipamentosStore } from '@/shared/composables/useEquipamentosStore'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
+import ConfirmActionDialog from '@/shared/components/ui/ConfirmActionDialog.vue'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 
 const searchQuery = ref('')
@@ -15,6 +16,7 @@ const sheetOpen = ref(false)
 const sheetMode = ref<'create' | 'edit'>('create')
 const editingId = ref<number | null>(null)
 const submitError = ref<string | null>(null)
+const confirmInactiveOpen = ref(false)
 
 const {
   items: equipamentos,
@@ -85,8 +87,18 @@ const filtered = computed(() => {
   return result
 })
 
-async function submitForm() {
+function isInactivatingEquipamento() {
+  const original = equipamentos.value.find(e => e.id_equipment === editingId.value)
+  return sheetMode.value === 'edit' && original?.active !== false && !form.value.active
+}
+
+async function submitForm(confirmedInactive = false) {
   submitError.value = null
+  if (isInactivatingEquipamento() && !confirmedInactive) {
+    confirmInactiveOpen.value = true
+    return
+  }
+  confirmInactiveOpen.value = false
   try {
     if (sheetMode.value === 'edit' && editingId.value) {
       await equipamentoService.atualizar(editingId.value, {
@@ -140,7 +152,7 @@ onMounted(() => { void ensureEquipamentosLoaded() })
           <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar equipamento' : 'Novo equipamento' }}</DialogTitle>
           <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar equipamento' : 'Novo equipamento' }}</DialogDescription>
         </DialogHeader>
-        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
+        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm()">
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Nome *</label>
             <input v-model="form.name" class="nd-field-input" placeholder="Nome do equipamento" required />
@@ -174,6 +186,15 @@ onMounted(() => { void ensureEquipamentosLoaded() })
         </form>
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      v-model:open="confirmInactiveOpen"
+      title="Inativar equipamento?"
+      description="Este equipamento ficara inativo e deixara de aparecer como opcao ativa em novos contratos."
+      confirm-label="Inativar"
+      destructive
+      @confirm="submitForm(true)"
+    />
 
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-lg">
