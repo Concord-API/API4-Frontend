@@ -75,16 +75,6 @@ const typeShortLabel = computed(() => typeShortLabelFor(currentType.value))
 
 const statusLabel = computed(() => statusLabelFor(currentStatus.value))
 
-const currentEmployeeId = computed(() => {
-  const email = currentUser.value?.email?.toLowerCase()
-  const employees = activeMaintenance.value?.employees ?? []
-  const employee = employees.find(item => item.email.toLowerCase() === email)
-  if (employee) return employee.employeeId
-  if (isTechnician.value) return null
-  const id = Number(currentUser.value?.id)
-  return Number.isFinite(id) ? id : null
-})
-
 const statusColor = computed(() => {
   if (!currentStatus.value) return 'var(--nd-action)'
   if (currentStatus.value === 'COMPLETED') return 'var(--nd-success)'
@@ -509,7 +499,7 @@ watch(() => activeMaintenance.value?.id, () => {
               @update:type-value="editForm.type = $event as ManutencaoTipo"
             />
 
-            <MaintenanceIssueComments :maintenance-id="manutencao.id" :disabled="editing" :current-employee-id="currentEmployeeId" />
+            <MaintenanceIssueComments :maintenance-id="manutencao.id" :disabled="editing" />
           </main>
 
           <MaintenanceIssueSidebar

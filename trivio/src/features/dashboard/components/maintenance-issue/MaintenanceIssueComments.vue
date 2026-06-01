@@ -10,7 +10,6 @@ import MaintenanceIssueComposer from './MaintenanceIssueComposer.vue'
 const props = defineProps<{
   maintenanceId: number
   disabled?: boolean
-  currentEmployeeId?: number | null
 }>()
 
 const { currentUser } = useAuth()
@@ -27,7 +26,7 @@ const maxMessageLength = 1000
 let loadRequestId = 0
 
 const currentUserId = computed(() => {
-  const id = Number(props.currentEmployeeId ?? currentUser.value?.id)
+  const id = Number(currentUser.value?.id)
   return Number.isFinite(id) ? id : null
 })
 
