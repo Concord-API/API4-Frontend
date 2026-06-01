@@ -75,16 +75,6 @@ const typeShortLabel = computed(() => typeShortLabelFor(currentType.value))
 
 const statusLabel = computed(() => statusLabelFor(currentStatus.value))
 
-const currentEmployeeId = computed(() => {
-  const email = currentUser.value?.email?.toLowerCase()
-  const employees = activeMaintenance.value?.employees ?? []
-  const employee = employees.find(item => item.email.toLowerCase() === email)
-  if (employee) return employee.employeeId
-  if (isTechnician.value) return null
-  const id = Number(currentUser.value?.id)
-  return Number.isFinite(id) ? id : null
-})
-
 const statusColor = computed(() => {
   if (!currentStatus.value) return 'var(--nd-action)'
   if (currentStatus.value === 'COMPLETED') return 'var(--nd-success)'
@@ -429,7 +419,7 @@ watch(() => activeMaintenance.value?.id, () => {
   <Dialog :open="open" @update:open="handleDialogOpenChange">
     <DialogContent
       :show-close-button="false"
-      class="mi-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(580px,calc(100vh-48px))] min-h-0 p-0 gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
+      class="mi-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(680px,calc(100vh-48px))] min-h-0 p-0 gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
     >
       <DialogHeader class="sr-only">
         <DialogTitle>Detalhes da manutenção</DialogTitle>
@@ -509,7 +499,7 @@ watch(() => activeMaintenance.value?.id, () => {
               @update:type-value="editForm.type = $event as ManutencaoTipo"
             />
 
-            <MaintenanceIssueComments :maintenance-id="manutencao.id" :disabled="editing" :current-employee-id="currentEmployeeId" />
+            <MaintenanceIssueComments :maintenance-id="manutencao.id" :disabled="editing" />
           </main>
 
           <MaintenanceIssueSidebar
@@ -530,6 +520,8 @@ watch(() => activeMaintenance.value?.id, () => {
             :editing="editing"
             :tecnico-options="tecnicoOptions"
             :can-complete="canCompleteMaintenance"
+            :can-manage-checklist="canManageMaintenance"
+            :can-toggle-checklist="canManageMaintenance || isTechnician"
             :completing="completing"
             @complete="completeMaintenance"
           />
