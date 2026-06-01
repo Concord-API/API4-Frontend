@@ -33,6 +33,10 @@ const progressPercent = computed(() => {
   return Math.round((completedCount.value / items.value.length) * 100)
 })
 
+function normalizeCompleted(value: unknown) {
+  return value === true || value === 1 || String(value).toLowerCase() === 'true'
+}
+
 function setPending(id: number, pending: boolean) {
   const next = new Set(pendingIds.value)
   if (pending) next.add(id)
@@ -57,7 +61,10 @@ async function loadChecklist() {
   try {
     const loaded = await checklistService.listarPorManutencao(props.maintenanceId)
     if (requestId !== loadRequestId) return
-    items.value = loaded
+    items.value = loaded.map(item => ({
+      ...item,
+      completed: normalizeCompleted(item.completed),
+    }))
   } catch (error) {
     if (requestId === loadRequestId) {
       toast.error(getApiErrorMessage(error, 'Nao foi possivel carregar o checklist.'))
@@ -78,6 +85,7 @@ async function toggleItem(item: ChecklistAPI, checked: boolean) {
     await checklistService.atualizar(item.id, {
       completed: checked,
     })
+    await loadChecklist()
     toast.success(checked ? 'Item marcado como concluido.' : 'Item marcado como pendente.')
   } catch (error) {
     item.completed = previous
@@ -216,10 +224,10 @@ watch(() => props.maintenanceId, () => {
 
       <div v-for="item in items" :key="item.id" class="mi-checklist-item">
         <Checkbox
-          :checked="item.completed"
+          :model-value="item.completed"
           :disabled="disabled || !canToggle || isPending(item.id)"
           class="mi-check"
-          @update:checked="toggleItem(item, $event === true)"
+          @update:model-value="toggleItem(item, $event === true)"
         />
         <input
           v-if="isEditing(item)"
