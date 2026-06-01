@@ -8,9 +8,9 @@ export interface ChecklistAPI {
 }
 
 export interface ChecklistRequest {
-  maintenanceId: number
-  description: string
-  completed: boolean
+  maintenanceId?: number
+  description?: string
+  completed?: boolean
 }
 
 export const checklistService = {

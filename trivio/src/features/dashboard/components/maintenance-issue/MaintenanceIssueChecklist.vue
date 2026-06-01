@@ -76,10 +76,9 @@ async function toggleItem(item: ChecklistAPI, checked: boolean) {
 
   try {
     await checklistService.atualizar(item.id, {
-      maintenanceId: item.maintenanceId,
-      description: item.description,
       completed: checked,
     })
+    toast.success(checked ? 'Item marcado como concluido.' : 'Item marcado como pendente.')
   } catch (error) {
     item.completed = previous
     toast.error(getApiErrorMessage(error, 'Nao foi possivel atualizar o checklist.'))
