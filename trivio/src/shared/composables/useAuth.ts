@@ -16,7 +16,7 @@ interface LoginApiResponse {
   token: string
   id: number
   email: string
-  role: 'MANAGER' | 'TECHNICIAN'
+  role: string
 }
 
 const SESSION_KEY = 'trivio_session'
@@ -26,13 +26,18 @@ function restoreSession(): ApiSessionPayload | null {
     const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
     const session = JSON.parse(raw) as ApiSessionPayload
-    const rawRole = String(session.user?.role ?? '').toUpperCase()
-    if (rawRole === 'MANAGER') session.user.role = 'manager'
-    if (rawRole === 'TECHNICIAN') session.user.role = 'technician'
+    session.user.role = normalizeRole(session.user?.role)
     return session
   } catch {
     return null
   }
+}
+
+function normalizeRole(role: unknown): UserRole {
+  const rawRole = String(role ?? '').toUpperCase()
+  return rawRole === 'MANAGER' || rawRole === 'ADMIN' || rawRole === 'ADMINISTRATOR'
+    ? 'manager'
+    : 'technician'
 }
 
 function persistSession(payload: ApiSessionPayload) {
@@ -57,7 +62,7 @@ export function useAuth() {
       user: {
         id: String(response.id),
         email: response.email,
-        role: response.role === 'MANAGER' ? 'manager' : 'technician',
+        role: normalizeRole(response.role),
       },
     }
 

@@ -419,7 +419,7 @@ watch(() => activeMaintenance.value?.id, () => {
   <Dialog :open="open" @update:open="handleDialogOpenChange">
     <DialogContent
       :show-close-button="false"
-      class="mi-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(680px,calc(100vh-48px))] min-h-0 p-0 gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
+      class="mi-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(680px,calc(100vh-48px))] min-h-0 p-0 gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl focus:outline-none focus-visible:outline-none max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
     >
       <DialogHeader class="sr-only">
         <DialogTitle>Detalhes da manutenção</DialogTitle>
