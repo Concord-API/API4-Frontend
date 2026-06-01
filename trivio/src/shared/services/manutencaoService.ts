@@ -3,8 +3,19 @@ import { api } from './api'
 export type ManutencaoStatus = 'SCHEDULED' | 'STARTED' | 'COMPLETED'
 export type ManutencaoTipo = 'PREVENTIVA' | 'CORRETIVA' | 'MELHORIA'
 
+export interface NextMaintenanceSuggestion {
+  contractId: number
+  date: string
+  type: ManutencaoTipo
+  status: ManutencaoStatus
+  preventive: boolean
+  latitude?: number
+  longitude?: number
+}
+
 export interface ManutencaoAPI {
   id: number
+  active: boolean
   contract: {
     id: number
     client: { id_client: number; name: string }
@@ -22,6 +33,7 @@ export interface ManutencaoAPI {
   endTime?: string
   latitude?: number
   longitude?: number
+  nextMaintenanceSuggestion?: NextMaintenanceSuggestion
 }
 
 export interface ManutencaoRequest {
@@ -31,10 +43,21 @@ export interface ManutencaoRequest {
   type: ManutencaoTipo
   status: ManutencaoStatus
   employeeIds: number[]
+  active?: boolean
   startTime?: string
   endTime?: string
   latitude?: number
   longitude?: number
+}
+
+export interface ManutencaoNotificacao {
+  maintenanceId: number
+  contractId: number
+  clientName: string
+  maintenanceDate: string
+  daysUntilMaintenance: 1 | 3 | 7
+  type: ManutencaoTipo
+  status: ManutencaoStatus
 }
 
 export const manutencaoService = {
@@ -48,7 +71,13 @@ export const manutencaoService = {
     if (employeeId) params.append('employeeId', employeeId.toString())
     return api.get<ManutencaoAPI[]>(`/maintenances?${params}`)
   },
+  listarNotificacoes: (employeeId?: number) => {
+    const params = new URLSearchParams()
+    if (employeeId) params.append('employeeId', employeeId.toString())
+    return api.get<ManutencaoNotificacao[]>(`/maintenances/notifications${params.toString() ? '?' + params.toString() : ''}`)
+  },
   buscar: (id: number) => api.get<ManutencaoAPI>(`/maintenances/${id}`),
   criar: (data: ManutencaoRequest) => api.postResponse<void>('/maintenances', data),
-  atualizar: (id: number, data: ManutencaoRequest) => api.patch<void>(`/maintenances/${id}`, data),
+  atualizar: (id: number, data: ManutencaoRequest) => api.patch<ManutencaoAPI>(`/maintenances/${id}`, data),
+  gerarProxima: (id: number) => api.post<ManutencaoAPI>(`/maintenances/${id}/next`, {}),
 }

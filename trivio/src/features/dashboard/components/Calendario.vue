@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-vue-next'
 import { useMediaQuery } from '@vueuse/core'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/shared/components/ui/sheet'
 import { useCalendario } from '@/features/dashboard/composables/useCalendario'
 import CalendarioGrid from './CalendarioGrid.vue'
 import CalendarioPainel from './CalendarioPainel.vue'
-import CalendarioModal, { type ModalMode, type CriacaoContext } from './CalendarioModal.vue'
+import CalendarioModal, { type CriacaoContext } from './CalendarioModal.vue'
+import MaintenanceIssueModal from './maintenance-issue/MaintenanceIssueModal.vue'
 import type { ManutencaoAPI } from '@/shared/services/manutencaoService'
 import type { TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useAuth } from '@/shared/composables/useAuth'
 
 const isDesktop = useMediaQuery('(min-width: 1025px)')
 const route = useRoute()
+const router = useRouter()
 const { currentUser } = useAuth()
 const isTechnician = computed(() => {
   const session = localStorage.getItem('trivio_session')
@@ -38,25 +40,37 @@ const {
 } = useCalendario()
 
 const modalOpen = ref(false)
-const modalMode = ref<ModalMode>('detalhe')
+const issueOpen = ref(false)
 const modalManutencao = ref<ManutencaoAPI | null>(null)
 const criacaoContext = ref<CriacaoContext | null>(null)
 
 function abrirDetalhe(m: ManutencaoAPI) {
   modalManutencao.value = m
   criacaoContext.value = null
-  modalMode.value = 'detalhe'
-  modalOpen.value = true
+  issueOpen.value = true
 }
 
 function abrirCriacao(dateStr: string, hour: number) {
+  if (isTechnician.value) return
   modalManutencao.value = null
   criacaoContext.value = { dateStr, hour, tecnico: tecnicoFiltro.value }
-  modalMode.value = 'criacao'
   modalOpen.value = true
 }
 
-function onSaved() { void carregarSemana() }
+async function onSaved() {
+  const selectedId = modalManutencao.value?.id
+  await carregarSemana()
+
+  if (!selectedId) return
+  const updated = manutencoesFiltradas.value.find(m => m.id === selectedId)
+  if (updated) {
+    modalManutencao.value = updated
+    return
+  }
+
+  modalManutencao.value = null
+  issueOpen.value = false
+}
 
 function onTecnicoFiltro(t: TecnicoAPI | null) {
   tecnicoFiltro.value = t
@@ -82,13 +96,29 @@ async function abrirManutencaoDaRota() {
 
   const manutencao = manutencoesFiltradas.value.find(m => m.id === id)
   if (manutencao) abrirDetalhe(manutencao)
+
+  await router.replace({
+    name: route.name ?? undefined,
+    params: route.params,
+    query: {},
+  })
 }
 
 onMounted(async () => {
   await carregarSemana()
-  void carregarTecnicos()
+  if (!isTechnician.value) {
+    void carregarTecnicos()
+  }
   await abrirManutencaoDaRota()
 })
+
+watch(
+  () => [route.query.manutencao, route.query.date],
+  async ([manutencao]) => {
+    if (!manutencao) return
+    await abrirManutencaoDaRota()
+  },
+)
 </script>
 
 <template>
@@ -162,9 +192,13 @@ onMounted(async () => {
 
     <CalendarioModal
       v-model:open="modalOpen"
-      v-model:mode="modalMode"
-      :manutencao="modalManutencao"
       :criacao-context="criacaoContext"
+      @saved="onSaved"
+    />
+    <MaintenanceIssueModal
+      v-model:open="issueOpen"
+      :manutencao="modalManutencao"
+      :can-edit="!isTechnician"
       @saved="onSaved"
     />
   </div>

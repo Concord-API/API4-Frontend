@@ -6,6 +6,7 @@ import { requisitoService, type RequisitoAPI } from '@/shared/services/requisito
 import { getApiErrorMessage } from '@/shared/services/api'
 import { useRequisitosStore } from '@/shared/composables/useRequisitosStore'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
+import ConfirmActionDialog from '@/shared/components/ui/ConfirmActionDialog.vue'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 
 const searchQuery = ref('')
@@ -15,6 +16,7 @@ const sheetOpen = ref(false)
 const sheetMode = ref<'create' | 'edit'>('create')
 const editingId = ref<number | null>(null)
 const submitError = ref<string | null>(null)
+const confirmInactiveOpen = ref(false)
 
 const {
   items: requisitos,
@@ -72,8 +74,18 @@ const filtered = computed(() => {
   return result
 })
 
-async function submitForm() {
+function isInactivatingRequisito() {
+  const original = requisitos.value.find(r => r.id === editingId.value)
+  return sheetMode.value === 'edit' && original?.active !== false && !form.value.active
+}
+
+async function submitForm(confirmedInactive = false) {
   submitError.value = null
+  if (isInactivatingRequisito() && !confirmedInactive) {
+    confirmInactiveOpen.value = true
+    return
+  }
+  confirmInactiveOpen.value = false
   try {
     if (sheetMode.value === 'edit' && editingId.value) {
       await requisitoService.atualizar(editingId.value, {
@@ -116,7 +128,7 @@ onMounted(() => { void ensureRequisitosLoaded() })
           <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar requisito' : 'Novo requisito' }}</DialogTitle>
           <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar requisito' : 'Novo requisito' }}</DialogDescription>
         </DialogHeader>
-        <form class="nd-form" @submit.prevent="submitForm">
+        <form class="nd-form" @submit.prevent="submitForm()">
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Nome *</label>
             <input v-model="form.name" class="nd-field-input" placeholder="Nome do requisito" required />
@@ -146,6 +158,15 @@ onMounted(() => { void ensureRequisitosLoaded() })
         </form>
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      v-model:open="confirmInactiveOpen"
+      title="Inativar requisito?"
+      description="Este requisito ficara inativo e deixara de aparecer como opcao ativa em novos contratos."
+      confirm-label="Inativar"
+      destructive
+      @confirm="submitForm(true)"
+    />
 
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-lg">

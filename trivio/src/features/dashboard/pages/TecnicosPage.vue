@@ -6,6 +6,7 @@ import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoServic
 import { getApiErrorMessage } from '@/shared/services/api'
 import { useTecnicosStore } from '@/shared/composables/useTecnicosStore'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
+import ConfirmActionDialog from '@/shared/components/ui/ConfirmActionDialog.vue'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 
@@ -16,6 +17,7 @@ const sheetOpen = ref(false)
 const sheetMode = ref<'create' | 'edit'>('create')
 const editingId = ref<number | null>(null)
 const submitError = ref<string | null>(null)
+const confirmInactiveOpen = ref(false)
 
 const {
   items: tecnicos,
@@ -73,8 +75,18 @@ const filtered = computed(() => {
   return result
 })
 
-async function submitForm() {
+function isInactivatingTecnico() {
+  const original = tecnicos.value.find(t => t.employeeId === editingId.value)
+  return sheetMode.value === 'edit' && original?.active !== false && !form.value.active
+}
+
+async function submitForm(confirmedInactive = false) {
   submitError.value = null
+  if (isInactivatingTecnico() && !confirmedInactive) {
+    confirmInactiveOpen.value = true
+    return
+  }
+  confirmInactiveOpen.value = false
   try {
     if (sheetMode.value === 'edit' && editingId.value) {
       const payload: Omit<TecnicoAPI, 'employeeId'> = {
@@ -135,7 +147,7 @@ onMounted(() => { void ensureTecnicosLoaded() })
           <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar técnico' : 'Cadastrar técnico' }}</DialogTitle>
           <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar técnico' : 'Cadastrar técnico' }}</DialogDescription>
         </DialogHeader>
-        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
+        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm()">
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Nome *</label>
             <input v-model="form.name" class="nd-field-input" placeholder="Nome do técnico" required />
@@ -173,6 +185,15 @@ onMounted(() => { void ensureTecnicosLoaded() })
         </form>
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      v-model:open="confirmInactiveOpen"
+      title="Inativar tecnico?"
+      description="Este tecnico ficara inativo e deixara de aparecer para novas alocacoes de manutencao."
+      confirm-label="Inativar"
+      destructive
+      @confirm="submitForm(true)"
+    />
 
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-xl">
