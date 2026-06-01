@@ -5,6 +5,7 @@ import type { ManutencaoAPI, ManutencaoTipo } from '@/shared/services/manutencao
 import NdCombobox from '@/shared/components/ui/NdCombobox.vue'
 import NdMultiCombobox from '@/shared/components/ui/NdMultiCombobox.vue'
 import { MapPickerModal } from '@/shared/components/ui/map-picker'
+import MaintenanceIssueChecklist from './MaintenanceIssueChecklist.vue'
 
 interface SelectOption {
   value: string | number
@@ -29,6 +30,8 @@ const props = defineProps<{
   employeeIds: number[]
   tecnicoOptions: SelectOption[]
   canComplete?: boolean
+  canManageChecklist?: boolean
+  canToggleChecklist?: boolean
   completing?: boolean
 }>()
 
@@ -218,6 +221,13 @@ function confirmAddress(coords: { lat: number; lng: number }) {
       </p>
     </section>
 
+    <MaintenanceIssueChecklist
+      :maintenance-id="manutencao.id"
+      :can-manage="canManageChecklist"
+      :can-toggle="canToggleChecklist"
+      :disabled="editing"
+    />
+
     <section class="mi-sidebar-section mi-activity-section">
       <h3>Atividade</h3>
 
@@ -261,6 +271,7 @@ function confirmAddress(coords: { lat: number; lng: number }) {
 
 .mi-sidebar-section {
   display: grid;
+  flex: 0 0 auto;
   gap: 14px;
   padding: 20px;
   border-bottom: 1px solid var(--nd-border);

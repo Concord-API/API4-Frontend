@@ -230,4 +230,8 @@ export const api = {
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }).then(
       response => response.data,
     ),
+  delete: <T>(path: string) =>
+    request<T>(path, { method: 'DELETE' }).then(
+      response => response.data,
+    ),
 }
