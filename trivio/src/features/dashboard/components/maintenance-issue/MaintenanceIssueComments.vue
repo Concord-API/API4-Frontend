@@ -60,6 +60,10 @@ function isEdited(follow: FollowAPI) {
   return Boolean(follow.updatedAt && follow.updatedAt !== follow.createdAt)
 }
 
+function isRemoved(follow: FollowAPI) {
+  return follow.active === false
+}
+
 function setPending(id: number, pending: boolean) {
   const next = new Set(pendingIds.value)
   if (pending) next.add(id)
@@ -152,9 +156,28 @@ async function removeFollow(follow: FollowAPI) {
 
   try {
     await followService.atualizar({ id: follow.id, message: follow.message, active: false })
-    follows.value = follows.value.filter(item => item.id !== follow.id)
+    follows.value = follows.value.map(item =>
+      item.id === follow.id ? { ...item, active: false, updatedAt: new Date().toISOString() } : item,
+    )
   } catch (error) {
     toast.error(getApiErrorMessage(error, 'Nao foi possivel remover a mensagem.'))
+  } finally {
+    setPending(follow.id, false)
+  }
+}
+
+async function undoRemoveFollow(follow: FollowAPI) {
+  if (!isOwn(follow) || isPending(follow.id)) return
+
+  setPending(follow.id, true)
+
+  try {
+    await followService.atualizar({ id: follow.id, message: follow.message, active: true })
+    follows.value = follows.value.map(item =>
+      item.id === follow.id ? { ...item, active: true, updatedAt: new Date().toISOString() } : item,
+    )
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Nao foi possivel desfazer a remocao.'))
   } finally {
     setPending(follow.id, false)
   }
@@ -199,11 +222,28 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
               <strong>{{ follow.employeeName }}</strong>
               <span>{{ formatTime(follow.createdAt) }}</span>
               <span v-if="isOwn(follow)" class="mi-own-label">voce</span>
-              <span v-if="isEdited(follow)" class="mi-edited-label">editada</span>
+              <span v-if="isRemoved(follow)" class="mi-edited-label">removida</span>
+              <span v-else-if="isEdited(follow)" class="mi-edited-label">editada</span>
             </div>
 
-            <div class="mi-comment-bubble" :class="{ 'mi-comment-bubble--own': isOwn(follow) }">
-              <template v-if="editingId === follow.id">
+            <div class="mi-comment-bubble" :class="{ 'mi-comment-bubble--own': isOwn(follow), 'mi-comment-bubble--removed': isRemoved(follow) }">
+              <template v-if="isRemoved(follow)">
+                <div class="mi-removed-content">
+                  <p>Essa mensagem foi removida.</p>
+                  <button
+                    v-if="isOwn(follow)"
+                    type="button"
+                    class="mi-undo-button"
+                    :disabled="isPending(follow.id)"
+                    @click="undoRemoveFollow(follow)"
+                  >
+                    <Loader2 v-if="isPending(follow.id)" :size="13" class="mi-spin" />
+                    <span v-else>Desfazer</span>
+                  </button>
+                </div>
+              </template>
+
+              <template v-else-if="editingId === follow.id">
                 <textarea
                   v-model="editingMessage"
                   class="mi-edit-input"
@@ -226,7 +266,7 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 
               <p v-else>{{ follow.message }}</p>
 
-              <div v-if="isOwn(follow) && editingId !== follow.id" class="mi-comment-actions">
+              <div v-if="isOwn(follow) && editingId !== follow.id && !isRemoved(follow)" class="mi-comment-actions">
                 <button type="button" class="mi-mini-button" :disabled="isPending(follow.id)" title="Editar" @click="startEdit(follow)">
                   <Pencil :size="13" />
                 </button>
@@ -400,11 +440,43 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
   background: color-mix(in srgb, var(--nd-success) 16%, var(--nd-surface));
 }
 
+.mi-comment-bubble--removed {
+  border-style: dashed;
+  color: var(--nd-text-secondary);
+  background: var(--nd-surface);
+}
+
 .mi-comment-bubble p {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   line-height: 1.45;
+}
+
+.mi-removed-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mi-undo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px;
+  color: var(--nd-action);
+  background: color-mix(in srgb, var(--nd-action) 12%, transparent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mi-undo-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .mi-comment-actions {

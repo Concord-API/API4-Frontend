@@ -7,6 +7,7 @@ import { getApiErrorMessage } from '@/shared/services/api'
 import { useClientesStore } from '@/shared/composables/useClientesStore'
 import { formatCnpj, formatCpf, formatCpfOrCnpj, formatPhone, onlyDigits } from '@/shared/lib/masks'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
+import ConfirmActionDialog from '@/shared/components/ui/ConfirmActionDialog.vue'
 import ViewToggle from '@/shared/components/ui/ViewToggle.vue'
 
 const searchQuery = ref('')
@@ -15,6 +16,7 @@ const sheetOpen = ref(false)
 const sheetMode = ref<'create' | 'edit'>('create')
 const editingId = ref<number | null>(null)
 const submitError = ref<string | null>(null)
+const confirmInactiveOpen = ref(false)
 
 const {
   items: clientes,
@@ -102,8 +104,18 @@ function documentoExibicao(c: ClienteAPI) {
   return '—'
 }
 
-async function submitForm() {
+function isInactivatingCliente() {
+  const original = clientes.value.find(c => c.id_client === editingId.value)
+  return sheetMode.value === 'edit' && original?.active !== false && !form.value.active
+}
+
+async function submitForm(confirmedInactive = false) {
   submitError.value = null
+  if (isInactivatingCliente() && !confirmedInactive) {
+    confirmInactiveOpen.value = true
+    return
+  }
+  confirmInactiveOpen.value = false
   const payload = {
     name: form.value.name,
     cpf: form.value.cpf || null,
@@ -143,7 +155,7 @@ onMounted(() => { void ensureClientesLoaded() })
           <DialogTitle class="nd-dialog-title">{{ sheetMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</DialogTitle>
           <DialogDescription class="sr-only">{{ sheetMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</DialogDescription>
         </DialogHeader>
-        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm">
+        <form class="nd-form grid grid-cols-1 sm:grid-cols-2 gap-x-4" @submit.prevent="submitForm()">
           <div class="nd-field col-span-full">
             <label class="nd-field-label">Nome *</label>
             <input v-model="form.name" class="nd-field-input" placeholder="Nome ou razão social" required />
@@ -185,6 +197,15 @@ onMounted(() => { void ensureClientesLoaded() })
         </form>
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      v-model:open="confirmInactiveOpen"
+      title="Inativar cliente?"
+      description="Este cliente ficara inativo e deixara de aparecer como opcao ativa em novos fluxos do sistema."
+      confirm-label="Inativar"
+      destructive
+      @confirm="submitForm(true)"
+    />
 
     <Dialog v-model:open="detailOpen">
       <DialogContent class="sm:max-w-xl">
