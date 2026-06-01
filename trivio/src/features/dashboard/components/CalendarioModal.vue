@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Building2, Calendar, Check, Clock, Loader2, MapPin, Tag, UserPlus, Users, X } from 'lucide-vue-next'
+import { Building2, Calendar, Check, Clock, ListChecks, Loader2, MapPin, Plus, Tag, Trash2, UserPlus, Users, X } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import NdDatePicker from '@/shared/components/ui/NdDatePicker.vue'
 import { MapLatLngField } from '@/shared/components/ui/map-field'
 import { contratoService, type ContratoAPI } from '@/shared/services/contratoService'
 import { getApiErrorMessage } from '@/shared/services/api'
+import { checklistService } from '@/shared/services/checklistService'
 import { manutencaoService, type ManutencaoStatus, type ManutencaoTipo } from '@/shared/services/manutencaoService'
 import { tecnicoService, type TecnicoAPI } from '@/shared/services/tecnicoService'
 import { useAuth } from '@/shared/composables/useAuth'
@@ -48,6 +49,8 @@ const contratos = ref<ContratoAPI[]>([])
 const tecnicos = ref<TecnicoAPI[]>([])
 const submitError = ref<string | null>(null)
 const submitting = ref(false)
+const checklistDraft = ref('')
+const checklistItems = ref<string[]>([])
 
 interface FormState {
   contractId: number | null
@@ -114,6 +117,7 @@ const statusOptions: Array<{ value: ManutencaoStatus; label: string }> = [
 
 const statusLabel = computed(() => statusLabelFor(form.value.status))
 const tipoLabel = computed(() => typeShortLabelFor(form.value.type))
+const checklistCount = computed(() => checklistItems.value.length)
 
 const statusColor = computed(() => {
   if (form.value.status === 'COMPLETED') return 'var(--nd-success)'
@@ -220,6 +224,78 @@ function roleLabel(admin: boolean) {
   return admin ? 'Relator' : 'Responsavel'
 }
 
+function resetChecklist() {
+  checklistDraft.value = ''
+  checklistItems.value = []
+}
+
+function addChecklistItem() {
+  const description = checklistDraft.value.trim()
+  if (!description) return
+
+  checklistItems.value = [...checklistItems.value, description]
+  checklistDraft.value = ''
+}
+
+function removeChecklistItem(index: number) {
+  checklistItems.value = checklistItems.value.filter((_, itemIndex) => itemIndex !== index)
+}
+
+function sameEmployeeIds(expected: number[], received: Array<{ employeeId: number }>) {
+  const expectedIds = [...expected].sort((a, b) => a - b)
+  const receivedIds = received.map(employee => employee.employeeId).sort((a, b) => a - b)
+
+  return (
+    expectedIds.length === receivedIds.length &&
+    expectedIds.every((id, index) => id === receivedIds[index])
+  )
+}
+
+async function findCreatedMaintenanceId(payload: {
+  contractId: number
+  date: string
+  type: ManutencaoTipo
+  status: ManutencaoStatus
+  employeeIds: number[]
+  startTime?: string
+  endTime?: string
+  latitude?: number
+  longitude?: number
+}) {
+  const maintenances = await manutencaoService.listar()
+
+  const created = maintenances
+    .filter(maintenance =>
+      maintenance.contract.id === payload.contractId &&
+      maintenance.date === payload.date &&
+      maintenance.type === payload.type &&
+      maintenance.status === payload.status &&
+      (maintenance.startTime?.slice(0, 5) ?? '') === (payload.startTime ?? '') &&
+      (maintenance.endTime?.slice(0, 5) ?? '') === (payload.endTime ?? '') &&
+      (payload.latitude == null || maintenance.latitude === payload.latitude) &&
+      (payload.longitude == null || maintenance.longitude === payload.longitude) &&
+      sameEmployeeIds(payload.employeeIds, maintenance.employees),
+    )
+    .sort((a, b) => b.id - a.id)[0]
+
+  return created?.id ?? null
+}
+
+async function createChecklistItems(maintenanceId: number) {
+  const descriptions = checklistItems.value.map(item => item.trim()).filter(Boolean)
+  if (!descriptions.length) return
+
+  await Promise.all(
+    descriptions.map(description =>
+      checklistService.criar({
+        maintenanceId,
+        description,
+        completed: false,
+      }),
+    ),
+  )
+}
+
 async function carregarDados() {
   if (isTechnician.value) return
 
@@ -239,6 +315,7 @@ watch(() => props.open, isOpen => {
   if (!isOpen) return
 
   void carregarDados()
+  resetChecklist()
 
   if (props.criacaoContext) {
     form.value = formFromContext(props.criacaoContext)
@@ -293,7 +370,28 @@ async function submitForm() {
 
   try {
     await manutencaoService.criar(payload)
-    toast.success('Manutencao cadastrada com sucesso.')
+    let checklistSaved = checklistCount.value === 0
+
+    if (checklistCount.value > 0) {
+      const maintenanceId = await findCreatedMaintenanceId(payload)
+
+      if (!maintenanceId) {
+        toast.warning('Manutencao cadastrada, mas nao foi possivel vincular o checklist.')
+      } else {
+        try {
+          await createChecklistItems(maintenanceId)
+          checklistSaved = true
+        } catch (error) {
+          toast.error(getApiErrorMessage(error, 'Manutencao cadastrada, mas nao foi possivel salvar o checklist.'))
+        }
+      }
+    }
+
+    toast.success(
+      checklistCount.value > 0 && checklistSaved
+        ? 'Manutencao e checklist cadastrados com sucesso.'
+        : 'Manutencao cadastrada com sucesso.',
+    )
 
     emit('update:open', false)
     emit('saved')
@@ -467,6 +565,55 @@ async function submitForm() {
                 <Users :size="15" />
                 Nenhum tecnico alocado
               </p>
+            </section>
+
+            <section class="cm-sidebar-section cm-checklist-section">
+              <div class="cm-sidebar-title-row">
+                <h3>Checklist <span>{{ checklistCount }}</span></h3>
+                <ListChecks :size="14" />
+              </div>
+
+              <div class="cm-checklist-list" :class="{ 'cm-checklist-list--empty': checklistCount === 0 }">
+                <div v-for="(item, index) in checklistItems" :key="`${item}-${index}`" class="cm-checklist-item">
+                  <span class="cm-checklist-box" aria-hidden="true"></span>
+                  <span class="cm-checklist-text">{{ item }}</span>
+                  <button
+                    type="button"
+                    class="cm-checklist-remove"
+                    :disabled="submitting"
+                    :aria-label="`Remover ${item}`"
+                    @click="removeChecklistItem(index)"
+                  >
+                    <Trash2 :size="13" />
+                  </button>
+                </div>
+
+                <p v-if="checklistCount === 0" class="cm-empty">
+                  <ListChecks :size="15" />
+                  Nenhum item adicionado
+                </p>
+              </div>
+
+              <div class="cm-checklist-add">
+                <input
+                  v-model="checklistDraft"
+                  type="text"
+                  class="cm-edit-field"
+                  placeholder="Adicionar um item..."
+                  maxlength="160"
+                  :disabled="submitting"
+                  @keydown.enter.prevent="addChecklistItem"
+                />
+                <button
+                  type="button"
+                  class="cm-checklist-add-button"
+                  :disabled="submitting || !checklistDraft.trim()"
+                  @click="addChecklistItem"
+                >
+                  <Plus :size="14" />
+                  Adicionar
+                </button>
+              </div>
             </section>
           </aside>
         </form>
@@ -869,6 +1016,116 @@ async function submitForm() {
   font-size: 0.8rem;
 }
 
+.cm-checklist-section {
+  gap: 12px;
+}
+
+.cm-sidebar-title-row h3 span {
+  margin-left: 5px;
+  color: var(--nd-text-primary);
+}
+
+.cm-checklist-list {
+  display: grid;
+  gap: 8px;
+  max-height: 178px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cm-checklist-list--empty {
+  max-height: none;
+}
+
+.cm-checklist-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+}
+
+.cm-checklist-box {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--nd-border-visible);
+  border-radius: 4px;
+  background: var(--nd-bg);
+}
+
+.cm-checklist-text {
+  min-width: 0;
+  color: var(--nd-text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cm-checklist-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--nd-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease-out, color 150ms ease-out, background 150ms ease-out;
+}
+
+.cm-checklist-item:hover .cm-checklist-remove,
+.cm-checklist-remove:focus-visible {
+  opacity: 1;
+}
+
+.cm-checklist-remove:hover {
+  color: var(--nd-accent);
+  background: var(--nd-surface-raised);
+}
+
+.cm-checklist-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cm-checklist-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.cm-checklist-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--nd-action-foreground);
+  background: var(--nd-action);
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cm-checklist-add-button:hover {
+  background: var(--nd-action-hover);
+}
+
+.cm-checklist-add-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .cm-spin {
   animation: cm-spin 0.8s linear infinite;
 }
@@ -892,6 +1149,10 @@ async function submitForm() {
   .cm-sidebar {
     border-top: 1px solid var(--nd-border);
     border-left: 0;
+  }
+
+  .cm-checklist-add {
+    grid-template-columns: 1fr;
   }
 }
 </style>
