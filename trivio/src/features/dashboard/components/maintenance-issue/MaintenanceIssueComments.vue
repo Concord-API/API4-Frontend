@@ -16,6 +16,7 @@ const { currentUser } = useAuth()
 
 const follows = ref<FollowAPI[]>([])
 const loading = ref(false)
+const refreshing = ref(false)
 const sending = ref(false)
 const message = ref('')
 const editingId = ref<number | null>(null)
@@ -81,11 +82,13 @@ function scrollToBottom() {
   })
 }
 
-async function loadFollows() {
+async function loadFollows(options: { refresh?: boolean } = {}) {
   if (!props.maintenanceId) return
 
+  const isRefresh = options.refresh === true
   const requestId = ++loadRequestId
-  loading.value = true
+  if (isRefresh) refreshing.value = true
+  else loading.value = true
 
   try {
     const loaded = await followService.listarPorManutencao(props.maintenanceId)
@@ -97,8 +100,16 @@ async function loadFollows() {
       toast.error(getApiErrorMessage(error, 'Nao foi possivel carregar o acompanhamento.'))
     }
   } finally {
-    if (requestId === loadRequestId) loading.value = false
+    if (requestId === loadRequestId) {
+      if (isRefresh) refreshing.value = false
+      else loading.value = false
+    }
   }
+}
+
+function refreshFollows() {
+  if (loading.value || refreshing.value) return
+  void loadFollows({ refresh: true })
 }
 
 async function sendMessage() {
@@ -110,7 +121,7 @@ async function sendMessage() {
   try {
     await followService.criar({ maintenanceId: props.maintenanceId, message: trimmed })
     message.value = ''
-    await loadFollows()
+    await loadFollows({ refresh: true })
   } catch (error) {
     toast.error(getApiErrorMessage(error, 'Nao foi possivel enviar a mensagem.'))
   } finally {
@@ -182,7 +193,9 @@ async function undoRemoveFollow(follow: FollowAPI) {
   }
 }
 
-watch(() => props.maintenanceId, loadFollows, { immediate: true })
+watch(() => props.maintenanceId, () => {
+  void loadFollows()
+}, { immediate: true })
 </script>
 
 <template>
@@ -192,7 +205,15 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
         <h3>Acompanhamento</h3>
         <span class="mi-comments-count">{{ follows.length }}</span>
       </div>
-      <button type="button" class="mi-comments-sort">Mais recentes</button>
+      <button
+        type="button"
+        class="mi-comments-sort"
+        :disabled="loading || refreshing"
+        @click="refreshFollows"
+      >
+        <Loader2 v-if="refreshing" :size="13" class="mi-spin" />
+        <span>Mais recentes</span>
+      </button>
     </header>
 
     <div ref="threadRef" class="mi-thread">
@@ -334,11 +355,19 @@ watch(() => props.maintenanceId, loadFollows, { immediate: true })
 }
 
 .mi-comments-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 0;
   color: var(--nd-interactive);
   background: transparent;
   font-size: 0.72rem;
   cursor: pointer;
+}
+
+.mi-comments-sort:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 .mi-thread {

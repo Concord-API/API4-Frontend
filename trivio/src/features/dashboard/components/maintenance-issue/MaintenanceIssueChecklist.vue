@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { CheckSquare, Loader2, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
+import { CheckSquare, CornerDownLeft, Loader2, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { Checkbox } from '@/shared/components/ui/checkbox'
 import { useAuth } from '@/shared/composables/useAuth'
@@ -16,7 +16,6 @@ const props = defineProps<{
 
 const items = ref<ChecklistAPI[]>([])
 const loading = ref(false)
-const adding = ref(false)
 const pendingIds = ref(new Set<number>())
 const creating = ref(false)
 const newDescription = ref('')
@@ -108,7 +107,6 @@ async function createItem() {
       completed: false,
     })
     newDescription.value = ''
-    adding.value = false
     await loadChecklist()
   } catch (error) {
     toast.error(getApiErrorMessage(error, 'Nao foi possivel adicionar o item.'))
@@ -186,15 +184,8 @@ async function focusEditInput(itemId: number) {
   input?.select()
 }
 
-function cancelCreate() {
-  if (creating.value) return
-  adding.value = false
-  newDescription.value = ''
-}
-
 watch(() => props.maintenanceId, () => {
   items.value = []
-  adding.value = false
   cancelEditItem()
   newDescription.value = ''
   pendingIds.value = new Set()
@@ -218,7 +209,7 @@ watch(() => props.maintenanceId, () => {
     </div>
 
     <div class="mi-checklist-scroll">
-      <div v-if="!loading && !items.length" class="mi-checklist-empty">
+      <div v-if="!loading && !items.length && !canManageItems" class="mi-checklist-empty">
         Nenhum item cadastrado.
       </div>
 
@@ -270,37 +261,32 @@ watch(() => props.maintenanceId, () => {
           </button>
         </div>
       </div>
-    </div>
 
-    <form v-if="canManageItems && adding" class="mi-checklist-form" @submit.prevent="createItem">
-      <input
-        v-model="newDescription"
-        class="mi-checklist-input"
-        maxlength="255"
-        placeholder="Adicionar um item..."
-        :disabled="creating || disabled"
-        autofocus
-      />
-      <div class="mi-checklist-form-actions">
-        <button type="submit" class="mi-checklist-add-confirm" :disabled="creating || disabled || !newDescription.trim()">
-          {{ creating ? 'Adicionando...' : 'Adicionar' }}
-        </button>
-        <button type="button" class="mi-checklist-add-cancel" :disabled="creating" @click="cancelCreate">
-          <X :size="15" />
+      <div v-if="canManageItems" class="mi-checklist-add">
+        <span class="mi-checklist-add-box" aria-hidden="true">
+          <Loader2 v-if="creating" :size="12" class="mi-spin" />
+          <Plus v-else :size="12" />
+        </span>
+        <input
+          v-model="newDescription"
+          class="mi-checklist-add-input"
+          maxlength="255"
+          placeholder="Adicionar um item..."
+          :disabled="creating || disabled"
+          @keydown.enter.prevent="createItem"
+        />
+        <button
+          type="button"
+          class="mi-checklist-add-enter"
+          title="Adicionar item"
+          aria-label="Adicionar item"
+          :disabled="creating || disabled || !newDescription.trim()"
+          @click="createItem"
+        >
+          <CornerDownLeft :size="13" />
         </button>
       </div>
-    </form>
-
-    <button
-      v-else-if="canManageItems"
-      type="button"
-      class="mi-checklist-add"
-      :disabled="disabled"
-      @click="adding = true"
-    >
-      <Plus :size="15" />
-      Adicionar um item
-    </button>
+    </div>
   </section>
 </template>
 
@@ -399,8 +385,7 @@ watch(() => props.maintenanceId, () => {
   text-decoration: line-through;
 }
 
-.mi-checklist-icon-button,
-.mi-checklist-add-cancel {
+.mi-checklist-icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -427,15 +412,13 @@ watch(() => props.maintenanceId, () => {
 }
 
 .mi-checklist-icon-button:hover,
-.mi-checklist-add-cancel:hover {
+.mi-checklist-add:hover .mi-checklist-add-box {
   color: var(--nd-accent);
   background: var(--nd-surface-raised);
 }
 
 .mi-checklist-icon-button:disabled,
-.mi-checklist-add:disabled,
-.mi-checklist-add-confirm:disabled,
-.mi-checklist-add-cancel:disabled {
+.mi-checklist-add-input:disabled {
   cursor: not-allowed;
   opacity: 0.62;
 }
@@ -458,59 +441,80 @@ watch(() => props.maintenanceId, () => {
 }
 
 .mi-checklist-add {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 24px;
   align-items: center;
-  justify-self: start;
   gap: 8px;
   min-height: 30px;
-  border: 0;
-  padding: 0;
-  color: var(--nd-text-secondary);
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.86rem;
+  cursor: text;
 }
 
-.mi-checklist-add:hover {
+.mi-checklist-add-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--nd-border-visible);
+  border-radius: 4px;
+  color: var(--nd-text-disabled);
+  background: transparent;
+}
+
+.mi-checklist-add:focus-within .mi-checklist-add-box {
+  border-color: var(--nd-action);
   color: var(--nd-action);
 }
 
-.mi-checklist-form {
-  display: grid;
-  gap: 10px;
-}
-
-.mi-checklist-input {
+.mi-checklist-add-input {
   width: 100%;
-  min-height: 36px;
-  border: 1px solid var(--nd-success);
-  border-radius: 10px;
-  padding: 0 12px;
-  color: var(--nd-text-primary);
-  background: var(--nd-bg);
-  outline: none;
-}
-
-.mi-checklist-input:focus {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--nd-success) 22%, transparent);
-}
-
-.mi-checklist-form-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mi-checklist-add-confirm {
-  min-height: 32px;
+  min-width: 0;
   border: 0;
-  border-radius: 999px;
-  padding: 0 16px;
-  color: #0b0f14;
-  background: var(--nd-success);
+  border-bottom: 1px solid transparent;
+  padding: 0;
+  color: var(--nd-text-primary);
+  background: transparent;
+  outline: none;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.mi-checklist-add-input::placeholder {
+  color: var(--nd-text-disabled);
+}
+
+.mi-checklist-add-input:focus {
+  border-bottom-color: var(--nd-border-visible);
+}
+
+.mi-checklist-add-enter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--nd-text-disabled);
+  background: transparent;
   cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 800;
+  opacity: 0;
+  transition: opacity 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.mi-checklist-add:focus-within .mi-checklist-add-enter,
+.mi-checklist-add:hover .mi-checklist-add-enter {
+  opacity: 1;
+}
+
+.mi-checklist-add-enter:hover {
+  color: var(--nd-action);
+  background: var(--nd-surface-raised);
+}
+
+.mi-checklist-add-enter:disabled {
+  cursor: default;
+  opacity: 0;
 }
 
 .mi-spin {

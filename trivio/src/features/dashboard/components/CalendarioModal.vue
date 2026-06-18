@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { Building2, Calendar, Check, Clock, ListChecks, Loader2, MapPin, Plus, Tag, Trash2, UserPlus, Users, X } from 'lucide-vue-next'
+import { Building2, Calendar, Check, Clock, CornerDownLeft, ListChecks, Loader2, MapPin, Pencil, Plus, Tag, Trash2, UserPlus, Users, X } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -51,6 +51,8 @@ const submitError = ref<string | null>(null)
 const submitting = ref(false)
 const checklistDraft = ref('')
 const checklistItems = ref<string[]>([])
+const editingChecklistIndex = ref<number | null>(null)
+const editingChecklistDraft = ref('')
 
 interface FormState {
   contractId: number | null
@@ -227,6 +229,8 @@ function roleLabel(admin: boolean) {
 function resetChecklist() {
   checklistDraft.value = ''
   checklistItems.value = []
+  editingChecklistIndex.value = null
+  editingChecklistDraft.value = ''
 }
 
 function addChecklistItem() {
@@ -239,6 +243,32 @@ function addChecklistItem() {
 
 function removeChecklistItem(index: number) {
   checklistItems.value = checklistItems.value.filter((_, itemIndex) => itemIndex !== index)
+  if (editingChecklistIndex.value === index) {
+    cancelEditChecklistItem()
+  } else if (editingChecklistIndex.value != null && editingChecklistIndex.value > index) {
+    editingChecklistIndex.value -= 1
+  }
+}
+
+function startEditChecklistItem(index: number) {
+  if (submitting.value) return
+  editingChecklistIndex.value = index
+  editingChecklistDraft.value = checklistItems.value[index] ?? ''
+}
+
+function cancelEditChecklistItem() {
+  editingChecklistIndex.value = null
+  editingChecklistDraft.value = ''
+}
+
+function saveChecklistItem(index: number) {
+  const description = editingChecklistDraft.value.trim()
+  if (!description) return
+
+  checklistItems.value = checklistItems.value.map((item, itemIndex) =>
+    itemIndex === index ? description : item,
+  )
+  cancelEditChecklistItem()
 }
 
 function sameEmployeeIds(expected: number[], received: Array<{ employeeId: number }>) {
@@ -477,19 +507,61 @@ async function submitForm() {
               <div class="cm-checklist-list">
                 <div v-for="(item, index) in checklistItems" :key="`${item}-${index}`" class="cm-checklist-item">
                   <span class="cm-checklist-box" aria-hidden="true"></span>
-                  <span class="cm-checklist-text">{{ item }}</span>
-                  <button
-                    type="button"
-                    class="cm-checklist-remove"
+                  <input
+                    v-if="editingChecklistIndex === index"
+                    v-model="editingChecklistDraft"
+                    class="cm-checklist-edit-input"
+                    maxlength="255"
                     :disabled="submitting"
-                    :aria-label="`Remover ${item}`"
-                    @click="removeChecklistItem(index)"
-                  >
-                    <Trash2 :size="13" />
-                  </button>
+                    @keydown.enter.prevent="saveChecklistItem(index)"
+                    @keydown.esc.prevent="cancelEditChecklistItem"
+                  />
+                  <span v-else class="cm-checklist-text">{{ item }}</span>
+                  <div class="cm-checklist-actions">
+                    <template v-if="editingChecklistIndex === index">
+                      <button
+                        type="button"
+                        class="cm-checklist-action"
+                        :disabled="submitting || !editingChecklistDraft.trim()"
+                        :aria-label="`Salvar ${item}`"
+                        @click="saveChecklistItem(index)"
+                      >
+                        <Check :size="13" />
+                      </button>
+                      <button
+                        type="button"
+                        class="cm-checklist-action"
+                        :disabled="submitting"
+                        :aria-label="`Cancelar edicao de ${item}`"
+                        @click="cancelEditChecklistItem"
+                      >
+                        <X :size="13" />
+                      </button>
+                    </template>
+                    <template v-else>
+                      <button
+                        type="button"
+                        class="cm-checklist-action"
+                        :disabled="submitting"
+                        :aria-label="`Editar ${item}`"
+                        @click="startEditChecklistItem(index)"
+                      >
+                        <Pencil :size="13" />
+                      </button>
+                      <button
+                        type="button"
+                        class="cm-checklist-action"
+                        :disabled="submitting"
+                        :aria-label="`Remover ${item}`"
+                        @click="removeChecklistItem(index)"
+                      >
+                        <Trash2 :size="13" />
+                      </button>
+                    </template>
+                  </div>
                 </div>
 
-                <label class="cm-checklist-add">
+                <div class="cm-checklist-add">
                   <span class="cm-checklist-box cm-checklist-add-box" aria-hidden="true">
                     <Plus :size="12" />
                   </span>
@@ -502,7 +574,17 @@ async function submitForm() {
                     :disabled="submitting"
                     @keydown.enter.prevent="addChecklistItem"
                   />
-                </label>
+                  <button
+                    type="button"
+                    class="cm-checklist-add-enter"
+                    title="Adicionar item"
+                    aria-label="Adicionar item"
+                    :disabled="submitting || !checklistDraft.trim()"
+                    @click="addChecklistItem"
+                  >
+                    <CornerDownLeft :size="13" />
+                  </button>
+                </div>
               </div>
             </section>
           </main>
@@ -1048,7 +1130,7 @@ async function submitForm() {
 .cm-checklist-item,
 .cm-checklist-add {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 26px;
+  grid-template-columns: 18px minmax(0, 1fr) 58px;
   align-items: center;
   gap: 8px;
   min-height: 30px;
@@ -1063,7 +1145,7 @@ async function submitForm() {
 }
 
 .cm-checklist-add {
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: 18px minmax(0, 1fr) 24px;
   cursor: text;
 }
 
@@ -1090,7 +1172,34 @@ async function submitForm() {
   white-space: nowrap;
 }
 
-.cm-checklist-remove {
+.cm-checklist-edit-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--nd-border-visible);
+  padding: 3px 0 4px;
+  color: var(--nd-text-primary);
+  background: transparent;
+  outline: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.cm-checklist-edit-input:focus {
+  border-bottom-color: var(--nd-action);
+}
+
+.cm-checklist-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.cm-checklist-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1101,21 +1210,20 @@ async function submitForm() {
   color: var(--nd-text-secondary);
   background: transparent;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 150ms ease-out, color 150ms ease-out, background 150ms ease-out;
+  transition: color 150ms ease-out, background 150ms ease-out;
 }
 
-.cm-checklist-item:hover .cm-checklist-remove,
-.cm-checklist-remove:focus-visible {
+.cm-checklist-item:hover .cm-checklist-actions,
+.cm-checklist-item:focus-within .cm-checklist-actions {
   opacity: 1;
 }
 
-.cm-checklist-remove:hover {
+.cm-checklist-action:hover {
   color: var(--nd-accent);
   background: var(--nd-surface-raised);
 }
 
-.cm-checklist-remove:disabled {
+.cm-checklist-action:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -1139,6 +1247,36 @@ async function submitForm() {
 
 .cm-checklist-add-input:focus {
   border-bottom-color: var(--nd-border-visible);
+}
+
+.cm-checklist-add-enter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--nd-text-disabled);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.cm-checklist-add:focus-within .cm-checklist-add-enter,
+.cm-checklist-add:hover .cm-checklist-add-enter {
+  opacity: 1;
+}
+
+.cm-checklist-add-enter:hover {
+  color: var(--nd-action);
+  background: var(--nd-surface-raised);
+}
+
+.cm-checklist-add-enter:disabled {
+  cursor: default;
+  opacity: 0;
 }
 
 .cm-spin {

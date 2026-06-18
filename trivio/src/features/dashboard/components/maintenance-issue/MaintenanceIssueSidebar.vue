@@ -160,7 +160,7 @@ function confirmAddress(coords: { lat: number; lng: number }) {
         <div class="mi-detail-row">
           <dt><Building2 :size="15" />Contrato</dt>
           <dd>
-            <span :class="{ 'mi-readonly-field': editing }">
+            <span class="mi-contract-code">
               #{{ String(manutencao.contract.id).padStart(3, '0') }}
             </span>
           </dd>
@@ -169,7 +169,7 @@ function confirmAddress(coords: { lat: number; lng: number }) {
         <div class="mi-detail-row">
           <dt><MapPin :size="15" />Endereço</dt>
           <dd class="mi-address-cell" :class="{ 'mi-muted': addressLoading }">
-            <span :class="{ 'mi-readonly-field': editing }">
+            <span class="mi-address-text">
               {{ addressLoading ? 'Carregando...' : addressLabel }}
             </span>
             <button
@@ -348,7 +348,6 @@ function confirmAddress(coords: { lat: number; lng: number }) {
 }
 
 .mi-edit-field,
-.mi-readonly-field,
 .mi-person-role {
   width: 100%;
   min-height: 30px;
@@ -372,6 +371,25 @@ function confirmAddress(coords: { lat: number; lng: number }) {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
+}
+
+.mi-contract-code {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: var(--nd-surface-raised);
+  color: var(--nd-text-primary);
+  line-height: 1;
+}
+
+.mi-address-text {
+  display: block;
+  min-width: 0;
+  padding-top: 1px;
+  color: var(--nd-text-primary);
+  line-height: 1.35;
 }
 
 .mi-map-button {

@@ -52,6 +52,8 @@ const typeOptions = [
 <template>
   <div class="mi-header-block">
     <section class="mi-title-section">
+      <h2>{{ title }}</h2>
+
       <div class="mi-badges">
         <Select
           v-if="editing"
@@ -85,9 +87,6 @@ const typeOptions = [
         </Select>
         <span v-else class="mi-type">{{ typeLabel }}</span>
       </div>
-
-      <div v-if="editing" class="mi-title-input">{{ title }}</div>
-      <h2 v-else>{{ title }}</h2>
     </section>
   </div>
 </template>
@@ -99,10 +98,12 @@ const typeOptions = [
 }
 
 .mi-title-section {
-  display: grid;
-  gap: 10px;
-  min-height: 104px;
-  padding: 20px 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 92px;
+  padding: 22px 24px;
   border-bottom: 1px solid var(--nd-border);
   background: var(--nd-surface);
 }
@@ -111,7 +112,10 @@ const typeOptions = [
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
+  flex: 0 0 auto;
+  padding-top: 1px;
 }
 
 .mi-status,
@@ -156,27 +160,12 @@ const typeOptions = [
 
 .mi-title-section h2 {
   margin: 0;
+  min-width: 0;
+  flex: 1;
   color: var(--nd-text-primary);
   font-size: 1.24rem;
   font-weight: 800;
   line-height: 1.2;
-}
-
-.mi-title-input {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  border: 1px solid var(--nd-border);
-  border-radius: 10px;
-  background: var(--nd-bg);
-  color: var(--nd-text-primary);
-}
-
-.mi-title-input {
-  min-height: 44px;
-  padding: 0 12px;
-  font-size: 1.24rem;
-  font-weight: 800;
 }
 
 :global(.mi-select-content) {
@@ -200,7 +189,13 @@ const typeOptions = [
 
 @media (max-width: 720px) {
   .mi-title-section {
+    flex-direction: column;
+    gap: 12px;
     padding: 16px;
+  }
+
+  .mi-badges {
+    justify-content: flex-start;
   }
 }
 </style>
