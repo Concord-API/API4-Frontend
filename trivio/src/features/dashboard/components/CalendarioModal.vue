@@ -611,6 +611,8 @@ async function submitForm() {
 <style scoped>
 .cm-dialog {
   display: block;
+  padding: 0 !important;
+  gap: 0 !important;
 }
 
 .cm-shell {
