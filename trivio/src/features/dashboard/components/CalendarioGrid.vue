@@ -16,6 +16,7 @@ const isTechnician = computed(() => String(currentUser.value?.role ?? '').toLowe
 const props = defineProps<{
   dias: DiaDaSemana[]
   manutencoes: ManutencaoAPI[]
+  popoversDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -391,6 +392,7 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
             :manutencoes="untimedMs"
             :scrollbar-width="scrollbarWidth"
             :is-technician="isTechnician"
+            :popovers-disabled="popoversDisabled"
             @card-expand="emit('card-expand', $event)"
             @drag-start="onDragStart"
             @drag-end="onDragEnd"
@@ -442,6 +444,7 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
                     :width-percent="layout.widthPercent"
                     :is-technician="isTechnician"
                     :preview-end-time="resizePreviewFor(layout.manutencao.id)?.endTime"
+                    :popovers-disabled="popoversDisabled"
                     @click="emit('card-click', $event)"
                     @expand="emit('card-expand', $event)"
                     @drag-start="onDragStart"

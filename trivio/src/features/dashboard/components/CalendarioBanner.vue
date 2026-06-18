@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
 import type { DiaDaSemana } from '@/features/dashboard/composables/useCalendario'
 import { Popover, PopoverContent, PopoverAnchor } from '@/shared/components/ui/popover'
@@ -10,6 +10,7 @@ const props = defineProps<{
   manutencoes: ManutencaoAPI[]
   scrollbarWidth: number
   isTechnician?: boolean
+  popoversDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -40,8 +41,21 @@ const porDia = computed(() =>
 const openPopovers = ref<Record<number, boolean>>({})
 
 function onChipExpand(m: ManutencaoAPI) {
+  openPopovers.value[m.id] = false
   emit('card-expand', m)
 }
+
+function onPopoverOpenChange(id: number, open: boolean) {
+  openPopovers.value[id] = props.popoversDisabled ? false : open
+}
+
+watch(
+  () => props.popoversDisabled,
+  disabled => {
+    if (disabled) openPopovers.value = {}
+  },
+  { flush: 'sync' },
+)
 
 function onChipDragStart(e: DragEvent, m: ManutencaoAPI) {
   if (props.isTechnician) return
@@ -77,7 +91,7 @@ function onColDrop(e: DragEvent, dateStr: string) {
           v-for="m in ms"
           :key="m.id"
           :open="!!openPopovers[m.id]"
-          @update:open="(v) => (openPopovers[m.id] = v)"
+          @update:open="(v) => onPopoverOpenChange(m.id, v)"
         >
           <PopoverAnchor as-child>
             <div
@@ -87,7 +101,7 @@ function onColDrop(e: DragEvent, dateStr: string) {
               :draggable="!isTechnician"
               @dragstart="onChipDragStart($event, m)"
               @dragend="emit('drag-end')"
-              @click.stop="openPopovers[m.id] = !openPopovers[m.id]"
+              @click.stop="!popoversDisabled && (openPopovers[m.id] = !openPopovers[m.id])"
               @dblclick.stop="onChipExpand(m)"
             >
               {{ m.contract?.client?.name ?? m.type }}

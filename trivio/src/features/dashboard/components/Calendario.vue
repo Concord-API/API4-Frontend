@@ -164,14 +164,11 @@ watch(
     <div v-if="error" class="cal-error">{{ error }}</div>
 
     <template v-else>
-      <div v-if="loading && !manutencoesFiltradas.length" class="cal-loading">
-        Carregando...
-      </div>
-
-      <div v-show="!loading || manutencoesFiltradas.length" class="cal-main">
+      <div class="cal-main">
         <CalendarioGrid
           :dias="diasDaSemana"
           :manutencoes="manutencoesFiltradas"
+          :popovers-disabled="issueOpen || modalOpen"
           @card-expand="abrirDetalhe"
           @cell-click="abrirCriacao"
           @nova-manutencao-ctx="abrirCriacao"
@@ -261,11 +258,6 @@ watch(
 .cal-error {
   color: var(--nd-accent);
   padding: 8px 0;
-}
-
-.cal-loading {
-  padding: 8px 0;
-  opacity: 0.6;
 }
 
 .cal-main {

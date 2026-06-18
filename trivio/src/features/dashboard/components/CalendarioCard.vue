@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ManutencaoAPI, ManutencaoStatus } from '@/shared/services/manutencaoService'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
 import CalendarioPopover from './CalendarioPopover.vue'
@@ -12,6 +12,7 @@ const props = defineProps<{
   widthPercent: number
   isTechnician?: boolean
   previewEndTime?: string
+  popoversDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -92,10 +93,22 @@ function onPopoverExpand(m: ManutencaoAPI) {
   popoverOpen.value = false
   emit('expand', m)
 }
+
+function onPopoverOpenChange(open: boolean) {
+  popoverOpen.value = props.popoversDisabled ? false : open
+}
+
+watch(
+  () => props.popoversDisabled,
+  disabled => {
+    if (disabled) popoverOpen.value = false
+  },
+  { flush: 'sync' },
+)
 </script>
 
 <template>
-  <Popover v-model:open="popoverOpen">
+  <Popover :open="popoverOpen" @update:open="onPopoverOpenChange">
     <PopoverTrigger as-child>
       <div
         class="cal-card"
