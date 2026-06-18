@@ -409,7 +409,7 @@ async function submitForm() {
   <Dialog :open="open" @update:open="handleOpenChange">
     <DialogContent
       :show-close-button="false"
-      class="cm-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(580px,calc(100vh-48px))] min-h-0 p-0 gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
+      class="cm-dialog w-[calc(100vw-48px)] max-w-[1024px] sm:max-w-[1024px] h-[min(580px,calc(100vh-48px))] min-h-0 !p-0 sm:!p-0 !gap-0 overflow-hidden rounded-[10px] border border-[var(--nd-border)] bg-[var(--nd-surface)] shadow-xl max-[900px]:w-[calc(100vw-24px)] max-[900px]:h-[calc(100vh-24px)]"
     >
       <DialogHeader class="sr-only">
         <DialogTitle>Nova manutencao</DialogTitle>
@@ -611,6 +611,16 @@ async function submitForm() {
 <style scoped>
 .cm-dialog {
   display: block;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+:deep(.cm-dialog) {
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+:global(.cm-dialog) {
   padding: 0 !important;
   gap: 0 !important;
 }
