@@ -8,53 +8,53 @@ import ThemeToggleButton from '@/shared/components/theme/ThemeToggleButton.vue'
 
 <template>
   <div
-    class="relative grid min-h-svh bg-white lg:grid-cols-[1fr_minmax(24rem,27rem)] dark:bg-black"
+    class="relative grid min-h-svh overflow-hidden bg-background lg:grid-cols-[minmax(0,1fr)_minmax(23rem,28rem)]"
   >
-    <section class="relative hidden min-h-svh overflow-hidden bg-white lg:block dark:bg-black">
-      <div class="absolute top-3 right-6 left-6 z-10 hidden h-9 items-center justify-between xl:top-4 xl:right-8 xl:left-8 lg:flex">
+    <section class="auth-hero relative hidden min-h-svh overflow-hidden lg:block">
+      <div class="absolute top-4 right-6 left-6 z-10 hidden h-10 items-center justify-between xl:top-5 xl:right-8 xl:left-8 lg:flex">
         <a href="#" class="inline-flex h-9 items-center text-foreground no-underline">
-          <BrandLogo />
+          <BrandLogo tone="onDark" />
         </a>
         <ThemeToggleButton />
       </div>
 
-      <div class="grid h-full grid-cols-2">
-        <div class="flex items-center justify-start pl-12 pr-6 xl:pl-16 xl:pr-8">
+      <div class="relative grid h-full grid-cols-[minmax(20rem,0.95fr)_minmax(22rem,1.05fr)]">
+        <div class="flex min-w-0 items-center justify-start pl-8 pr-4 xl:pl-14 xl:pr-8">
           <img
             :src="branding"
             alt="Branding animado do painel Trivio"
-            class="max-h-[72svh] w-full object-contain object-left"
+            class="auth-branding-art max-h-[76svh] w-full min-w-0 object-contain object-left"
           />
         </div>
 
-        <div class="flex items-center justify-center px-8 xl:px-12">
+        <div class="flex min-w-0 items-center justify-center px-8 xl:px-12">
           <AuthBrandingCopy />
         </div>
       </div>
     </section>
 
     <section
-      class="flex min-h-svh flex-col border-b border-black/10 bg-white px-10 pt-1.5 pb-2 sm:px-6 sm:pt-1.5 sm:pb-2 lg:border-b-0 lg:border-l dark:border-white/10 dark:bg-black"
+      class="flex min-h-svh min-w-0 flex-col border-b border-border bg-background px-4 pt-3 pb-4 sm:px-6 lg:border-b-0 lg:border-l"
     >
-      <div class="flex h-10 items-center justify-between lg:hidden">
+      <div class="flex h-11 items-center justify-between lg:hidden">
         <a href="#" class="inline-flex shrink-0 items-center text-foreground no-underline">
           <BrandLogo size="compact" />
         </a>
         <ThemeToggleButton class="shrink-0" />
       </div>
 
-      <div class="flex flex-1 items-center py-10 sm:py-12 lg:py-0">
+      <div class="flex flex-1 items-center py-8 sm:py-10 lg:py-0">
         <div
-          class="flex w-full flex-col justify-center gap-10 md:grid md:grid-cols-[minmax(18rem,22rem)_minmax(16rem,1fr)] md:items-center md:gap-10 lg:block"
+          class="flex w-full min-w-0 flex-col justify-center gap-8 md:grid md:grid-cols-[minmax(18rem,24rem)_minmax(14rem,1fr)] md:items-center md:gap-8 lg:block"
         >
-          <LoginForm class="w-full max-w-sm" />
+          <LoginForm class="w-full max-w-sm md:max-w-md lg:max-w-none" />
 
-          <div class="hidden space-y-5 md:block md:justify-self-end lg:hidden">
+          <div class="hidden min-w-0 space-y-5 md:block md:justify-self-end lg:hidden">
             <div class="flex justify-end">
               <img
                 :src="branding"
                 alt="Branding animado do painel Trivio"
-                class="max-h-44 w-full object-contain object-right sm:max-h-52 md:max-h-48 "
+                class="max-h-44 w-full min-w-0 object-contain object-right sm:max-h-52 md:max-h-48"
               />
             </div>
 
@@ -65,3 +65,13 @@ import ThemeToggleButton from '@/shared/components/theme/ThemeToggleButton.vue'
     </section>
   </div>
 </template>
+
+<style scoped>
+.auth-hero {
+  background: var(--nd-auth-hero-bg);
+}
+
+.auth-branding-art {
+  filter: drop-shadow(0 24px 60px var(--nd-auth-art-shadow));
+}
+</style>

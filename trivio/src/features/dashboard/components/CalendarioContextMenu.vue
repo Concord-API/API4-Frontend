@@ -54,7 +54,7 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 12px;
   color: var(--nd-text-primary);
   padding: 7px 10px;

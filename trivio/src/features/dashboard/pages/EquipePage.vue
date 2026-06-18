@@ -46,7 +46,7 @@ const activeTab = ref<'tecnicos' | 'requisitos'>('tecnicos')
 @media (min-width: 1024px) { .equipe-nav { margin-top: -3rem; margin-bottom: 3rem; } }
 
 .equipe-tab {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.05em;

@@ -121,7 +121,7 @@ function onColDrop(e: DragEvent, dateStr: string) {
 .cal-banner-label {
   width: 48px;
   flex-shrink: 0;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -168,7 +168,7 @@ function onColDrop(e: DragEvent, dateStr: string) {
   background: color-mix(in srgb, var(--chip-color) 13%, transparent);
   border-left: 2px solid var(--chip-color);
   color: var(--chip-color);
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
   font-weight: 600;
   padding: 0 4px;

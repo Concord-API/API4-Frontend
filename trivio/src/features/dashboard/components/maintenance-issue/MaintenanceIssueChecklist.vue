@@ -407,7 +407,7 @@ watch(() => props.maintenanceId, () => {
   width: 26px;
   height: 26px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--nd-text-secondary);
   background: transparent;
   cursor: pointer;
@@ -444,7 +444,7 @@ watch(() => props.maintenanceId, () => {
   width: 100%;
   min-height: 30px;
   border: 1px solid var(--nd-action);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0 9px;
   color: var(--nd-text-primary);
   background: var(--nd-bg);

@@ -435,15 +435,14 @@ async function submitForm() {
               <Check v-else :size="15" />
               Cadastrar
             </button>
-            <button type="button" class="cm-top-button" title="Fechar" :disabled="submitting" @click="closeModal">
-              <X :size="17" />
-            </button>
           </div>
         </header>
 
         <form id="cm-form" class="cm-body" @submit.prevent="submitForm">
           <main class="cm-main">
             <section class="cm-title-section">
+              <h2>{{ titleLabel }}</h2>
+
               <div class="cm-badges">
                 <Select v-model="statusModel">
                   <SelectTrigger class="cm-badge-trigger cm-status" :style="{ color: statusColor, borderColor: statusColor }">
@@ -467,22 +466,44 @@ async function submitForm() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <h2>{{ titleLabel }}</h2>
             </section>
 
-            <section class="cm-form-section">
-              <div class="cm-section-heading">
-                <MapPin :size="15" />
-                <h3>Localizacao</h3>
+            <section class="cm-form-section cm-checklist-workspace">
+              <div class="cm-sidebar-title-row">
+                <h3>Checklist <span>{{ checklistCount }}</span></h3>
+                <ListChecks :size="14" />
               </div>
 
-              <MapLatLngField
-                v-model:modelLat="form.latitude"
-                v-model:modelLng="form.longitude"
-              />
+              <div class="cm-checklist-list">
+                <div v-for="(item, index) in checklistItems" :key="`${item}-${index}`" class="cm-checklist-item">
+                  <span class="cm-checklist-box" aria-hidden="true"></span>
+                  <span class="cm-checklist-text">{{ item }}</span>
+                  <button
+                    type="button"
+                    class="cm-checklist-remove"
+                    :disabled="submitting"
+                    :aria-label="`Remover ${item}`"
+                    @click="removeChecklistItem(index)"
+                  >
+                    <Trash2 :size="13" />
+                  </button>
+                </div>
 
-              <div v-if="submitError" class="cm-error">{{ submitError }}</div>
+                <label class="cm-checklist-add">
+                  <span class="cm-checklist-box cm-checklist-add-box" aria-hidden="true">
+                    <Plus :size="12" />
+                  </span>
+                  <input
+                    v-model="checklistDraft"
+                    type="text"
+                    class="cm-checklist-add-input"
+                    placeholder="Adicionar um item..."
+                    maxlength="160"
+                    :disabled="submitting"
+                    @keydown.enter.prevent="addChecklistItem"
+                  />
+                </label>
+              </div>
             </section>
           </main>
 
@@ -535,6 +556,20 @@ async function submitForm() {
             </section>
 
             <section class="cm-sidebar-section">
+              <div class="cm-section-heading">
+                <MapPin :size="15" />
+                <h3>Localizacao</h3>
+              </div>
+
+              <MapLatLngField
+                v-model:modelLat="form.latitude"
+                v-model:modelLng="form.longitude"
+              />
+
+              <div v-if="submitError" class="cm-error">{{ submitError }}</div>
+            </section>
+
+            <section class="cm-sidebar-section">
               <div class="cm-sidebar-title-row">
                 <h3>Pessoas</h3>
                 <UserPlus :size="14" />
@@ -565,55 +600,6 @@ async function submitForm() {
                 <Users :size="15" />
                 Nenhum tecnico alocado
               </p>
-            </section>
-
-            <section class="cm-sidebar-section cm-checklist-section">
-              <div class="cm-sidebar-title-row">
-                <h3>Checklist <span>{{ checklistCount }}</span></h3>
-                <ListChecks :size="14" />
-              </div>
-
-              <div class="cm-checklist-list" :class="{ 'cm-checklist-list--empty': checklistCount === 0 }">
-                <div v-for="(item, index) in checklistItems" :key="`${item}-${index}`" class="cm-checklist-item">
-                  <span class="cm-checklist-box" aria-hidden="true"></span>
-                  <span class="cm-checklist-text">{{ item }}</span>
-                  <button
-                    type="button"
-                    class="cm-checklist-remove"
-                    :disabled="submitting"
-                    :aria-label="`Remover ${item}`"
-                    @click="removeChecklistItem(index)"
-                  >
-                    <Trash2 :size="13" />
-                  </button>
-                </div>
-
-                <p v-if="checklistCount === 0" class="cm-empty">
-                  <ListChecks :size="15" />
-                  Nenhum item adicionado
-                </p>
-              </div>
-
-              <div class="cm-checklist-add">
-                <input
-                  v-model="checklistDraft"
-                  type="text"
-                  class="cm-edit-field"
-                  placeholder="Adicionar um item..."
-                  maxlength="160"
-                  :disabled="submitting"
-                  @keydown.enter.prevent="addChecklistItem"
-                />
-                <button
-                  type="button"
-                  class="cm-checklist-add-button"
-                  :disabled="submitting || !checklistDraft.trim()"
-                  @click="addChecklistItem"
-                >
-                  <Plus :size="14" />
-                  Adicionar
-                </button>
-              </div>
             </section>
           </aside>
         </form>
@@ -674,7 +660,6 @@ async function submitForm() {
   flex: 0 0 auto;
 }
 
-.cm-top-button,
 .cm-cancel-button,
 .cm-save-button {
   display: inline-flex;
@@ -699,22 +684,27 @@ async function submitForm() {
 
 .cm-cancel-button {
   gap: 6px;
-  min-height: 32px;
-  border-radius: 4px;
+  min-height: 34px;
+  border-radius: 8px;
+  padding: 0 10px;
+  border: 1px solid transparent;
   color: var(--nd-text-secondary);
   background: transparent;
   font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .cm-cancel-button:hover {
+  border-color: var(--nd-border-visible);
   color: var(--nd-text-primary);
+  background: var(--nd-surface-raised);
 }
 
 .cm-save-button {
   gap: 6px;
   min-height: 34px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: 8px;
   color: var(--nd-action-foreground);
   background: var(--nd-action);
   font-size: 0.78rem;
@@ -725,7 +715,6 @@ async function submitForm() {
   background: var(--nd-action-hover);
 }
 
-.cm-top-button:disabled,
 .cm-cancel-button:disabled,
 .cm-save-button:disabled {
   cursor: not-allowed;
@@ -747,11 +736,12 @@ async function submitForm() {
 }
 
 .cm-title-section {
-  display: grid;
-  align-content: start;
-  min-height: 132px;
-  gap: 14px;
-  padding: 20px 24px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 92px;
+  gap: 18px;
+  padding: 22px 24px;
   border-bottom: 1px solid var(--nd-border);
   background: var(--nd-surface);
 }
@@ -761,6 +751,9 @@ async function submitForm() {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  padding-top: 1px;
 }
 
 .cm-status,
@@ -809,6 +802,7 @@ async function submitForm() {
   font-size: 1.24rem;
   font-weight: 800;
   line-height: 1.2;
+  min-width: 0;
 }
 
 :global(.cm-select-content) {
@@ -836,7 +830,11 @@ async function submitForm() {
   gap: 16px;
   min-height: 0;
   padding: 22px 24px;
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.cm-checklist-workspace {
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .cm-section-heading {
@@ -1027,18 +1025,16 @@ async function submitForm() {
 
 .cm-checklist-list {
   display: grid;
+  align-content: start;
   gap: 8px;
-  max-height: 178px;
+  max-height: none;
   min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
 }
 
-.cm-checklist-list--empty {
-  max-height: none;
-}
-
-.cm-checklist-item {
+.cm-checklist-item,
+.cm-checklist-add {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) 26px;
   align-items: center;
@@ -1052,6 +1048,24 @@ async function submitForm() {
   border: 1px solid var(--nd-border-visible);
   border-radius: 4px;
   background: var(--nd-bg);
+}
+
+.cm-checklist-add {
+  grid-template-columns: 18px minmax(0, 1fr);
+  cursor: text;
+}
+
+.cm-checklist-add-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nd-text-disabled);
+  background: transparent;
+}
+
+.cm-checklist-add:focus-within .cm-checklist-add-box {
+  border-color: var(--nd-action);
+  color: var(--nd-action);
 }
 
 .cm-checklist-text {
@@ -1094,36 +1108,25 @@ async function submitForm() {
   opacity: 0.5;
 }
 
-.cm-checklist-add {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.cm-checklist-add-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 0 10px;
+.cm-checklist-add-input {
+  width: 100%;
+  min-width: 0;
   border: 0;
-  border-radius: 999px;
-  color: var(--nd-action-foreground);
-  background: var(--nd-action);
-  font-size: 0.74rem;
-  font-weight: 800;
-  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  padding: 0;
+  color: var(--nd-text-primary);
+  background: transparent;
+  outline: none;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
-.cm-checklist-add-button:hover {
-  background: var(--nd-action-hover);
+.cm-checklist-add-input::placeholder {
+  color: var(--nd-text-disabled);
 }
 
-.cm-checklist-add-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
+.cm-checklist-add-input:focus {
+  border-bottom-color: var(--nd-border-visible);
 }
 
 .cm-spin {
@@ -1151,8 +1154,5 @@ async function submitForm() {
     border-left: 0;
   }
 
-  .cm-checklist-add {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

@@ -184,7 +184,7 @@ function onPopoverExpand(m: ManutencaoAPI) {
 }
 
 .cal-card-label {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 600;
   color: var(--card-color);
@@ -195,7 +195,7 @@ function onPopoverExpand(m: ManutencaoAPI) {
 }
 
 .cal-card-horario {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
   color: var(--nd-text-disabled);
   white-space: nowrap;
@@ -214,7 +214,7 @@ function onPopoverExpand(m: ManutencaoAPI) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 7px;
   font-weight: 700;
   color: #fff;

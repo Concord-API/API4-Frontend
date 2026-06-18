@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import sidebarLogoDark from '@/assets/trivio branco.svg'
@@ -82,17 +82,17 @@ const userDisplay = computed(() => ({
 <style scoped>
 :deep([data-sidebar="sidebar"]) {
   background: var(--sidebar) !important;
-  border-right: 1px solid var(--nd-border) !important;
+  border-right: 1px solid var(--sidebar-border) !important;
 }
 
 .nd-sidebar-header {
-  height: 48px;
-  padding: 0 24px;
+  height: var(--nd-app-header-height);
+  padding: 0 18px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
-  border-bottom: 1px solid var(--nd-border);
+  border-bottom: 1px solid var(--sidebar-border);
   flex-shrink: 0;
   gap: 0;
 }
@@ -106,15 +106,15 @@ const userDisplay = computed(() => ({
 }
 
 .nd-sidebar-content {
-  padding: 4px 0 0;
+  padding: 14px 12px;
 }
 
 .nd-sidebar-group {
-  padding: 8px 0 4px;
+  padding: 4px 0;
 }
 
 .nd-menu {
-  gap: 2px;
+  gap: 4px;
 }
 
 :deep(.nd-menu-btn) {
@@ -131,29 +131,40 @@ const userDisplay = computed(() => ({
 .nd-nav-link {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 13px 24px 13px 21px;
-  min-height: 48px;
+  gap: 12px;
+  padding: 10px 13px;
+  min-height: 42px;
   text-decoration: none;
-  color: var(--nd-text-secondary);
-  border-left: 3px solid transparent;
-  transition: color 150ms ease-out, border-color 150ms ease-out, background 150ms ease-out;
+  color: color-mix(in srgb, var(--sidebar-foreground) 76%, transparent);
+  border: 0;
+  border-radius: 8px;
+  outline: 1px solid transparent;
+  outline-offset: -1px;
+  transition: color 150ms ease-out, background 150ms ease-out, outline-color 150ms ease-out;
   width: 100%;
 }
 
 .nd-nav-link:hover {
-  color: var(--nd-text-primary);
-  background: rgba(128, 128, 128, 0.06);
+  color: var(--sidebar-foreground);
+  background: color-mix(in srgb, #5e2bff 14%, transparent);
 }
 
 .nd-nav-link--active {
-  color: var(--nd-text-display) !important;
-  border-left-color: var(--nd-sidebar-active-color) !important;
-  background: linear-gradient(90deg, var(--nd-sidebar-active-bg-start) 0%, var(--nd-sidebar-active-bg-mid) 50%, transparent 100%);
+  color: var(--sidebar-foreground) !important;
+  background: linear-gradient(90deg, rgba(94, 43, 255, 0.2) 0%, rgba(94, 43, 255, 0.12) 100%);
+  box-shadow: none;
+}
+
+.nd-nav-link:focus-visible {
+  outline-color: color-mix(in srgb, #5e2bff 42%, transparent);
 }
 
 .nd-nav-link--active .nd-nav-icon {
-  color: var(--nd-sidebar-active-color);
+  color: #5e2bff;
+}
+
+.nd-nav-link--active .nd-nav-label {
+  font-weight: 700;
 }
 
 .nd-nav-icon {
@@ -164,35 +175,42 @@ const userDisplay = computed(() => ({
 }
 
 .nd-nav-label {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
 }
 
 .nd-sidebar-footer {
-  border-top: 1px solid var(--nd-border);
-  padding: 20px 24px;
+  border-top: 1px solid var(--sidebar-border);
+  padding: 14px 12px;
 }
 
 .nd-user-row {
   display: flex;
   align-items: center;
   gap: 12px;
+  border: 0;
+  outline: 1px solid color-mix(in srgb, var(--sidebar-border) 82%, transparent);
+  outline-offset: -1px;
+  border-radius: 8px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--sidebar-foreground) 4%, transparent);
 }
 
 .nd-user-avatar {
   width: 34px;
   height: 34px;
-  border: 1px solid var(--nd-border-visible);
-  border-radius: 4px;
+  border: 0;
+  background: color-mix(in srgb, var(--sidebar-foreground) 8%, transparent);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
-  color: var(--nd-text-disabled);
+  color: color-mix(in srgb, var(--sidebar-foreground) 72%, transparent);
   flex-shrink: 0;
 }
 
@@ -205,10 +223,10 @@ const userDisplay = computed(() => ({
 }
 
 .nd-user-name {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: var(--nd-text-primary);
+  color: var(--sidebar-foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -216,9 +234,9 @@ const userDisplay = computed(() => ({
 }
 
 .nd-user-email {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
-  color: var(--nd-text-disabled);
+  color: color-mix(in srgb, var(--sidebar-foreground) 52%, transparent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -230,15 +248,36 @@ const userDisplay = computed(() => ({
   background: transparent;
   border: none;
   cursor: pointer;
-  color: var(--nd-text-disabled);
-  padding: 4px;
+  color: color-mix(in srgb, var(--sidebar-foreground) 52%, transparent);
+  min-width: 32px;
+  min-height: 32px;
+  justify-content: center;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  transition: color 150ms ease-out;
+  transition: color 150ms ease-out, background-color 150ms ease-out;
   flex-shrink: 0;
 }
 
 .nd-logout-btn:hover {
-  color: #D71921;
+  color: var(--sidebar-foreground);
+  background: color-mix(in srgb, var(--sidebar-foreground) 8%, transparent);
+}
+
+@media (max-width: 640px) {
+  .nd-sidebar-header {
+    height: var(--nd-app-header-height);
+    padding: 0 16px;
+  }
+
+  .nd-sidebar-footer {
+    padding: 14px 16px;
+  }
+
+  .nd-nav-link {
+    min-height: 44px;
+    padding: 11px 16px 11px 14px;
+  }
 }
 </style>
+

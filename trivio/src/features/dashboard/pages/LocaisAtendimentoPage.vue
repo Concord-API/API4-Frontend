@@ -274,7 +274,7 @@ onMounted(carregarDados)
 }
 
 .la-error {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   letter-spacing: 0.01em;
   color: var(--nd-accent);
@@ -331,7 +331,7 @@ onMounted(carregarDados)
 }
 
 .la-map-card-date {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--nd-text-disabled);
@@ -356,7 +356,7 @@ onMounted(carregarDados)
 }
 
 .la-map-card-name {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--nd-text-primary);
@@ -371,7 +371,7 @@ onMounted(carregarDados)
 
 .la-map-card-tipo,
 .la-map-card-address {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   letter-spacing: 0.01em;
   color: var(--nd-text-disabled);
@@ -418,7 +418,7 @@ onMounted(carregarDados)
 }
 
 .la-list-title {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -427,7 +427,7 @@ onMounted(carregarDados)
 }
 
 .la-list-count {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   color: var(--nd-text-disabled);
 }
@@ -446,7 +446,7 @@ onMounted(carregarDados)
 
 .la-empty {
   padding: 32px 16px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   letter-spacing: 0.01em;
   color: var(--nd-text-disabled);
@@ -480,14 +480,14 @@ onMounted(carregarDados)
 }
 
 .la-card-date {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--nd-text-disabled);
 }
 
 .la-tag {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -498,7 +498,7 @@ onMounted(carregarDados)
 }
 
 .la-card-name {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   color: var(--nd-text-primary);
   margin: 0;
@@ -506,7 +506,7 @@ onMounted(carregarDados)
 }
 
 .la-card-tipo {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -514,7 +514,7 @@ onMounted(carregarDados)
 }
 
 .la-card-address {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   color: var(--nd-text-disabled);
   margin-top: 4px;

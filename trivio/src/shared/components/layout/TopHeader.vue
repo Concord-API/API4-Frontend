@@ -35,9 +35,9 @@ const breadcrumb = computed(() =>
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 48px;
-  padding: 0 16px;
-  background: var(--nd-bg);
+  height: var(--nd-app-header-height);
+  padding: 0 14px;
+  background: var(--nd-surface);
   border-bottom: 1px solid var(--nd-border);
   flex-shrink: 0;
 }
@@ -46,6 +46,7 @@ const breadcrumb = computed(() =>
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .nd-divider {
@@ -55,17 +56,22 @@ const breadcrumb = computed(() =>
 }
 
 .nd-breadcrumb {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   color: var(--nd-text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nd-header-right {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 :deep(.nd-trigger) {
@@ -73,10 +79,28 @@ const breadcrumb = computed(() =>
   background: transparent !important;
   border: none;
   box-shadow: none;
+  border-radius: 8px;
 }
 
 :deep(.nd-trigger):hover {
   color: var(--nd-text-primary);
-  background: transparent !important;
+  background: var(--nd-surface-raised) !important;
+}
+
+@media (max-width: 640px) {
+  .nd-header {
+    height: var(--nd-app-header-height);
+    padding: 0 10px;
+  }
+
+  .nd-divider {
+    display: none;
+  }
+
+  .nd-breadcrumb {
+    max-width: 46vw;
+    font-size: 10px;
+  }
 }
 </style>
+

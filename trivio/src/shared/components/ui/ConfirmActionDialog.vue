@@ -63,14 +63,14 @@ const emit = defineEmits<{
 <style scoped>
 .cad-title {
   color: var(--nd-text-primary);
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1rem;
   font-weight: 800;
 }
 
 .cad-description {
   color: var(--nd-text-secondary);
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.86rem;
   line-height: 1.5;
 }
@@ -83,7 +83,7 @@ const emit = defineEmits<{
   border: 0;
   border-radius: 999px;
   padding: 0 16px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;

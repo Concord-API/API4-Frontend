@@ -46,7 +46,7 @@ const activeTab = ref<'contratos' | 'clientes'>('contratos')
 @media (min-width: 1024px) { .carteira-nav { margin-top: -3rem; margin-bottom: 3rem; } }
 
 .carteira-tab {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.05em;

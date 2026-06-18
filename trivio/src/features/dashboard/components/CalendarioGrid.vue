@@ -542,7 +542,7 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
   border-right: none;
 }
 .cal-day-label {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -550,7 +550,7 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
   color: var(--nd-text-secondary);
 }
 .cal-day-num {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 22px;
   font-weight: 400;
   color: var(--nd-text-secondary);
@@ -594,7 +594,7 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
   justify-content: flex-end;
   padding-right: 6px;
   padding-top: 2px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   letter-spacing: 0.02em;
   color: var(--nd-text-disabled);
@@ -630,7 +630,7 @@ function resizePreviewFor(id: number): { heightPx: number; endTime: string } | n
   box-sizing: border-box;
 }
 .cal-drag-ghost-label {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 600;
   color: var(--nd-action);

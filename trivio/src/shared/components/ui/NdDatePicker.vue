@@ -72,7 +72,7 @@ function selectDate(value: any) {
   border-bottom: 1px solid var(--nd-border-visible);
   outline: none;
   padding: 8px 0;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   color: var(--nd-text-primary);
   cursor: pointer;
@@ -108,7 +108,7 @@ function selectDate(value: any) {
   border: 1px solid var(--nd-border);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   z-index: 50;
 }
 </style>

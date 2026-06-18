@@ -102,12 +102,12 @@ function clear() {
   gap: 8px;
   background: var(--nd-surface);
   border: 1px solid var(--nd-border);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0 12px;
   height: 32px;
   cursor: pointer;
   transition: border-color 150ms ease-out, background 150ms ease-out;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 12px;
   white-space: nowrap;
   min-width: 140px;
@@ -144,7 +144,7 @@ function clear() {
   border: 1px solid var(--nd-border);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   z-index: 50;
   display: flex;
   flex-direction: column;

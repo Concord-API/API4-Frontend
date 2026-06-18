@@ -381,7 +381,7 @@ function confirmAddress(coords: { lat: number; lng: number }) {
   width: 30px;
   height: 30px;
   border: 1px solid var(--nd-border-visible);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--nd-text-secondary);
   background: var(--nd-surface-raised);
   cursor: pointer;

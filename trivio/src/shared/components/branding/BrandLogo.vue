@@ -7,20 +7,27 @@ import { useTheme } from '@/shared/composables/useTheme'
 import { cn } from '@/shared/lib/utils'
 
 type BrandLogoSize = 'compact' | 'default'
+type BrandLogoTone = 'auto' | 'onDark' | 'onLight'
 
 const props = withDefaults(
   defineProps<{
     class?: HTMLAttributes['class']
     size?: BrandLogoSize
+    tone?: BrandLogoTone
   }>(),
   {
     size: 'default',
+    tone: 'auto',
   },
 )
 
 const { mode } = useTheme()
 
-const logoSrc = computed(() => mode.value === 'dark' ? logoBranco : logoPreto)
+const logoSrc = computed(() => {
+  if (props.tone === 'onDark') return logoBranco
+  if (props.tone === 'onLight') return logoPreto
+  return mode.value === 'dark' ? logoBranco : logoPreto
+})
 
 const imgClasses = computed(() =>
   props.size === 'compact'

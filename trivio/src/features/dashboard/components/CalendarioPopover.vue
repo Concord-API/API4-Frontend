@@ -197,7 +197,7 @@ watch(() => props.manutencao, () => { void resolverEndereco() }, { immediate: tr
   gap: 8px;
   min-width: 220px;
   max-width: 280px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .cpv-header {

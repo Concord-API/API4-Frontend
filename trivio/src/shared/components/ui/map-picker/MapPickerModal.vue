@@ -208,7 +208,7 @@ function cancel() {
 }
 
 .mp-search-error {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   color: var(--nd-accent);
   padding: 4px 16px 0;
@@ -239,7 +239,7 @@ function cancel() {
 }
 
 .mp-coords {
-  font-family: 'Montserrat', monospace;
+  font-family: 'Inter', monospace;
   font-size: 12px;
   color: var(--nd-text-secondary);
   letter-spacing: 0.02em;

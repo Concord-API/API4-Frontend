@@ -7,9 +7,9 @@ import TopHeader from '@/shared/components/layout/TopHeader.vue'
 <template>
   <SidebarProvider>
     <AppSidebar />
-    <main class="w-full relative flex flex-col h-svh min-h-0 bg-background">
+    <main class="relative flex h-svh min-h-0 w-full min-w-0 flex-col bg-background">
       <TopHeader />
-      <div class="flex-1 min-h-0 w-full mx-auto px-4 py-6 sm:px-8 sm:py-8 md:px-12 md:py-10 lg:px-16 lg:py-12">
+      <div class="mx-auto min-h-0 w-full min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-7 md:px-8 md:py-8 xl:px-12 xl:py-10">
         <RouterView />
       </div>
     </main>

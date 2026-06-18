@@ -38,33 +38,38 @@ async function handleSubmit(e: Event) {
 </script>
 
 <template>
-  <form @submit="handleSubmit" :class="cn('flex w-full flex-col gap-8', props.class)">
-    <div class="space-y-2 text-center">
-      <h1 class="text-3xl font-bold tracking-[-0.04em] text-foreground">Entrar</h1>
-      <p class="mx-auto max-w-sm text-sm leading-6 text-muted-foreground">
+  <form
+    @submit="handleSubmit"
+    :class="cn('flex w-full min-w-0 flex-col gap-7 rounded-lg border bg-card p-5 shadow-sm sm:p-6 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none', props.class)"
+  >
+    <div class="space-y-3 text-left">
+      <h1 class="font-display text-5xl leading-none font-normal text-foreground">
+        Entrar
+      </h1>
+      <p class="max-w-sm text-sm leading-6 text-muted-foreground">
         Entre com sua conta para acessar o painel de controle do Trivio.
       </p>
     </div>
 
     <FieldGroup class="gap-5">
       <Field class="gap-2">
-        <FieldLabel for="email" class="text-sm font-medium text-foreground"> Email </FieldLabel>
+        <FieldLabel for="email" class="text-sm font-semibold text-foreground">Email</FieldLabel>
         <Input
           id="email"
           type="email"
           v-model="email"
           placeholder="Digite seu email"
           required
-          class="h-11 rounded-xl px-4"
+          class="h-11 px-4"
         />
       </Field>
 
       <Field class="gap-2">
-        <div class="flex items-center gap-3">
-          <FieldLabel for="password" class="text-sm font-medium text-foreground">
+        <div class="flex flex-wrap items-center gap-3">
+          <FieldLabel for="password" class="text-sm font-semibold text-foreground">
             Senha
           </FieldLabel>
-          <a href="#" class="ml-auto text-sm text-secundary underline-offset-4 transition-colors hover:underline">
+          <a href="#" class="ml-auto text-sm font-medium text-primary underline-offset-4 transition-colors hover:underline">
             Esqueceu sua senha?
           </a>
         </div>
@@ -74,12 +79,12 @@ async function handleSubmit(e: Event) {
           v-model="password"
           placeholder="Digite sua senha"
           required
-          class="h-11 rounded-xl px-4"
+          class="h-11 px-4"
         />
       </Field>
 
       <Field>
-        <Button :disabled="isLoading" type="submit" size="lg" class="h-11 w-full rounded-xl text-sm font-semibold shadow-none">
+        <Button :disabled="isLoading" type="submit" size="lg" class="h-11 w-full text-sm font-bold shadow-none">
           {{ isLoading ? 'Entrando...' : 'Entrar' }}
         </Button>
       </Field>

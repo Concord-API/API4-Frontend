@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { Check, ChevronsUpDown } from 'lucide-vue-next'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
@@ -120,7 +120,7 @@ function isSelected(value: string | number) {
 .nd-cb-trigger:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
 .nd-cb-value {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   color: var(--nd-text-primary);
   text-align: left;
@@ -130,7 +130,7 @@ function isSelected(value: string | number) {
   white-space: nowrap;
 }
 .nd-cb-placeholder {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   color: var(--nd-text-disabled);
   text-align: left;
@@ -171,7 +171,7 @@ function isSelected(value: string | number) {
 :deep([cmdk-input]),
 :deep([data-slot="command-input"]) {
   all: unset !important;
-  font-family: 'Montserrat', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
   font-size: 11px !important;
   letter-spacing: 0.01em !important;
   color: var(--nd-text-primary) !important;
@@ -193,7 +193,7 @@ function isSelected(value: string | number) {
 :deep([cmdk-group-heading]) { display: none !important; }
 
 :deep(.nd-cb-empty) {
-  font-family: 'Montserrat', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
   font-size: 10px !important;
   letter-spacing: 0.02em !important;
   color: var(--nd-text-disabled) !important;
@@ -205,7 +205,7 @@ function isSelected(value: string | number) {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-family: 'Montserrat', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
   font-size: 13px !important;
   color: var(--nd-text-secondary) !important;
   padding: 7px 10px !important;

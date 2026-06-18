@@ -44,7 +44,7 @@ watch(() => [props.lat, props.lng], () => { void load() }, { immediate: true })
   flex-shrink: 0;
 }
 .geo-text {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   color: var(--nd-text-secondary);
   white-space: nowrap;

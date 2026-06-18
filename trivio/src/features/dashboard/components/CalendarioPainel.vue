@@ -226,7 +226,7 @@ const legendItems = [
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: #fff;
 }
 
@@ -253,7 +253,7 @@ const legendItems = [
 }
 
 .cp-section-label {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -269,7 +269,7 @@ const legendItems = [
 }
 
 .cp-month-label {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--nd-text-primary);
@@ -305,7 +305,7 @@ const legendItems = [
 }
 
 .cp-day-header {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 600;
   color: var(--nd-text-disabled);
@@ -353,7 +353,7 @@ const legendItems = [
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 400;
   color: var(--nd-text-secondary);
@@ -388,7 +388,7 @@ const legendItems = [
 }
 
 .cp-legend-text {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 12px;
   color: var(--nd-text-secondary);
 }
