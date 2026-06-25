@@ -22,7 +22,7 @@ const props = withDefaults(
 
 const titleSegments: BrandingSegment[] = [
   {
-    text: 'Comando claro para ',
+    text: 'Mais visibilidade para ',
   },
   {
     text: 'manuten\u00e7\u00f5es',
@@ -40,8 +40,7 @@ const titleSegments: BrandingSegment[] = [
   },
 ]
 
-const description =
-  'Equipamentos, clientes e aloca\u00e7\u00f5es em um s\u00f3 lugar, com leitura r\u00e1pida para cada opera\u00e7\u00e3o.'
+const description = 'Equipamentos, clientes e alocacoes em um so lugar.'
 
 const containerClasses = computed(() =>
   props.size === 'compact' ? 'space-y-4' : 'space-y-7',

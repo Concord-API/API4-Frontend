@@ -13,7 +13,7 @@ import ThemeToggleButton from '@/shared/components/theme/ThemeToggleButton.vue'
     <section class="auth-hero relative hidden min-h-svh overflow-hidden lg:block">
       <div class="absolute top-4 right-6 left-6 z-10 hidden h-10 items-center justify-between xl:top-5 xl:right-8 xl:left-8 lg:flex">
         <a href="#" class="inline-flex h-9 items-center text-foreground no-underline">
-          <BrandLogo tone="onDark" />
+          <BrandLogo />
         </a>
         <ThemeToggleButton />
       </div>
